@@ -226,6 +226,303 @@ body {
   filter: drop-shadow(0 1px 2px rgba(212, 175, 55, 0.15));
 }
 
+/* ─── New utility classes ─── */
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Magnetic hover lift for cards */
+.hover-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.hover-lift:active {
+  transform: translateY(-1px);
+}
+
+/* Button press effect */
+.btn-press:active {
+  transform: scale(0.97) !important;
+}
+
+/* Objection flash overlay */
+.objection-flash {
+  animation: objection-flash 0.6s ease-out forwards;
+}
+
+@keyframes objection-flash {
+  0% { background-color: rgba(139, 26, 26, 0.3); transform: translateX(0); }
+  15% { transform: translateX(-8px); }
+  30% { transform: translateX(8px); }
+  45% { transform: translateX(-5px); }
+  60% { transform: translateX(5px); }
+  75% { background-color: rgba(139, 26, 26, 0.1); }
+  100% { background-color: transparent; transform: translateX(0); }
+}
+
+/* Drop cap styling */
+.drop-cap::first-letter {
+  font-family: var(--font-serif);
+  font-size: 3.5em;
+  font-weight: 900;
+  float: left;
+  line-height: 0.85;
+  margin-right: 0.15em;
+  margin-top: 0.05em;
+  color: var(--color-gold-500);
+  text-shadow: 0 1px 3px rgba(212, 175, 55, 0.2);
+}
+
+/* Signature swirl container */
+.signature-container {
+  position: relative;
+  display: inline-block;
+}
+
+.signature-svg {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+}
+
+.signature-svg.animate {
+  animation: signature-draw 1.5s ease-out forwards;
+}
+
+/* Ruled paper lines for parchment */
+.ruled-paper {
+  position: relative;
+}
+
+.ruled-paper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 27px,
+      rgba(212, 175, 55, 0.05) 27px,
+      rgba(212, 175, 55, 0.05) 28px
+    );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Red ribbon/banner for verdicts */
+.verdict-ribbon {
+  position: relative;
+  background: linear-gradient(135deg, #8b1a1a, #c41e1e, #8b1a1a);
+  padding: 8px 40px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.verdict-ribbon::before,
+.verdict-ribbon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.verdict-ribbon::before {
+  left: -20px;
+  border-width: 0 0 44px 20px;
+  border-color: transparent transparent rgba(139, 26, 26, 0.6) transparent;
+}
+
+.verdict-ribbon::after {
+  right: -20px;
+  border-width: 44px 20px 0 0;
+  border-color: rgba(139, 26, 26, 0.6) transparent transparent transparent;
+}
+
+/* Confetti burst */
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  top: -10px;
+  animation: confetti-fall 2.5s ease-in forwards;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+}
+
+/* Stamp overlay for Kill It */
+.stamp-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+  animation: stamp-overlay-in 0.8s ease-out forwards;
+}
+
+@keyframes stamp-overlay-in {
+  0% { background: rgba(139, 26, 26, 0); }
+  40% { background: rgba(139, 26, 26, 0.15); }
+  100% { background: rgba(139, 26, 26, 0); }
+}
+
+/* Courtroom backdrop / scene */
+.courtroom-scene {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.courtroom-scene::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 200px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.02) 0%, transparent 40%);
+  border-radius: 50%;
+}
+
+.courtroom-scene::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(0deg, rgba(26, 21, 16, 0.6) 0%, transparent 100%);
+}
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--color-court-800);
+  border: 1px solid var(--color-gold-500);
+  padding: 10px 20px;
+  border-radius: 2px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-court-200);
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Ruling color themes */
+.ruling-theme-ship {
+  --theme-accent: #1a6b3c;
+  --theme-glow: rgba(26, 107, 60, 0.2);
+}
+
+.ruling-theme-kill {
+  --theme-accent: #8b1a1a;
+  --theme-glow: rgba(139, 26, 26, 0.2);
+}
+
+.ruling-theme-revise {
+  --theme-accent: #6b5a1a;
+  --theme-glow: rgba(107, 90, 26, 0.2);
+}
+
+.ruling-theme-mistrial {
+  --theme-accent: #4a3d6b;
+  --theme-glow: rgba(74, 61, 107, 0.2);
+}
+
+/* Dust mote particles */
+.dust-mote {
+  position: fixed;
+  border-radius: 50%;
+  background: rgba(212, 175, 55, 0.08);
+  pointer-events: none;
+  z-index: 0;
+  animation: dust-float linear infinite;
+}
+
+@keyframes dust-float {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  20% { opacity: 0.3; }
+  80% { opacity: 0.3; }
+  100% { transform: translateY(-100vh) translateX(40px); opacity: 0; }
+}
+
+/* Docket badge */
+.docket-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--color-court-900);
+  border: 1px solid var(--color-court-700);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--color-court-400);
+}
+
+/* Ceremonial banner */
+.banner-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.5;
+}
+
+.banner-line::before,
+.banner-line::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-gold-500), transparent);
+}
+
 /* ─── Keyframes ─── */
 
 @keyframes gavel-strike {

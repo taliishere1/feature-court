@@ -1,15 +1,18 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { CourtSeal, StageProgress } from "@/components/court-components";
+import { StageProgress, CaseDocketHeader, LegalPaper } from "@/components/court-components";
+import { useSound } from "@/lib/use-sound";
 
 function DefenseContent() {
   const searchParams = useSearchParams();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { playGavel } = useSound();
+  const playedRef = useRef(false);
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -17,14 +20,20 @@ function DefenseContent() {
     fetch(`/api/trial?id=${id}`)
       .then((r) => r.json())
       .then(setTrial)
-      .finally(() => setLoading(false));
-  }, [searchParams]);
+      .finally(() => {
+        setLoading(false);
+        if (!playedRef.current) {
+          setTimeout(() => { playGavel(); playedRef.current = true; }, 300);
+        }
+      });
+  }, [searchParams, playGavel]);
 
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
   return (
     <div className="min-h-screen flex flex-col wood-panel">
+      <div className="courtroom-scene" />
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href={`/trial/prosecution?id=${trial.id}`} className="flex items-center gap-2 group">
@@ -44,14 +53,17 @@ function DefenseContent() {
 
       <main className="flex-1 px-6 py-12 relative z-10">
         <div className="max-w-3xl mx-auto animate-page-enter">
-          <div className="text-center mb-4">
-            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 3 of 5</span>
-          </div>
+          <CaseDocketHeader
+            caseTitle={trial.case_title}
+            caseId={trial.id}
+            stageLabel="Defense"
+            stageNum={3}
+          />
 
           <StageProgress current={3} />
 
           <div className="text-center mb-8 animate-fade-in-up">
-            <div className="inline-flex items-center gap-4 border border-court-700 rounded-sm px-6 py-3 bg-court-900/60">
+            <div className="inline-flex items-center gap-4 border border-court-700 rounded-sm px-6 py-3 bg-court-900/60 hover-lift">
               <div className="w-10 h-10 rounded-full border-2 border-gold-500/50 flex items-center justify-center">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gold-400">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" />
@@ -64,7 +76,7 @@ function DefenseContent() {
             </div>
           </div>
 
-          <div className="parchment p-6 mb-8 animate-fade-in-up stagger-1">
+          <LegalPaper className="mb-8 animate-fade-in-up stagger-1">
             <div className="flex items-center gap-2 mb-3">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Opening Statement</span>
             </div>
@@ -74,17 +86,17 @@ function DefenseContent() {
               </p>
               <p className="text-court-600 text-[10px] font-mono uppercase tracking-[0.2em] mt-3">— The Defense</p>
             </div>
-          </div>
+          </LegalPaper>
 
           <div className="space-y-3">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-4 animate-fade-in-up stagger-2">Rebuttals</span>
             {trial.defense.arguments.map((arg, i) => (
               <div
                 key={i}
-                className="group parchment p-4 animate-evidence-slide"
+                className="group parchment p-4 animate-evidence-slide hover-lift"
                 style={{ animationDelay: `${0.25 + i * 0.15}s` }}
               >
-                <div className="flex gap-4">
+                <div className="flex gap-4" style={{ position: "relative", zIndex: 2 }}>
                   <span className="font-mono text-[10px] text-gold-500/80 mt-0.5 shrink-0">
                     Rebuttal {String(i + 1).padStart(2, "0")}
                   </span>
@@ -97,7 +109,8 @@ function DefenseContent() {
           <div className="text-center mt-12 animate-fade-in-up stagger-5">
             <Link
               href={`/trial/cross?id=${trial.id}`}
-              className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base"
+              onClick={() => playGavel()}
+              className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base hover-lift btn-press"
             >
               Cross-examination
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
@@ -116,7 +129,6 @@ function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
       <div className="flex flex-col items-center gap-4">
-        <CourtSeal className="w-8 h-8 text-gold-500" animated />
         <div className="text-court-400 font-serif">The defense rises...</div>
       </div>
     </div>

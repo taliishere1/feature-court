@@ -1,10 +1,45 @@
+"use client";
+
 import Link from "next/link";
-import { CourtSeal, OrnateDivider, GoldParticles } from "@/components/court-components";
+import { useEffect, useState } from "react";
+import {
+  CourtSeal,
+  OrnateDivider,
+  GoldParticles,
+  InteractiveGavel,
+  ConfettiBurst,
+  BailiffAnnouncement,
+} from "@/components/court-components";
+import { useSound } from "@/lib/use-sound";
+import { useGameStats } from "@/lib/use-game-stats";
 
 export default function LandingPage() {
+  const { playGavel } = useSound();
+  const { stats, getBailiffGreeting } = useGameStats();
+  const [greeting, setGreeting] = useState("");
+  const [confetti, setConfetti] = useState(false);
+
+  useEffect(() => {
+    setGreeting(getBailiffGreeting());
+  }, [getBailiffGreeting]);
+
+  function handleGavelBang() {
+    playGavel();
+  }
+
+  function handleFileCase() {
+    setConfetti(true);
+    playGavel();
+    setTimeout(() => setConfetti(false), 3000);
+  }
+
   return (
     <div className="min-h-screen flex flex-col wood-panel relative">
+      <ConfettiBurst active={confetti} count={30} />
       <GoldParticles count={15} />
+
+      {/* Courtroom scene backdrop */}
+      <div className="courtroom-scene" />
 
       {/* Courtroom header bar */}
       <header className="border-b border-court-800 relative z-10">
@@ -20,69 +55,74 @@ export default function LandingPage() {
               </span>
             </div>
           </div>
-          <Link
-            href="/gallery"
-            className="group flex items-center gap-2 text-sm text-court-400 hover:text-court-200 transition-colors"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-court-500 group-hover:text-gold-500 transition-colors">
-              <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
-              <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
-            </svg>
-            Hall of Verdicts
-          </Link>
+          <div className="flex items-center gap-4">
+            {/* Cases tried counter */}
+            {stats.casesTried > 0 && (
+              <span className="hidden sm:flex items-center gap-1.5 text-[10px] text-court-500 font-mono uppercase tracking-[0.15em] border border-court-700 px-2.5 py-1 rounded-sm">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-500">
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+                {stats.casesTried} case{stats.casesTried !== 1 ? "s" : ""} tried
+              </span>
+            )}
+            <Link
+              href="/gallery"
+              className="group flex items-center gap-2 text-sm text-court-400 hover:text-court-200 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-court-500 group-hover:text-gold-500 transition-colors">
+                <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
+              </svg>
+              Hall of Verdicts
+            </Link>
+          </div>
         </div>
       </header>
+
+      {/* Bailiff greeting */}
+      {stats.casesTried > 0 && (
+        <div className="relative z-10 pt-6">
+          <BailiffAnnouncement text={greeting} />
+        </div>
+      )}
 
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-16 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
-          {/* Gavel emblem */}
-          <div className="mb-10 animate-gavel-strike">
-            <svg width="72" height="72" viewBox="0 0 56 56" fill="none" className="mx-auto text-gold-500" style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.25))" }}>
-              {/* Platform base */}
-              <rect x="16" y="42" width="24" height="4" rx="1" fill="currentColor" opacity="0.35" />
-              {/* Handle */}
-              <rect x="25" y="22" width="6" height="22" rx="1.5" fill="currentColor" opacity="0.55" />
-              {/* Gavel head */}
-              <rect x="13" y="6" width="30" height="18" rx="3" fill="currentColor" opacity="0.85" />
-              {/* Star emblem on gavel */}
-              <polygon points="28,8 30.5,13 36,13 31.5,16.5 33,22 28,19 23,22 24.5,16.5 20,13 25.5,13" fill="var(--color-court-950)" opacity="0.9" />
-              {/* Decorative lines on gavel head */}
-              <line x1="15" y1="18" x2="26" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
-              <line x1="30" y1="18" x2="41" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
-            </svg>
+          {/* Interactive gavel emblem */}
+          <div className="mb-8">
+            <InteractiveGavel onBang={handleGavelBang} />
+            <p className="text-court-600 text-[9px] font-mono uppercase tracking-[0.2em] mt-2 animate-fade-in-up">
+              Bang the gavel
+            </p>
           </div>
 
           {/* Court ceremonial banner */}
-          <div className="flex items-center gap-4 justify-center mb-5 opacity-40">
-            <svg width="40" height="10" viewBox="0 0 40 10" className="text-gold-500" fill="none">
-              <path d="M0 5 Q10 0 20 5 Q30 10 40 5" stroke="currentColor" strokeWidth="0.5" />
-            </svg>
-            <span className="font-mono text-[9px] uppercase tracking-[0.35em] text-gold-500">In the Court of Product Decisions</span>
-            <svg width="40" height="10" viewBox="0 0 40 10" className="text-gold-500" fill="none">
-              <path d="M0 5 Q10 0 20 5 Q30 10 40 5" stroke="currentColor" strokeWidth="0.5" />
-            </svg>
-          </div>
+          <div className="banner-line mb-5" />
 
           {/* Title */}
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-court-100 leading-[1.08] mb-5">
+          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-court-100 leading-[1.08] mb-5 animate-fade-in-up">
             Put your product decision&nbsp;
             <span className="italic gold-foil">on trial</span>
           </h1>
 
-          <p className="text-court-400 text-base sm:text-lg max-w-lg mx-auto mb-10 leading-relaxed font-legal tracking-wide">
+          <p className="text-court-400 text-base sm:text-lg max-w-lg mx-auto mb-10 leading-relaxed font-legal tracking-wide animate-fade-in-up stagger-1">
             The prosecution tears it apart. The defense fights for it.
             <br />
             <span className="text-court-200">You deliver the verdict.</span>
           </p>
 
           {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up stagger-2">
             <Link
               href="/file"
-              className="group inline-flex items-center gap-2.5 px-9 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base"
+              onClick={handleFileCase}
+              className="group inline-flex items-center gap-2.5 px-9 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base hover-lift btn-press"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:scale-110 transition-transform">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -94,7 +134,8 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/trial/arraignment?sample=0"
-              className="group inline-flex items-center gap-2.5 px-9 py-3.5 border border-court-600 hover:border-court-400 text-court-300 hover:text-court-100 font-medium rounded-sm transition-all duration-200 text-base"
+              onClick={playGavel}
+              className="group inline-flex items-center gap-2.5 px-9 py-3.5 border border-court-600 hover:border-court-400 text-court-300 hover:text-court-100 font-medium rounded-sm transition-all duration-200 text-base hover-lift btn-press"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:rotate-12 transition-transform">
                 <path d="M12 3L14 7L18 8L15 11L16 15L12 13L8 15L9 11L6 8L10 7L12 3Z" />
@@ -105,30 +146,32 @@ export default function LandingPage() {
         </div>
 
         {/* How it works */}
-        <div className="mt-20 max-w-4xl w-full">
-          <OrnateDivider className="mb-10" />
+        {stats.casesTried === 0 && (
+          <div className="mt-20 max-w-4xl w-full animate-fade-in-up stagger-3">
+            <OrnateDivider className="mb-10" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {steps.map((step, i) => (
-              <div
-                key={step.title}
-                className="group text-center p-6 border border-court-800/60 hover:border-court-600/60 transition-all duration-300 rounded-sm"
-              >
-                <div className="w-10 h-10 mx-auto mb-4 rounded-full border border-court-700 flex items-center justify-center group-hover:border-gold-500/50 transition-colors bench-accent">
-                  <span className="font-mono text-xs text-gold-500">{String(i + 1).padStart(2, "0")}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {steps.map((step, i) => (
+                <div
+                  key={step.title}
+                  className="group text-center p-6 border border-court-800/60 hover:border-court-600/60 transition-all duration-300 rounded-sm hover-lift"
+                >
+                  <div className="w-10 h-10 mx-auto mb-4 rounded-full border border-court-700 flex items-center justify-center group-hover:border-gold-500/50 transition-colors bench-accent">
+                    <span className="font-mono text-xs text-gold-500">{String(i + 1).padStart(2, "0")}</span>
+                  </div>
+                  <h3 className="font-serif text-base font-semibold text-court-200 mb-2">{step.title}</h3>
+                  <p className="text-court-500 text-sm leading-relaxed">{step.description}</p>
                 </div>
-                <h3 className="font-serif text-base font-semibold text-court-200 mb-2">{step.title}</h3>
-                <p className="text-court-500 text-sm leading-relaxed">{step.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* Footer */}
       <footer className="border-t border-court-800 px-6 py-4 relative z-10">
         <div className="max-w-6xl mx-auto flex items-center justify-between text-court-600 text-xs">
-          <span className="font-mono">© Feature Court · World Product Day Hackathon 2026</span>
+          <span className="font-mono">&copy; Feature Court · World Product Day Hackathon 2026</span>
           <span className="font-mono tracking-wider">All Rise · All Ship · All Kill</span>
         </div>
       </footer>

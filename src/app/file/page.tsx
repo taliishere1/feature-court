@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CourtSeal, OrnateDivider } from "@/components/court-components";
+import { CourtSeal, OrnateDivider, LegalPaper } from "@/components/court-components";
+import { useSound } from "@/lib/use-sound";
 
 export default function FileCasePage() {
   const router = useRouter();
+  const { playGavel, playRustle } = useSound();
   const [form, setForm] = useState({
     proposal: "",
     audience: "",
@@ -19,6 +21,7 @@ export default function FileCasePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
+    playGavel();
 
     try {
       const res = await fetch("/api/trial", {
@@ -47,8 +50,13 @@ export default function FileCasePage() {
     }
   }
 
+  function handleFocus() {
+    playRustle();
+  }
+
   return (
     <div className="min-h-screen flex flex-col wood-panel">
+      <div className="courtroom-scene" />
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -77,8 +85,8 @@ export default function FileCasePage() {
             <p className="text-[9px] text-court-500 font-mono mt-1">Submit for Trial · All fields required</p>
           </div>
 
-          <div className="parchment p-6 md:p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <LegalPaper>
+            <form onSubmit={handleSubmit} className="space-y-6 relative" style={{ zIndex: 2 }}>
               <div className="animate-fade-in-up stagger-1">
                 <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
                   <span className="text-gold-500 font-mono text-[10px]">§1</span>
@@ -89,6 +97,7 @@ export default function FileCasePage() {
                   type="text"
                   required
                   value={form.proposal}
+                  onFocus={handleFocus}
                   onChange={(e) => setForm({ ...form, proposal: e.target.value })}
                   placeholder='e.g. "Build a mobile app", "Cut the comments feature"'
                   className="w-full bg-transparent border border-court-700 rounded-sm px-4 py-3 text-court-100 placeholder:text-court-600/40 focus:outline-none focus:border-gold-500/60 transition-colors text-sm font-legal tracking-wide"
@@ -105,6 +114,7 @@ export default function FileCasePage() {
                   type="text"
                   required
                   value={form.audience}
+                  onFocus={handleFocus}
                   onChange={(e) => setForm({ ...form, audience: e.target.value })}
                   placeholder="e.g. Power users, new signups, enterprise accounts"
                   className="w-full bg-transparent border border-court-700 rounded-sm px-4 py-3 text-court-100 placeholder:text-court-600/40 focus:outline-none focus:border-gold-500/60 transition-colors text-sm font-legal tracking-wide"
@@ -121,6 +131,7 @@ export default function FileCasePage() {
                   type="text"
                   required
                   value={form.whyNow}
+                  onFocus={handleFocus}
                   onChange={(e) => setForm({ ...form, whyNow: e.target.value })}
                   placeholder="e.g. Competitors are moving, user feedback is loud"
                   className="w-full bg-transparent border border-court-700 rounded-sm px-4 py-3 text-court-100 placeholder:text-court-600/40 focus:outline-none focus:border-gold-500/60 transition-colors text-sm font-legal tracking-wide"
@@ -137,6 +148,7 @@ export default function FileCasePage() {
                   type="text"
                   required
                   value={form.tradeoff}
+                  onFocus={handleFocus}
                   onChange={(e) => setForm({ ...form, tradeoff: e.target.value })}
                   placeholder="e.g. 6 months of engineering, delay the roadmap"
                   className="w-full bg-transparent border border-court-700 rounded-sm px-4 py-3 text-court-100 placeholder:text-court-600/40 focus:outline-none focus:border-gold-500/60 transition-colors text-sm font-legal tracking-wide"
@@ -154,8 +166,11 @@ export default function FileCasePage() {
                     <button
                       type="button"
                       key={option}
-                      onClick={() => setForm({ ...form, gutCall: option })}
-                      className={`flex-1 px-3 py-2.5 rounded-sm border text-xs font-medium transition-all duration-200 ${
+                      onClick={() => {
+                        setForm({ ...form, gutCall: option });
+                        playRustle();
+                      }}
+                      className={`flex-1 px-3 py-2.5 rounded-sm border text-xs font-medium transition-all duration-200 hover-lift btn-press ${
                         form.gutCall === option
                           ? "bg-gold-500/15 border-gold-500/60 text-gold-300"
                           : "bg-transparent border-court-700 text-court-400 hover:border-court-500 hover:text-court-200"
@@ -173,7 +188,7 @@ export default function FileCasePage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="group inline-flex items-center gap-2.5 px-10 py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base"
+                  className="group inline-flex items-center gap-2.5 px-10 py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base hover-lift btn-press"
                 >
                   {submitting ? (
                     <>
@@ -194,9 +209,8 @@ export default function FileCasePage() {
                 </button>
               </div>
             </form>
-          </div>
+          </LegalPaper>
 
-          {/* Footer */}
           <p className="text-center text-court-600 text-[10px] font-mono mt-6 uppercase tracking-wider">
             By submitting, you consent to judgment by a jury of your peers.
           </p>
