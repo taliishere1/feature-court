@@ -3,36 +3,36 @@
 @import "tailwindcss";
 
 @theme {
-  --color-court-950: #030712;
-  --color-court-900: #0a0f1e;
-  --color-court-850: #0f1629;
-  --color-court-800: #141e34;
-  --color-court-750: #1a2640;
-  --color-court-700: #22304f;
-  --color-court-600: #334466;
-  --color-court-500: #5a6e94;
-  --color-court-400: #8598b8;
-  --color-court-300: #aebdd4;
-  --color-court-200: #cdd7e5;
-  --color-court-100: #e4e9f0;
-  --color-court-50: #f0f3f7;
+  --color-court-950: #120c0a;
+  --color-court-900: #1c1411;
+  --color-court-850: #231a15;
+  --color-court-800: #2b201a;
+  --color-court-750: #362a22;
+  --color-court-700: #46362b;
+  --color-court-600: #5e4a3c;
+  --color-court-500: #7d6452;
+  --color-court-400: #9c836f;
+  --color-court-300: #bfab98;
+  --color-court-200: #d9caba;
+  --color-court-100: #ede4d9;
+  --color-court-50: #f5efe8;
 
-  --color-gold-700: #92400e;
-  --color-gold-600: #b45309;
-  --color-gold-500: #d97706;
-  --color-gold-400: #f59e0b;
-  --color-gold-300: #fbbf24;
-  --color-gold-200: #fcd34d;
-  --color-gold-100: #fde68a;
+  --color-gold-700: #7d5a00;
+  --color-gold-600: #a87a00;
+  --color-gold-500: #d4a017;
+  --color-gold-400: #e8b825;
+  --color-gold-300: #f0cd50;
+  --color-gold-200: #f5db80;
+  --color-gold-100: #fae8b0;
 
-  --color-robe-900: #0a0e1e;
-  --color-robe-800: #121838;
-  --color-robe-700: #1c2650;
-  --color-robe-600: #2a3870;
+  --color-robe-900: #1a0a0c;
+  --color-robe-800: #2d1216;
+  --color-robe-700: #401a20;
+  --color-robe-600: #5a2630;
 
   --color-stamp-ship: #059669;
   --color-stamp-kill: #dc2626;
-  --color-stamp-revise: #d97706;
+  --color-stamp-revise: #b45309;
   --color-stamp-mistrial: #7c3aed;
 
   --font-serif: 'Playfair Display', Georgia, serif;
