@@ -2,12 +2,44 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { TrialData } from "@/lib/types";
+import { TrialData, Ruling } from "@/lib/types";
 import { CourtSeal, OrnateDivider, useSoundEffects } from "@/components/court-components";
+
+interface RulingRecord {
+  id: string;
+  ruling: Ruling;
+  caseTitle: string;
+  timestamp: number;
+}
+
+const RULING_LABELS: Record<Ruling, string> = {
+  ship: "Ship It",
+  kill: "Kill It",
+  revise: "Send Back",
+  mistrial: "Mistrial",
+};
+
+const RULING_COLORS: Record<Ruling, string> = {
+  ship: "text-stamp-ship",
+  kill: "text-stamp-kill",
+  revise: "text-stamp-revise",
+  mistrial: "text-stamp-mistrial",
+};
+
+const RULING_BG: Record<Ruling, string> = {
+  ship: "bg-stamp-ship/10 border-stamp-ship/30",
+  kill: "bg-stamp-kill/10 border-stamp-kill/30",
+  revise: "bg-stamp-revise/10 border-stamp-revise/30",
+  mistrial: "bg-stamp-mistrial/10 border-stamp-mistrial/30",
+};
 
 export default function GalleryPage() {
   const [trials, setTrials] = useState<TrialData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rulings, setRulings] = useState<RulingRecord[]>([]);
+  const [streak, setStreak] = useState(0);
+  const [lastRuling, setLastRuling] = useState<Ruling | null>(null);
+  const [casesTried, setCasesTried] = useState(0);
   const { playGavelKnock } = useSoundEffects();
 
   useEffect(() => {
@@ -18,7 +50,20 @@ export default function GalleryPage() {
         if (data.length > 0) playGavelKnock();
       })
       .finally(() => setLoading(false));
+    // Load stored rulings from localStorage
+    const stored = JSON.parse(localStorage.getItem("fc-rulings") || "[]");
+    setRulings(stored);
+    setStreak(parseInt(localStorage.getItem("fc-streak") || "0", 10));
+    setLastRuling(localStorage.getItem("fc-last-ruling") as Ruling | null);
+    setCasesTried(parseInt(localStorage.getItem("fc-cases-tried") || "0", 10));
   }, [playGavelKnock]);
+
+  const totalVerdicts = rulings.length;
+
+  const stats: { key: Ruling; count: number; pct: number }[] = (["ship", "kill", "revise", "mistrial"] as Ruling[]).map((key) => {
+    const count = rulings.filter((r) => r.ruling === key).length;
+    return { key, count, pct: totalVerdicts > 0 ? Math.round((count / totalVerdicts) * 100) : 0 };
+  });
 
   return (
     <div className="min-h-screen flex flex-col wood-panel">
@@ -52,7 +97,7 @@ export default function GalleryPage() {
       <main className="flex-1 px-6 py-16 relative z-10">
         <div className="max-w-6xl mx-auto animate-page-enter">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
               <CourtSeal className="w-8 h-8 text-gold-500" />
               <div>
@@ -63,11 +108,48 @@ export default function GalleryPage() {
               </div>
               <CourtSeal className="w-8 h-8 text-gold-500" />
             </div>
-            <div className="flex items-center justify-center gap-2 text-court-400 text-sm font-legal">
-              <span>Product decisions that have been put on trial</span>
-            </div>
-            <OrnateDivider className="mt-6 max-w-xs mx-auto" />
           </div>
+
+          {/* Stats bar */}
+          {casesTried > 0 && (
+            <div className="max-w-2xl mx-auto mb-8">
+              <div className="parchment p-4 animate-fade-in-up">
+                <div className="flex items-center justify-between mb-3 relative z-10">
+                  <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500">Your Record</span>
+                  <span className="font-mono text-[9px] text-court-500">
+                    <span className="text-gold-500">{casesTried}</span> case{casesTried !== 1 ? "s" : ""} tried
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-2 relative z-10">
+                  {stats.map((s) => (
+                    <div key={s.key} className={`text-center p-2 rounded-sm border ${RULING_BG[s.key]}`}>
+                      <p className={`font-mono text-[10px] font-bold ${RULING_COLORS[s.key]}`}>{s.count}</p>
+                      <p className="text-court-500 text-[8px] font-mono uppercase tracking-[0.1em] mt-0.5">{RULING_LABELS[s.key]}</p>
+                      {totalVerdicts > 0 && (
+                        <div className="w-full h-1 bg-court-800 rounded-full mt-1 overflow-hidden">
+                          <div className={`h-full rounded-full ${s.key === "ship" ? "bg-stamp-ship" : s.key === "kill" ? "bg-stamp-kill" : s.key === "revise" ? "bg-stamp-revise" : "bg-stamp-mistrial"}`} style={{ width: `${s.pct}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {streak >= 2 && lastRuling && (
+                  <div className="mt-3 pt-2 border-t border-court-800 relative z-10">
+                    <div className="flex items-center justify-center gap-2">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-500">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                      </svg>
+                      <span className="text-[10px] text-court-400 font-legal italic">
+                        You&apos;re on a <span className={`font-semibold ${RULING_COLORS[lastRuling]}`}>{RULING_LABELS[lastRuling]}</span> streak of <span className="text-gold-500 font-semibold">{streak}</span>!
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <OrnateDivider className="mb-8 max-w-xs mx-auto" />
 
           {loading ? (
             <div className="flex items-center justify-center py-20">

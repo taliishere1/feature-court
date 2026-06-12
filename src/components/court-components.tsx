@@ -147,7 +147,24 @@ export function useSoundEffects() {
     } catch {}
   }, [getContext]);
 
-  return { playGavelKnock, playStampSlam, playPaperRustle, playSwoosh, playConfetti };
+  const playAmbientHum = useCallback(() => {
+    try {
+      const ctx = getContext();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(55, ctx.currentTime);
+      o.frequency.linearRampToValueAtTime(58, ctx.currentTime + 2);
+      g.gain.setValueAtTime(0.03, ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.02, ctx.currentTime + 3);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 3);
+    } catch {}
+  }, [getContext]);
+
+  return { playGavelKnock, playStampSlam, playPaperRustle, playSwoosh, playConfetti, playAmbientHum };
 }
 
 // ─── Ornate Court Seal ───
@@ -418,12 +435,19 @@ export function LegalRibbon({ text, color = "#8b1a1a" }: { text: string; color?:
 
 // ─── Signature Block ───
 
-export function SignatureBlock({ date }: { date?: string }) {
+export function SignatureBlock({ date, interactive = false, onSign }: { date?: string; interactive?: boolean; onSign?: () => void }) {
   const today = date || new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
+  const [signed, setSigned] = useState(false);
+
+  const handleSign = () => {
+    if (signed) return;
+    setSigned(true);
+    onSign?.();
+  };
 
   return (
     <div className="mt-6 pt-4 border-t border-court-700">
@@ -432,18 +456,47 @@ export function SignatureBlock({ date }: { date?: string }) {
       </p>
       <div className="flex items-center gap-4">
         <div className="flex-1">
-          <svg viewBox="0 0 200 40" className="w-40 h-8 text-court-400 animate-signature-draw">
-            <path
-              d="M10 30 Q30 10 50 25 Q70 5 90 20 Q110 8 130 22 Q150 10 170 25 Q180 18 190 20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              opacity="0.6"
-              strokeDasharray="300"
-              strokeDashoffset="300"
-            />
-          </svg>
+          {interactive ? (
+            <button
+              onClick={handleSign}
+              disabled={signed}
+              className={`block text-left w-full cursor-pointer ${signed ? "" : "group"}`}
+            >
+              {signed ? (
+                <svg viewBox="0 0 200 40" className="w-40 h-8 text-gold-400 animate-signature-draw">
+                  <path
+                    d="M10 30 Q30 10 50 25 Q70 5 90 20 Q110 8 130 22 Q150 10 170 25 Q180 18 190 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    opacity="0.6"
+                    strokeDasharray="300"
+                    strokeDashoffset="300"
+                  />
+                </svg>
+              ) : (
+                <div className="border border-dashed border-court-600 rounded-sm px-4 py-2 group-hover:border-gold-500/50 group-hover:bg-gold-500/5 transition-all duration-200">
+                  <span className="font-mono text-[10px] text-court-500 group-hover:text-gold-500 uppercase tracking-[0.15em] transition-colors">
+                    Click to sign
+                  </span>
+                </div>
+              )}
+            </button>
+          ) : (
+            <svg viewBox="0 0 200 40" className="w-40 h-8 text-court-400 animate-signature-draw">
+              <path
+                d="M10 30 Q30 10 50 25 Q70 5 90 20 Q110 8 130 22 Q150 10 170 25 Q180 18 190 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                opacity="0.6"
+                strokeDasharray="300"
+                strokeDashoffset="300"
+              />
+            </svg>
+          )}
         </div>
         <div className="text-right">
           <p className="font-serif text-court-200 text-sm">Your Honor</p>
@@ -665,6 +718,20 @@ export function DustMotes({ count = 8 }: { count?: number }) {
   }, [count]);
 
   return <div ref={containerRef} />;
+}
+
+// ─── Ambient Court Hum ───
+
+export function AmbientCourtHum() {
+  const { playAmbientHum } = useSoundEffects();
+  useEffect(() => {
+    playAmbientHum();
+    const interval = setInterval(() => {
+      playAmbientHum();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [playAmbientHum]);
+  return null;
 }
 
 // ─── Rubber Stamp ───
