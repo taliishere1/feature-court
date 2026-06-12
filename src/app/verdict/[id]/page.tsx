@@ -55,6 +55,15 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+
+    if (typeof window !== "undefined" && window.pendo) {
+      window.pendo.track("verdict_link_copied", {
+        trial_id: trial?.id ?? "",
+        ruling: ruling ?? "",
+        case_title: trial?.case_title ?? "",
+        is_sample: trial?.isSample ?? false,
+      });
+    }
   }
 
   if (loading) return <LoadingState />;
@@ -183,6 +192,15 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
                 navigator.clipboard.writeText(text);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
+
+                if (typeof window !== "undefined" && window.pendo) {
+                  window.pendo.track("verdict_shared", {
+                    trial_id: trial.id,
+                    ruling: ruling,
+                    case_title: trial.case_title,
+                    is_sample: trial.isSample ?? false,
+                  });
+                }
               }}
               className="group inline-flex items-center gap-2 px-5 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm"
             >
