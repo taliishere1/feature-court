@@ -3,7 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { CourtSeal, WaxSeal, ScrollworkBorder, OrnateDivider, GoldParticles } from "@/components/court-components";
+import {
+  CourtSeal,
+  WaxSeal,
+  OrnateDivider,
+  GoldParticles,
+  ScrollworkBorder,
+  ConfettiBurst,
+  SignatureBlock,
+} from "@/components/court-components";
+import { useSound } from "@/lib/use-sound";
+import { useGameStats } from "@/lib/use-game-stats";
 
 const RULING_LABELS: Record<Ruling, string> = {
   ship: "SHIP IT",
@@ -32,7 +42,9 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
   const [gutCall, setGutCall] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [stamped, setStamped] = useState(false);
+  const [phase, setPhase] = useState<"loading" | "stamp" | "seal" | "sentence" | "details" | "complete">("loading");
+  const { playGavel, playStamp } = useSound();
+  const { recordRuling } = useGameStats();
 
   useEffect(() => {
     async function load() {
@@ -46,10 +58,26 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
       const data = await res.json();
       setTrial(data);
       setLoading(false);
-      setTimeout(() => setStamped(true), 500);
+
+      if (r) recordRuling(r);
+
+      // Cinematic sequence
+      setTimeout(() => {
+        setPhase("stamp");
+        playGavel();
+        setTimeout(() => playGavel(), 200);
+        setTimeout(() => playGavel(), 400);
+      }, 200);
+      setTimeout(() => {
+        setPhase("seal");
+        playStamp();
+      }, 900);
+      setTimeout(() => setPhase("sentence"), 1600);
+      setTimeout(() => setPhase("details"), 2400);
+      setTimeout(() => setPhase("complete"), 3200);
     }
     load();
-  }, [params]);
+  }, [params, playGavel, playStamp, recordRuling]);
 
   function handleCopyLink() {
     navigator.clipboard.writeText(window.location.href);
@@ -66,14 +94,26 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
     }
   }
 
-  if (loading) return <LoadingState />;
-  if (!trial || !ruling) return <NotFoundState />;
+  if (loading || !trial || !ruling) {
+    return (
+      <div className="min-h-screen flex items-center justify-center wood-panel">
+        <div className="flex flex-col items-center gap-4">
+          <CourtSeal className="w-12 h-12 text-gold-500" animated />
+          <div className="text-court-400 font-serif">Preparing the verdict...</div>
+        </div>
+      </div>
+    );
+  }
 
   const verdict = trial.verdicts[ruling];
   const gutMismatch = gutCall && ruling !== gutCall;
 
   return (
     <div className="min-h-screen flex flex-col wood-panel">
+      <ConfettiBurst active={ruling === "ship"} count={50} />
+      {ruling === "kill" && phase === "stamp" && (
+        <div className="stamp-overlay" />
+      )}
       <GoldParticles count={12} />
 
       <header className="border-b border-court-800 relative z-10">
@@ -90,11 +130,17 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
 
       <main className="flex-1 px-6 py-16 flex items-center justify-center relative z-10">
         <div className="max-w-xl w-full animate-page-enter">
-          {/* Official Verdict Document */}
           <ScrollworkBorder>
             <div className="parchment p-6 md:p-8 overflow-hidden">
+              {/* Red ribbon banner */}
+              <div className={`-mx-6 -mt-6 mb-6 transition-all duration-700 ${phase !== "loading" ? "opacity-100" : "opacity-0"}`}>
+                <div className="verdict-ribbon">
+                  <p className="font-serif text-sm font-bold text-white uppercase tracking-[0.3em]">Verdict Delivered</p>
+                </div>
+              </div>
+
               {/* Letterhead */}
-              <div className={`text-center border-b border-court-700 pb-5 mb-6 transition-all duration-1000 ${stamped ? "opacity-100" : "opacity-0"}`}>
+              <div className={`text-center border-b border-court-700 pb-5 mb-6 transition-all duration-1000 ${phase !== "loading" ? "opacity-100" : "opacity-0"}`}>
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <CourtSeal className="w-7 h-7 text-gold-500" />
                   <div>
@@ -110,27 +156,30 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
               </div>
 
               {/* Case title */}
-              <div className={`text-center mb-5 transition-all duration-1000 delay-200 ${stamped ? "opacity-100" : "opacity-0"}`}>
+              <div className={`text-center mb-5 transition-all duration-1000 delay-200 ${phase !== "loading" ? "opacity-100" : "opacity-0"}`}>
                 <h1 className="font-serif text-lg sm:text-xl font-bold text-court-100 leading-tight">
                   {trial.case_title}
                 </h1>
               </div>
 
               {/* Ruling stamp */}
-              <div className={`text-center py-5 ${stamped ? "opacity-100" : "opacity-0"}`}>
-                <div className={`inline-block ${RULING_BG[ruling]} border-2 ${RULING_COLORS[ruling]} px-10 py-4 rounded-sm ${stamped ? "animate-stamp-impact" : ""}`}>
+              <div className={`text-center py-5 ${phase === "stamp" || phase !== "loading" ? "opacity-100" : "opacity-0"}`}>
+                <div
+                  className={`inline-block ${RULING_BG[ruling]} border-2 ${RULING_COLORS[ruling]} px-10 py-4 rounded-sm ${
+                    phase === "stamp" ? "animate-stamp-impact" : ""
+                  }`}
+                >
                   <p className={`font-serif text-2xl sm:text-3xl font-black tracking-[0.15em] ${RULING_COLORS[ruling]}`}>
                     {RULING_LABELS[ruling]}
                   </p>
                 </div>
-                {/* Wax seal below stamp */}
                 <div className="mt-4 flex justify-center">
-                  <WaxSeal ruling={ruling} animated={stamped} />
+                  <WaxSeal ruling={ruling} animated={phase === "seal" || (phase !== "loading" && phase !== "stamp")} />
                 </div>
               </div>
 
               {/* Sentence */}
-              <div className={`text-center mb-5 transition-all duration-700 delay-500 ${stamped ? "opacity-100" : "opacity-0"}`}>
+              <div className={`text-center mb-5 transition-all duration-700 ${phase === "sentence" || phase === "details" || phase === "complete" ? "opacity-100" : "opacity-0"}`}>
                 <OrnateDivider className="mb-4" />
                 <p className="text-court-200 text-base italic font-legal leading-relaxed max-w-md mx-auto">
                   &ldquo;{verdict.sentence}&rdquo;
@@ -138,27 +187,15 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
               </div>
 
               {/* Verdict details */}
-              <div className={`border-t border-court-700 pt-5 space-y-4 transition-all duration-700 delay-700 ${stamped ? "opacity-100" : "opacity-0"}`}>
-                <VerdictField
-                  label="Real risk you might be missing"
-                  value={verdict.real_risk}
-                  index={0}
-                />
-                <VerdictField
-                  label="Strongest argument to reconsider"
-                  value={verdict.strongest_ignored_argument}
-                  index={1}
-                />
-                <VerdictField
-                  label="Validate before committing"
-                  value={verdict.test_first}
-                  index={2}
-                />
+              <div className={`border-t border-court-700 pt-5 space-y-4 transition-all duration-700 ${phase === "details" || phase === "complete" ? "opacity-100" : "opacity-0"}`}>
+                <VerdictField label="Real risk you might be missing" value={verdict.real_risk} index={0} />
+                <VerdictField label="Strongest argument to reconsider" value={verdict.strongest_ignored_argument} index={1} />
+                <VerdictField label="Validate before committing" value={verdict.test_first} index={2} />
               </div>
 
               {/* Gut call note */}
               {gutMismatch && (
-                <div className={`border-t border-court-700 pt-4 mt-5 text-center transition-all duration-700 delay-900 ${stamped ? "opacity-100" : "opacity-0"}`}>
+                <div className={`border-t border-court-700 pt-4 mt-5 text-center transition-all duration-700 ${phase === "complete" ? "opacity-100" : "opacity-0"}`}>
                   <div className="inline-flex items-center gap-2 text-court-500 text-[11px]">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" />
@@ -170,8 +207,13 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
                 </div>
               )}
 
+              {/* Signature block */}
+              <div className={`transition-all duration-700 ${phase === "complete" ? "opacity-100" : "opacity-0"}`}>
+                <SignatureBlock ruling={ruling} />
+              </div>
+
               {/* Footer */}
-              <div className={`border-t border-court-700 pt-4 mt-5 flex items-center justify-between transition-all duration-700 delay-[1.1s] ${stamped ? "opacity-100" : "opacity-0"}`}>
+              <div className={`border-t border-court-700 pt-4 mt-5 flex items-center justify-between transition-all duration-700 ${phase === "complete" ? "opacity-100" : "opacity-0"}`}>
                 <span className="font-mono text-[9px] text-court-600">Filed under seal</span>
                 <span className="font-mono text-[9px] text-court-600">featurecourt.app</span>
               </div>
@@ -179,10 +221,10 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
           </ScrollworkBorder>
 
           {/* Actions */}
-          <div className={`flex flex-wrap gap-3 mt-8 justify-center transition-all duration-700 delay-[1.3s] ${stamped ? "opacity-100" : "opacity-0"}`}>
+          <div className={`flex flex-wrap gap-3 mt-8 justify-center transition-all duration-700 ${phase === "complete" ? "opacity-100" : "opacity-0"}`}>
             <button
               onClick={handleCopyLink}
-              className="group inline-flex items-center gap-2 px-5 py-3 border border-court-600 hover:border-court-400 text-court-300 hover:text-court-100 rounded-sm transition-all duration-200 text-sm font-medium"
+              className="group inline-flex items-center gap-2 px-5 py-3 border border-court-600 hover:border-court-400 text-court-300 hover:text-court-100 rounded-sm transition-all duration-200 text-sm font-medium hover-lift btn-press"
             >
               {copied ? "Copied!" : "Copy link"}
             </button>
@@ -202,7 +244,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
                   });
                 }
               }}
-              className="group inline-flex items-center gap-2 px-5 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm"
+              className="group inline-flex items-center gap-2 px-5 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm hover-lift btn-press"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
@@ -211,7 +253,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
             </button>
             <Link
               href="/file"
-              className="group inline-flex items-center gap-2 px-5 py-3 border border-court-600 hover:border-court-400 text-court-300 hover:text-court-100 rounded-sm transition-all duration-200 text-sm font-medium"
+              className="group inline-flex items-center gap-2 px-5 py-3 border border-court-600 hover:border-court-400 text-court-300 hover:text-court-100 rounded-sm transition-all duration-200 text-sm font-medium hover-lift btn-press"
             >
               File another case
             </Link>
@@ -227,26 +269,6 @@ function VerdictField({ label, value, index }: { label: string; value: string; i
     <div className="animate-fade-in-up" style={{ animationDelay: `${index * 0.15}s` }}>
       <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-court-500 mb-1.5">{label}</p>
       <p className="text-court-200 text-sm leading-relaxed font-legal">{value}</p>
-    </div>
-  );
-}
-
-function LoadingState() {
-  return (
-    <div className="min-h-screen flex items-center justify-center wood-panel">
-      <div className="flex flex-col items-center gap-4">
-        <CourtSeal className="w-8 h-8 text-gold-500" animated />
-        <div className="text-court-400 font-serif">Preparing the verdict...</div>
-      </div>
-    </div>
-  );
-}
-
-function NotFoundState() {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 wood-panel">
-      <p className="text-court-400 font-serif">Verdict not found.</p>
-      <Link href="/" className="text-gold-500 hover:text-gold-400 underline">Return to the court</Link>
     </div>
   );
 }

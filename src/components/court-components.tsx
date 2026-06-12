@@ -368,3 +368,284 @@ export function RubberStamp({
     </div>
   );
 }
+
+// ─── Interactive Gavel ───
+
+export function InteractiveGavel({ onBang, className = "" }: { onBang?: () => void; className?: string }) {
+  const [banging, setBanging] = useState(false);
+
+  function handleClick() {
+    setBanging(true);
+    onBang?.();
+    setTimeout(() => setBanging(false), 600);
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`cursor-pointer bg-transparent border-none p-0 outline-none ${className}`}
+      aria-label="Bang the gavel"
+    >
+      <div className={banging ? "animate-gavel-bang" : ""} style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.25))" }}>
+        <svg width="72" height="72" viewBox="0 0 56 56" fill="none" className="text-gold-500 hover:text-gold-400 transition-colors duration-200">
+          <rect x="16" y="42" width="24" height="4" rx="1" fill="currentColor" opacity="0.35" />
+          <rect x="25" y="22" width="6" height="22" rx="1.5" fill="currentColor" opacity="0.55" />
+          <rect x="13" y="6" width="30" height="18" rx="3" fill="currentColor" opacity="0.85" />
+          <polygon points="28,8 30.5,13 36,13 31.5,16.5 33,22 28,19 23,22 24.5,16.5 20,13 25.5,13" fill="var(--color-court-950)" opacity="0.9" />
+          <line x1="15" y1="18" x2="26" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+          <line x1="30" y1="18" x2="41" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+        </svg>
+      </div>
+    </button>
+  );
+}
+
+// ─── Case Docket Header ───
+
+export function CaseDocketHeader({
+  caseTitle,
+  caseId,
+  stageLabel,
+  stageNum,
+}: {
+  caseTitle: string;
+  caseId: string;
+  stageLabel: string;
+  stageNum: number;
+}) {
+  return (
+    <div className="text-center mb-6 animate-fade-in-down">
+      <div className="flex items-center justify-center gap-2 mb-3">
+        <CourtSeal className="w-6 h-6 text-gold-500" />
+        <span className="font-serif text-sm text-court-400 tracking-wide">Feature Court</span>
+        <CourtSeal className="w-6 h-6 text-gold-500" />
+      </div>
+      <div className="docket-badge inline-flex mb-3">
+        <span>CIVIL ACTION №</span>
+        <span className="text-gold-500">{caseId.slice(0, 8).toUpperCase()}</span>
+      </div>
+      <h1 className="font-serif text-2xl sm:text-3xl font-bold text-court-100 leading-tight mb-2">
+        {caseTitle}
+      </h1>
+      <div className="flex items-center justify-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em]">
+        <span className="text-gold-500">Stage {stageNum} of 5</span>
+        <span className="text-court-600">·</span>
+        <span className="text-court-400">{stageLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Signature Block ───
+
+export function SignatureBlock({ ruling }: { ruling?: string }) {
+  const [drawn, setDrawn] = useState(false);
+  const color = ruling === "ship" ? "#1a6b3c" : ruling === "kill" ? "#8b1a1a" : ruling === "revise" ? "#6b5a1a" : "#4a3d6b";
+
+  useEffect(() => {
+    const t = setTimeout(() => setDrawn(true), 1200);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div className="signature-container text-center pt-4 border-t border-court-700 mt-6">
+      <svg viewBox="0 0 200 50" className="w-48 h-12 mx-auto" fill="none">
+        <path
+          d="M10 35 Q30 10 50 30 Q60 40 70 25 Q80 10 90 35 Q100 40 110 20 Q120 5 130 30 Q140 45 150 15 Q160 -5 170 25 Q175 35 180 20 Q185 10 190 30"
+          stroke={color || "#8b1a1a"}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          className={drawn ? "signature-svg animate" : "signature-svg"}
+          opacity="0.6"
+        />
+      </svg>
+      <p className="text-court-600 text-[10px] font-mono uppercase tracking-[0.15em] mt-1">Signature of the Court</p>
+      <p className="text-court-600 text-[9px] font-mono mt-0.5">
+        So ordered this {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+      </p>
+    </div>
+  );
+}
+
+// ─── Confetti Burst ───
+
+export function ConfettiBurst({ active = false, count = 40 }: { active?: boolean; count?: number }) {
+  const [pieces, setPieces] = useState<{ id: number; x: number; color: string; delay: number; size: number; drift: number }[]>([]);
+
+  useEffect(() => {
+    if (!active) {
+      setPieces([]);
+      return;
+    }
+    const colors = ["#d4af37", "#f0d974", "#b8942f", "#e6c84a", "#8b6f3e", "#ffffff"];
+    const newPieces = Array.from({ length: count }, (_, i) => ({
+      id: i,
+      x: 20 + Math.random() * 60,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      delay: Math.random() * 0.5,
+      size: 4 + Math.random() * 6,
+      drift: (Math.random() - 0.5) * 100,
+    }));
+    setPieces(newPieces);
+  }, [active, count]);
+
+  if (!active || pieces.length === 0) return null;
+
+  return (
+    <div className="confetti-container">
+      {pieces.map((p) => (
+        <div
+          key={p.id}
+          className="confetti-piece"
+          style={{
+            left: `${p.x}%`,
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            background: p.color,
+            borderRadius: Math.random() > 0.5 ? "50%" : "1px",
+            animationDelay: `${p.delay}s`,
+            transform: `rotate(${Math.random() * 360}deg)`,
+            ["--drift" as string]: `${p.drift}px`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── Dramatic Loading ───
+
+const BAILIFF_LINES = [
+  "All riiise... the court is now in session.",
+  "Order in the court! The judge is approaching the bench.",
+  "The court will come to order. All persons having business... draw near.",
+  "Hear ye, hear ye. The court is assembling.",
+  "The bench is being prepared. Justice is loading...",
+];
+
+export function DramaticLoading({ stage = 0 }: { stage?: number }) {
+  const [lineIdx, setLineIdx] = useState(0);
+
+  useEffect(() => {
+    setLineIdx(stage % BAILIFF_LINES.length);
+  }, [stage]);
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-6 wood-panel">
+      <CourtSeal className="w-12 h-12 text-gold-500" animated />
+      <div className="flex flex-col items-center gap-3">
+        <div className="animate-gavel-bang">
+          <svg width="32" height="32" viewBox="0 0 56 56" fill="none" className="text-gold-500/60">
+            <rect x="16" y="42" width="24" height="4" rx="1" fill="currentColor" opacity="0.35" />
+            <rect x="25" y="22" width="6" height="22" rx="1.5" fill="currentColor" opacity="0.55" />
+            <rect x="13" y="6" width="30" height="18" rx="3" fill="currentColor" opacity="0.85" />
+            <polygon points="28,8 30.5,13 36,13 31.5,16.5 33,22 28,19 23,22 24.5,16.5 20,13 25.5,13" fill="currentColor" opacity="0.3" />
+          </svg>
+        </div>
+        <p className="text-court-400 font-serif text-base animate-pulse">
+          {BAILIFF_LINES[lineIdx]}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Toast Notification ───
+
+export function ToastNotification({
+  message,
+  visible,
+  icon,
+}: {
+  message: string;
+  visible: boolean;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className={`toast ${visible ? "show" : ""}`}>
+      {icon || (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-500">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
+      <span>{message}</span>
+    </div>
+  );
+}
+
+// ─── Ruling Preview Card ───
+
+export function RulingPreviewCard({
+  label,
+  description,
+  preview,
+  color,
+  isSelected,
+  onClick,
+}: {
+  label: string;
+  description: string;
+  preview: string;
+  color: string;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left rounded-sm transition-all duration-300 hover-lift ${
+        isSelected
+          ? "border-gold-500 bg-gold-500/10 shadow-[0_0_20px_rgba(212,175,55,0.12)]"
+          : "border-court-700 bg-court-900/50 hover:border-court-500"
+      }`}
+      style={{ borderWidth: "1px", borderStyle: "solid" }}
+    >
+      <div className="p-5">
+        <div className="flex items-center gap-3 mb-2.5">
+          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? "border-gold-500" : "border-court-500"}`}>
+            {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-gold-500 animate-seal-appear" />}
+          </div>
+          <span className={`font-serif text-lg font-bold transition-colors ${isSelected ? "gold-foil" : "text-court-200"}`}>
+            {label}
+          </span>
+        </div>
+        <p className="text-court-500 text-xs ml-8 leading-relaxed mb-2">{description}</p>
+        <div
+          className="ml-8 mt-2 pt-2 border-t border-court-800 text-[11px] italic font-legal leading-relaxed"
+          style={{ color }}
+        >
+          &ldquo;{preview.slice(0, 80)}{preview.length > 80 ? "..." : ""}&rdquo;
+        </div>
+      </div>
+      {isSelected && (
+        <div className="h-0.5 bg-gradient-to-r from-gold-500 to-transparent" />
+      )}
+    </button>
+  );
+}
+
+// ─── Legal Paper ───
+
+export function LegalPaper({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`parchment ruled-paper p-6 md:p-8 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+// ─── Bailiff Announcement ───
+
+export function BailiffAnnouncement({ text, visible = true }: { text: string; visible?: boolean }) {
+  return (
+    <div
+      className={`text-center transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+    >
+      <div className="inline-flex items-center gap-2 text-court-400 text-xs font-mono uppercase tracking-widest">
+        <span className="inline-block w-2 h-2 rounded-full bg-gold-500/60 animate-pulse" />
+        {text}
+        <span className="inline-block w-2 h-2 rounded-full bg-gold-500/60 animate-pulse" />
+      </div>
+    </div>
+  );
+}
