@@ -1,6 +1,154 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+
+// ─── Sound Effects (Web Audio API) ───
+
+export function useSoundEffects() {
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  const getContext = useCallback(() => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return audioCtxRef.current;
+  }, []);
+
+  const playGavelKnock = useCallback(() => {
+    try {
+      const ctx = getContext();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(120, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.08);
+      g.gain.setValueAtTime(0.4, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 0.15);
+      // Add second knock for resonance
+      const o2 = ctx.createOscillator();
+      const g2 = ctx.createGain();
+      o2.type = "sine";
+      o2.frequency.setValueAtTime(80, ctx.currentTime);
+      g2.gain.setValueAtTime(0.15, ctx.currentTime);
+      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      o2.connect(g2);
+      g2.connect(ctx.destination);
+      o2.start(ctx.currentTime);
+      o2.stop(ctx.currentTime + 0.25);
+    } catch {}
+  }, [getContext]);
+
+  const playStampSlam = useCallback(() => {
+    try {
+      const ctx = getContext();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(200, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.12);
+      g.gain.setValueAtTime(0.5, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(ctx.currentTime);
+      o.stop(ctx.currentTime + 0.2);
+      // Noise burst
+      const bufferSize = ctx.sampleRate * 0.08;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+      }
+      const noise = ctx.createBufferSource();
+      const ng = ctx.createGain();
+      noise.buffer = buffer;
+      ng.gain.setValueAtTime(0.3, ctx.currentTime);
+      ng.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      noise.connect(ng);
+      ng.connect(ctx.destination);
+      noise.start(ctx.currentTime);
+    } catch {}
+  }, [getContext]);
+
+  const playPaperRustle = useCallback(() => {
+    try {
+      const ctx = getContext();
+      const bufferSize = ctx.sampleRate * 0.15;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 1.5);
+      }
+      const noise = ctx.createBufferSource();
+      const g = ctx.createGain();
+      noise.buffer = buffer;
+      g.gain.setValueAtTime(0.08, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      // Bandpass filter for paper-like sound
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(2000, ctx.currentTime);
+      filter.Q.setValueAtTime(0.5, ctx.currentTime);
+      noise.connect(filter);
+      filter.connect(g);
+      g.connect(ctx.destination);
+      noise.start(ctx.currentTime);
+    } catch {}
+  }, [getContext]);
+
+  const playSwoosh = useCallback(() => {
+    try {
+      const ctx = getContext();
+      const bufferSize = ctx.sampleRate * 0.2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+      }
+      const noise = ctx.createBufferSource();
+      const g = ctx.createGain();
+      noise.buffer = buffer;
+      g.gain.setValueAtTime(0.06, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      // Sweep filter
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(300, ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(3000, ctx.currentTime + 0.15);
+      filter.Q.setValueAtTime(1, ctx.currentTime);
+      noise.connect(filter);
+      filter.connect(g);
+      g.connect(ctx.destination);
+      noise.start(ctx.currentTime);
+    } catch {}
+  }, [getContext]);
+
+  const playConfetti = useCallback(() => {
+    try {
+      const ctx = getContext();
+      for (let i = 0; i < 8; i++) {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "sine";
+        const freq = 600 + Math.random() * 800;
+        o.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.05);
+        o.frequency.exponentialRampToValueAtTime(freq * 3, ctx.currentTime + i * 0.05 + 0.15);
+        g.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.05 + 0.15);
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start(ctx.currentTime + i * 0.05);
+        o.stop(ctx.currentTime + i * 0.05 + 0.15);
+      }
+    } catch {}
+  }, [getContext]);
+
+  return { playGavelKnock, playStampSlam, playPaperRustle, playSwoosh, playConfetti };
+}
 
 // ─── Ornate Court Seal ───
 
@@ -17,6 +165,8 @@ export function CourtSeal({ className = "w-12 h-12", animated = false }: { class
         ))}
         {/* Inner ring */}
         <circle cx="50" cy="50" r="38" stroke="currentColor" strokeWidth="1" opacity="0.5" />
+        {/* Inner decorative ring */}
+        <circle cx="50" cy="50" r="34" stroke="currentColor" strokeWidth="0.3" opacity="0.15" strokeDasharray="2 4" />
         {/* Star in center */}
         <polygon
           points="50,18 55,32 70,32 58,42 62,56 50,48 38,56 42,42 30,32 45,32"
@@ -39,6 +189,17 @@ export function CourtSeal({ className = "w-12 h-12", animated = false }: { class
         {/* Crosshatch pattern inside */}
         <line x1="25" y1="25" x2="75" y2="75" stroke="currentColor" strokeWidth="0.3" opacity="0.15" />
         <line x1="25" y1="75" x2="75" y2="25" stroke="currentColor" strokeWidth="0.3" opacity="0.15" />
+        {/* Extra detailing */}
+        <circle cx="50" cy="50" r="8" stroke="currentColor" strokeWidth="0.3" opacity="0.2" />
+        {/* Small diamond accents */}
+        {[0, 90, 180, 270].map((angle) => (
+          <polygon
+            key={`diamond-${angle}`}
+            points={`${50 + 28 * Math.cos((angle * Math.PI) / 180)},${50 + 28 * Math.sin((angle * Math.PI) / 180) - 2} ${50 + 28 * Math.cos((angle * Math.PI) / 180) + 2},${50 + 28 * Math.sin((angle * Math.PI) / 180)} ${50 + 28 * Math.cos((angle * Math.PI) / 180)},${50 + 28 * Math.sin((angle * Math.PI) / 180) + 2} ${50 + 28 * Math.cos((angle * Math.PI) / 180) - 2},${50 + 28 * Math.sin((angle * Math.PI) / 180)}`}
+            fill="currentColor"
+            opacity="0.5"
+          />
+        ))}
       </svg>
     </div>
   );
@@ -46,7 +207,7 @@ export function CourtSeal({ className = "w-12 h-12", animated = false }: { class
 
 // ─── Wax Seal ───
 
-export function WaxSeal({ ruling, animated = true }: { ruling?: string; animated?: boolean }) {
+export function WaxSeal({ ruling, animated = true, size = 72 }: { ruling?: string; animated?: boolean; size?: number }) {
   const colorMap: Record<string, string> = {
     ship: "#1a6b3c",
     kill: "#8b1a1a",
@@ -57,7 +218,7 @@ export function WaxSeal({ ruling, animated = true }: { ruling?: string; animated
 
   return (
     <div className={`${animated ? "animate-stamp-impact" : ""} inline-block`}>
-      <svg viewBox="0 0 60 60" width="60" height="60">
+      <svg viewBox="0 0 60 60" width={size} height={size}>
         <defs>
           <filter id="waxTexture">
             <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise" />
@@ -65,20 +226,26 @@ export function WaxSeal({ ruling, animated = true }: { ruling?: string; animated
             <feBlend in="SourceGraphic" in2="grayNoise" mode="multiply" />
           </filter>
           <radialGradient id={`waxGrad-${ruling || "default"}`} cx="40%" cy="35%">
-            <stop offset="0%" stopColor={fill} stopOpacity="0.9" />
-            <stop offset="60%" stopColor={fill} stopOpacity="0.7" />
+            <stop offset="0%" stopColor={fill} stopOpacity="0.95" />
+            <stop offset="40%" stopColor={fill} stopOpacity="0.85" />
+            <stop offset="70%" stopColor={fill} stopOpacity="0.7" />
             <stop offset="100%" stopColor={fill} stopOpacity="0.5" />
           </radialGradient>
         </defs>
+        {/* Wax blob shadow */}
+        <ellipse cx="30" cy="32" rx="28" ry="26" fill="rgba(0,0,0,0.3)" filter="url(#waxTexture)" opacity="0.3" />
         {/* Wax blob */}
-        <ellipse cx="30" cy="30" rx="28" ry="26" fill={`url(#waxGrad-${ruling || "default"})`} />
+        <ellipse cx="30" cy="30" rx="28" ry="26" fill={`url(#waxGrad-${ruling || "default"})`} filter="url(#waxTexture)" />
         {/* Raised rim */}
         <ellipse cx="30" cy="30" rx="22" ry="20" fill="none" stroke={fill} strokeWidth="0.5" opacity="0.4" />
         {/* Embossed FC emblem */}
-        <text x="30" y="34" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="14" fontWeight="bold" fontFamily="serif">FC</text>
+        <text x="30" y="35" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="16" fontWeight="bold" fontFamily="serif">FC</text>
+        {/* Ribbon hanging from seal */}
+        <path d="M22 48 Q30 58 38 48" fill="none" stroke={fill} strokeWidth="1.5" opacity="0.4" />
+        <path d="M26 50 Q30 56 34 50" fill="none" stroke={fill} strokeWidth="1" opacity="0.3" />
         {/* Rough edge - decorative dots */}
-        {Array.from({ length: 18 }).map((_, i) => {
-          const angle = (i * 20 * Math.PI) / 180;
+        {Array.from({ length: 20 }).map((_, i) => {
+          const angle = (i * 18 * Math.PI) / 180;
           return (
             <circle
               key={i}
@@ -86,7 +253,7 @@ export function WaxSeal({ ruling, animated = true }: { ruling?: string; animated
               cy={30 + 24 * Math.sin(angle)}
               r="1.5"
               fill={fill}
-              opacity="0.3"
+              opacity="0.25"
             />
           );
         })}
@@ -113,11 +280,11 @@ export function StageProgress({ current }: { current: number }) {
           <div key={stage.num} className="flex items-center">
             <div className="flex flex-col items-center">
               <div
-                className={`w-7 h-7 rounded-full border flex items-center justify-center text-[10px] font-mono transition-all duration-500 ${
+                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-mono transition-all duration-700 ${
                   stage.num <= current
-                    ? "bg-gold-500/20 border-gold-500 text-gold-400"
+                    ? "bg-gold-500/20 border-gold-500 text-gold-400 shadow-[0_0_8px_rgba(212,175,55,0.2)]"
                     : "border-court-700 text-court-600"
-                }`}
+                } ${stage.num === current ? "animate-glow-pulse" : ""}`}
               >
                 {stage.num < current ? (
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -128,7 +295,7 @@ export function StageProgress({ current }: { current: number }) {
                 )}
               </div>
               <span
-                className={`text-[9px] font-mono uppercase tracking-wider mt-1 transition-colors duration-500 ${
+                className={`text-[9px] font-mono uppercase tracking-wider mt-1.5 transition-all duration-500 ${
                   stage.num === current ? "text-gold-500" : "text-court-600"
                 }`}
               >
@@ -136,14 +303,152 @@ export function StageProgress({ current }: { current: number }) {
               </span>
             </div>
             {i < STAGES.length - 1 && (
-              <div
-                className={`w-8 sm:w-12 h-px mx-1 sm:mx-2 transition-colors duration-500 ${
-                  stage.num < current ? "bg-gold-500/40" : "bg-court-700"
-                }`}
-              />
+              <div className="flex items-center mx-2">
+                {stage.num < current ? (
+                  <svg width="20" height="12" viewBox="0 0 20 12" className="text-gold-500/40">
+                    <rect x="0" y="5" width="12" height="2" rx="1" fill="currentColor" />
+                    <path d="M14 2 L18 6 L14 10" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                  </svg>
+                ) : (
+                  <div className="w-14 sm:w-16 h-px bg-court-700" />
+                )}
+              </div>
             )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Interactive Gavel ───
+
+export function InteractiveGavel({ onStrike, className = "" }: { onStrike?: () => void; className?: string }) {
+  const [striking, setStriking] = useState(false);
+
+  const handleClick = () => {
+    setStriking(true);
+    onStrike?.();
+    setTimeout(() => setStriking(false), 600);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`cursor-pointer focus:outline-none ${className}`}
+      aria-label="Strike gavel"
+    >
+      <div className={striking ? "animate-gavel-strike" : ""}>
+        <svg width="72" height="72" viewBox="0 0 56 56" fill="none" className="text-gold-500" style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.25))" }}>
+          {/* Platform base */}
+          <rect x="16" y="42" width="24" height="4" rx="1" fill="currentColor" opacity="0.35" />
+          {/* Handle */}
+          <rect x="25" y="22" width="6" height="22" rx="1.5" fill="currentColor" opacity="0.55" />
+          {/* Gavel head */}
+          <rect x="13" y="6" width="30" height="18" rx="3" fill="currentColor" opacity="0.85" />
+          {/* Star emblem on gavel */}
+          <polygon points="28,8 30.5,13 36,13 31.5,16.5 33,22 28,19 23,22 24.5,16.5 20,13 25.5,13" fill="var(--color-court-950)" opacity="0.9" />
+          {/* Decorative lines on gavel head */}
+          <line x1="15" y1="18" x2="26" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+          <line x1="30" y1="18" x2="41" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+        </svg>
+      </div>
+    </button>
+  );
+}
+
+// ─── Judicial Bench ───
+
+export function JudicialBench({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`relative text-center ${className}`}>
+      {/* Bench top accent */}
+      <div className="relative inline-block">
+        <div className="absolute -top-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-gold-500/40 to-transparent rounded-full" />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── Case Docket Header ───
+
+export function CaseDocketHeader({
+  caseNo,
+  caseTitle,
+  stageLabel,
+}: {
+  caseNo: string;
+  caseTitle: string;
+  stageLabel: string;
+}) {
+  return (
+    <div className="border-b border-court-700 pb-3 mb-6">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2">
+          <CourtSeal className="w-6 h-6 text-gold-500" />
+          <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">
+            Docket No. {caseNo.slice(0, 8).toUpperCase()}
+          </span>
+        </div>
+        <span className="font-mono text-[10px] text-gold-500 uppercase tracking-[0.25em]">{stageLabel}</span>
+      </div>
+      <p className="font-serif text-court-200 text-sm leading-snug mt-1">{caseTitle}</p>
+    </div>
+  );
+}
+
+// ─── Legal Ribbon Banner ───
+
+export function LegalRibbon({ text, color = "#8b1a1a" }: { text: string; color?: string }) {
+  return (
+    <div className="ribbon-banner text-center mb-8 animate-ribbon-slide">
+      <div
+        className="inline-block px-8 py-2"
+        style={{
+          background: `linear-gradient(135deg, ${color}, ${color}dd)`,
+          clipPath: "polygon(0 0, 100% 0, 95% 50%, 100% 100%, 0 100%, 5% 50%)",
+        }}
+      >
+        <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-white font-bold">{text}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Signature Block ───
+
+export function SignatureBlock({ date }: { date?: string }) {
+  const today = date || new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  return (
+    <div className="mt-6 pt-4 border-t border-court-700">
+      <p className="font-legal text-court-500 text-xs italic mb-4">
+        So ordered this day, {today}.
+      </p>
+      <div className="flex items-center gap-4">
+        <div className="flex-1">
+          <svg viewBox="0 0 200 40" className="w-40 h-8 text-court-400 animate-signature-draw">
+            <path
+              d="M10 30 Q30 10 50 25 Q70 5 90 20 Q110 8 130 22 Q150 10 170 25 Q180 18 190 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              opacity="0.6"
+              strokeDasharray="300"
+              strokeDashoffset="300"
+            />
+          </svg>
+        </div>
+        <div className="text-right">
+          <p className="font-serif text-court-200 text-sm">Your Honor</p>
+          <p className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em]">Presiding Judge</p>
+        </div>
       </div>
     </div>
   );
@@ -221,34 +526,38 @@ export function ScrollworkBorder({ children, className = "" }: { children: React
   return (
     <div className={`relative ${className}`}>
       {/* Corner scrollwork - top left */}
-      <div className="absolute -top-3 -left-3 w-10 h-10 pointer-events-none">
+      <div className="absolute -top-3 -left-3 w-12 h-12 pointer-events-none">
         <svg viewBox="0 0 40 40" className="w-full h-full text-gold-500/30" fill="none">
           <path d="M0 40V0h40" stroke="currentColor" strokeWidth="1.5" />
           <path d="M5 35V5h30" stroke="currentColor" strokeWidth="0.5" opacity="0.5" />
           <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="0.5" />
           <path d="M0 20 Q10 15 20 0" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+          <circle cx="6" cy="12" r="1" fill="currentColor" opacity="0.2" />
         </svg>
       </div>
       {/* Corner scrollwork - top right */}
-      <div className="absolute -top-3 -right-3 w-10 h-10 pointer-events-none rotate-90">
+      <div className="absolute -top-3 -right-3 w-12 h-12 pointer-events-none rotate-90">
+        <svg viewBox="0 0 40 40" className="w-full h-full text-gold-500/30" fill="none">
+          <path d="M0 40V0h40" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M5 35V5h30" stroke="currentColor" strokeWidth="0.5" opacity="0.5" />
+          <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="0.5" />
+          <circle cx="6" cy="12" r="1" fill="currentColor" opacity="0.2" />
+        </svg>
+      </div>
+      {/* Corner scrollwork - bottom left */}
+      <div className="absolute -bottom-3 -left-3 w-12 h-12 pointer-events-none -rotate-90">
         <svg viewBox="0 0 40 40" className="w-full h-full text-gold-500/30" fill="none">
           <path d="M0 40V0h40" stroke="currentColor" strokeWidth="1.5" />
           <path d="M5 35V5h30" stroke="currentColor" strokeWidth="0.5" opacity="0.5" />
           <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="0.5" />
         </svg>
       </div>
-      {/* Corner scrollwork - bottom left */}
-      <div className="absolute -bottom-3 -left-3 w-10 h-10 pointer-events-none -rotate-90">
-        <svg viewBox="0 0 40 40" className="w-full h-full text-gold-500/30" fill="none">
-          <path d="M0 40V0h40" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M5 35V5h30" stroke="currentColor" strokeWidth="0.5" opacity="0.5" />
-        </svg>
-      </div>
       {/* Corner scrollwork - bottom right */}
-      <div className="absolute -bottom-3 -right-3 w-10 h-10 pointer-events-none rotate-180">
+      <div className="absolute -bottom-3 -right-3 w-12 h-12 pointer-events-none rotate-180">
         <svg viewBox="0 0 40 40" className="w-full h-full text-gold-500/30" fill="none">
           <path d="M0 40V0h40" stroke="currentColor" strokeWidth="1.5" />
           <path d="M5 35V5h30" stroke="currentColor" strokeWidth="0.5" opacity="0.5" />
+          <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="0.5" />
         </svg>
       </div>
       {children}
@@ -295,7 +604,6 @@ export function GoldParticles({ count = 20 }: { count?: number }) {
     const particles: HTMLDivElement[] = [];
     for (let i = 0; i < count; i++) {
       const p = document.createElement("div");
-      p.className = "particle";
       p.style.cssText = `
         position: fixed;
         width: ${2 + Math.random() * 3}px;
@@ -316,6 +624,43 @@ export function GoldParticles({ count = 20 }: { count?: number }) {
 
     return () => {
       particles.forEach((p) => p.remove());
+    };
+  }, [count]);
+
+  return <div ref={containerRef} />;
+}
+
+// ─── Dust Motes ───
+
+export function DustMotes({ count = 8 }: { count?: number }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const motes: HTMLDivElement[] = [];
+    for (let i = 0; i < count; i++) {
+      const m = document.createElement("div");
+      m.style.cssText = `
+        position: fixed;
+        width: ${1 + Math.random() * 2}px;
+        height: ${1 + Math.random() * 2}px;
+        background: rgba(212, 175, 55, ${0.03 + Math.random() * 0.06});
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1;
+        left: ${Math.random() * 100}vw;
+        top: ${Math.random() * 100}vh;
+        animation: dust-float ${20 + Math.random() * 30}s ease-in-out infinite;
+        animation-delay: ${-Math.random() * 30}s;
+      `;
+      document.body.appendChild(m);
+      motes.push(m);
+    }
+
+    return () => {
+      motes.forEach((m) => m.remove());
     };
   }, [count]);
 
@@ -369,282 +714,153 @@ export function RubberStamp({
   );
 }
 
-// ─── Interactive Gavel ───
+// ─── Confetti Effect ───
 
-export function InteractiveGavel({ onBang, className = "" }: { onBang?: () => void; className?: string }) {
-  const [banging, setBanging] = useState(false);
-
-  function handleClick() {
-    setBanging(true);
-    onBang?.();
-    setTimeout(() => setBanging(false), 600);
-  }
-
-  return (
-    <button
-      onClick={handleClick}
-      className={`cursor-pointer bg-transparent border-none p-0 outline-none ${className}`}
-      aria-label="Bang the gavel"
-    >
-      <div className={banging ? "animate-gavel-bang" : ""} style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.25))" }}>
-        <svg width="72" height="72" viewBox="0 0 56 56" fill="none" className="text-gold-500 hover:text-gold-400 transition-colors duration-200">
-          <rect x="16" y="42" width="24" height="4" rx="1" fill="currentColor" opacity="0.35" />
-          <rect x="25" y="22" width="6" height="22" rx="1.5" fill="currentColor" opacity="0.55" />
-          <rect x="13" y="6" width="30" height="18" rx="3" fill="currentColor" opacity="0.85" />
-          <polygon points="28,8 30.5,13 36,13 31.5,16.5 33,22 28,19 23,22 24.5,16.5 20,13 25.5,13" fill="var(--color-court-950)" opacity="0.9" />
-          <line x1="15" y1="18" x2="26" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
-          <line x1="30" y1="18" x2="41" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
-        </svg>
-      </div>
-    </button>
-  );
-}
-
-// ─── Case Docket Header ───
-
-export function CaseDocketHeader({
-  caseTitle,
-  caseId,
-  stageLabel,
-  stageNum,
-}: {
-  caseTitle: string;
-  caseId: string;
-  stageLabel: string;
-  stageNum: number;
-}) {
-  return (
-    <div className="text-center mb-6 animate-fade-in-down">
-      <div className="flex items-center justify-center gap-2 mb-3">
-        <CourtSeal className="w-6 h-6 text-gold-500" />
-        <span className="font-serif text-sm text-court-400 tracking-wide">Feature Court</span>
-        <CourtSeal className="w-6 h-6 text-gold-500" />
-      </div>
-      <div className="docket-badge inline-flex mb-3">
-        <span>CIVIL ACTION №</span>
-        <span className="text-gold-500">{caseId.slice(0, 8).toUpperCase()}</span>
-      </div>
-      <h1 className="font-serif text-2xl sm:text-3xl font-bold text-court-100 leading-tight mb-2">
-        {caseTitle}
-      </h1>
-      <div className="flex items-center justify-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em]">
-        <span className="text-gold-500">Stage {stageNum} of 5</span>
-        <span className="text-court-600">·</span>
-        <span className="text-court-400">{stageLabel}</span>
-      </div>
-    </div>
-  );
-}
-
-// ─── Signature Block ───
-
-export function SignatureBlock({ ruling }: { ruling?: string }) {
-  const [drawn, setDrawn] = useState(false);
-  const color = ruling === "ship" ? "#1a6b3c" : ruling === "kill" ? "#8b1a1a" : ruling === "revise" ? "#6b5a1a" : "#4a3d6b";
+export function ConfettiEffect({ active, duration = 3000 }: { active: boolean; duration?: number }) {
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setDrawn(true), 1200);
-    return () => clearTimeout(t);
-  }, []);
+    if (!active) return;
 
-  return (
-    <div className="signature-container text-center pt-4 border-t border-court-700 mt-6">
-      <svg viewBox="0 0 200 50" className="w-48 h-12 mx-auto" fill="none">
-        <path
-          d="M10 35 Q30 10 50 30 Q60 40 70 25 Q80 10 90 35 Q100 40 110 20 Q120 5 130 30 Q140 45 150 15 Q160 -5 170 25 Q175 35 180 20 Q185 10 190 30"
-          stroke={color || "#8b1a1a"}
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          className={drawn ? "signature-svg animate" : "signature-svg"}
-          opacity="0.6"
-        />
-      </svg>
-      <p className="text-court-600 text-[10px] font-mono uppercase tracking-[0.15em] mt-1">Signature of the Court</p>
-      <p className="text-court-600 text-[9px] font-mono mt-0.5">
-        So ordered this {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-      </p>
-    </div>
-  );
-}
+    const container = containerRef.current;
+    if (!container) return;
 
-// ─── Confetti Burst ───
+    const colors = ["#d4af37", "#f0d974", "#b8942f", "#8b6f3e", "#e6c84a", "#f7ecb3"];
+    const pieces: HTMLDivElement[] = [];
 
-export function ConfettiBurst({ active = false, count = 40 }: { active?: boolean; count?: number }) {
-  const [pieces, setPieces] = useState<{ id: number; x: number; color: string; delay: number; size: number; drift: number }[]>([]);
+    for (let i = 0; i < 40; i++) {
+      const p = document.createElement("div");
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const size = 4 + Math.random() * 6;
+      const left = Math.random() * 100;
+      const delay = Math.random() * 1;
+      const fallDuration = 2 + Math.random() * 2;
 
-  useEffect(() => {
-    if (!active) {
-      setPieces([]);
-      return;
+      p.style.cssText = `
+        position: absolute;
+        width: ${size}px;
+        height: ${size * 0.6}px;
+        background: ${color};
+        left: ${left}%;
+        top: -10px;
+        border-radius: 1px;
+        animation: confetti-fall ${fallDuration}s ease-in ${delay}s forwards;
+        transform: rotate(${Math.random() * 360}deg);
+      `;
+      container.appendChild(p);
+      pieces.push(p);
     }
-    const colors = ["#d4af37", "#f0d974", "#b8942f", "#e6c84a", "#8b6f3e", "#ffffff"];
-    const newPieces = Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: 20 + Math.random() * 60,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      delay: Math.random() * 0.5,
-      size: 4 + Math.random() * 6,
-      drift: (Math.random() - 0.5) * 100,
-    }));
-    setPieces(newPieces);
-  }, [active, count]);
 
-  if (!active || pieces.length === 0) return null;
+    const timer = setTimeout(() => {
+      pieces.forEach((p) => p.remove());
+    }, duration + 2000);
 
-  return (
-    <div className="confetti-container">
-      {pieces.map((p) => (
-        <div
-          key={p.id}
-          className="confetti-piece"
-          style={{
-            left: `${p.x}%`,
-            width: `${p.size}px`,
-            height: `${p.size}px`,
-            background: p.color,
-            borderRadius: Math.random() > 0.5 ? "50%" : "1px",
-            animationDelay: `${p.delay}s`,
-            transform: `rotate(${Math.random() * 360}deg)`,
-            ["--drift" as string]: `${p.drift}px`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+    return () => {
+      clearTimeout(timer);
+      pieces.forEach((p) => p.remove());
+    };
+  }, [active, duration]);
 
-// ─── Dramatic Loading ───
+  if (!active) return null;
 
-const BAILIFF_LINES = [
-  "All riiise... the court is now in session.",
-  "Order in the court! The judge is approaching the bench.",
-  "The court will come to order. All persons having business... draw near.",
-  "Hear ye, hear ye. The court is assembling.",
-  "The bench is being prepared. Justice is loading...",
-];
-
-export function DramaticLoading({ stage = 0 }: { stage?: number }) {
-  const [lineIdx, setLineIdx] = useState(0);
-
-  useEffect(() => {
-    setLineIdx(stage % BAILIFF_LINES.length);
-  }, [stage]);
-
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-6 wood-panel">
-      <CourtSeal className="w-12 h-12 text-gold-500" animated />
-      <div className="flex flex-col items-center gap-3">
-        <div className="animate-gavel-bang">
-          <svg width="32" height="32" viewBox="0 0 56 56" fill="none" className="text-gold-500/60">
-            <rect x="16" y="42" width="24" height="4" rx="1" fill="currentColor" opacity="0.35" />
-            <rect x="25" y="22" width="6" height="22" rx="1.5" fill="currentColor" opacity="0.55" />
-            <rect x="13" y="6" width="30" height="18" rx="3" fill="currentColor" opacity="0.85" />
-            <polygon points="28,8 30.5,13 36,13 31.5,16.5 33,22 28,19 23,22 24.5,16.5 20,13 25.5,13" fill="currentColor" opacity="0.3" />
-          </svg>
-        </div>
-        <p className="text-court-400 font-serif text-base animate-pulse">
-          {BAILIFF_LINES[lineIdx]}
-        </p>
-      </div>
-    </div>
-  );
+  return <div ref={containerRef} className="confetti-container" />;
 }
 
 // ─── Toast Notification ───
 
-export function ToastNotification({
-  message,
-  visible,
-  icon,
-}: {
-  message: string;
-  visible: boolean;
-  icon?: React.ReactNode;
-}) {
+export function ToastNotification({ message, show, icon, onComplete }: { message: string; show: boolean; icon?: React.ReactNode; onComplete?: () => void }) {
+  useEffect(() => {
+    if (show) {
+      const timer = setTimeout(() => onComplete?.(), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [show, onComplete]);
+
+  if (!show) return null;
+
   return (
-    <div className={`toast ${visible ? "show" : ""}`}>
-      {icon || (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-500">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      )}
+    <div className="toast-notification">
+      {icon && <span>{icon}</span>}
       <span>{message}</span>
     </div>
   );
 }
 
-// ─── Ruling Preview Card ───
+// ─── Page Transition ───
 
-export function RulingPreviewCard({
-  label,
-  description,
-  preview,
-  color,
-  isSelected,
-  onClick,
-}: {
-  label: string;
-  description: string;
-  preview: string;
-  color: string;
-  isSelected: boolean;
-  onClick: () => void;
-}) {
+export function PageTransition({ children, direction = "in" }: { children: React.ReactNode; direction?: "in" | "out" }) {
   return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left rounded-sm transition-all duration-300 hover-lift ${
-        isSelected
-          ? "border-gold-500 bg-gold-500/10 shadow-[0_0_20px_rgba(212,175,55,0.12)]"
-          : "border-court-700 bg-court-900/50 hover:border-court-500"
-      }`}
-      style={{ borderWidth: "1px", borderStyle: "solid" }}
-    >
-      <div className="p-5">
-        <div className="flex items-center gap-3 mb-2.5">
-          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? "border-gold-500" : "border-court-500"}`}>
-            {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-gold-500 animate-seal-appear" />}
-          </div>
-          <span className={`font-serif text-lg font-bold transition-colors ${isSelected ? "gold-foil" : "text-court-200"}`}>
-            {label}
-          </span>
-        </div>
-        <p className="text-court-500 text-xs ml-8 leading-relaxed mb-2">{description}</p>
-        <div
-          className="ml-8 mt-2 pt-2 border-t border-court-800 text-[11px] italic font-legal leading-relaxed"
-          style={{ color }}
-        >
-          &ldquo;{preview.slice(0, 80)}{preview.length > 80 ? "..." : ""}&rdquo;
-        </div>
-      </div>
-      {isSelected && (
-        <div className="h-0.5 bg-gradient-to-r from-gold-500 to-transparent" />
-      )}
-    </button>
-  );
-}
-
-// ─── Legal Paper ───
-
-export function LegalPaper({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`parchment ruled-paper p-6 md:p-8 ${className}`}>
+    <div className={direction === "in" ? "animate-swoosh-in" : "animate-swoosh-out"}>
       {children}
     </div>
   );
 }
 
-// ─── Bailiff Announcement ───
+// ─── Loading Ceremony ───
 
-export function BailiffAnnouncement({ text, visible = true }: { text: string; visible?: boolean }) {
+export function LoadingCeremony({ message = "The court is assembling..." }: { message?: string }) {
+  const [gavelCount, setGavelCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGavelCount((c) => (c < 3 ? c + 1 : c));
+    }, 400);
+    setTimeout(() => clearInterval(interval), 1200);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div
-      className={`text-center transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
-    >
-      <div className="inline-flex items-center gap-2 text-court-400 text-xs font-mono uppercase tracking-widest">
-        <span className="inline-block w-2 h-2 rounded-full bg-gold-500/60 animate-pulse" />
-        {text}
-        <span className="inline-block w-2 h-2 rounded-full bg-gold-500/60 animate-pulse" />
+    <div className="min-h-screen flex flex-col items-center justify-center wood-panel">
+      <div className="flex flex-col items-center gap-6 animate-page-enter">
+        <CourtSeal className="w-12 h-12 text-gold-500" animated />
+        <div className="flex gap-2">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className={`w-2 h-8 rounded-full bg-gold-500/60 transition-all duration-300 ${
+                gavelCount > i ? "opacity-100 scale-y-100" : "opacity-30 scale-y-50"
+              }`}
+              style={{ transitionDelay: `${i * 0.1}s` }}
+            />
+          ))}
+        </div>
+        <div className="font-serif text-court-400 text-lg animate-pulse">{message}</div>
+        {/* Bailiff quote cycling */}
+        <div className="font-legal text-court-500 text-sm italic max-w-md text-center animate-fade-in-up">
+          {gavelCount === 0 && "All riiise..."}
+          {gavelCount === 1 && "The Honorable Court is now in session..."}
+          {gavelCount === 2 && "May the evidence be presented fairly..."}
+          {gavelCount >= 3 && "Proceed, counselor..."}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Objection Stamp ───
+
+export function ObjectionStamp({ active, onComplete }: { active: boolean; onComplete?: () => void }) {
+  const [showing, setShowing] = useState(false);
+
+  useEffect(() => {
+    if (active) {
+      setShowing(true);
+      const timer = setTimeout(() => {
+        setShowing(false);
+        onComplete?.();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [active, onComplete]);
+
+  if (!showing) return null;
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+      <div className="animate-stamp-impact">
+        <div className="px-8 py-4 border-4 border-red-700 bg-red-900/30 rotate-[-8deg]">
+          <p className="font-serif text-3xl font-black tracking-[0.2em] text-red-600">OBJECTION!</p>
+        </div>
       </div>
     </div>
   );

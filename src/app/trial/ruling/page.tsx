@@ -4,14 +4,13 @@ import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { StageProgress, OrnateDivider, CaseDocketHeader, CourtSeal, RulingPreviewCard } from "@/components/court-components";
-import { useSound } from "@/lib/use-sound";
+import { CourtSeal, StageProgress, OrnateDivider, ScrollworkBorder, useSoundEffects } from "@/components/court-components";
 
-const RULING_OPTIONS: { key: Ruling; label: string; description: string; color: string }[] = [
-  { key: "ship", label: "Ship It", description: "Full speed ahead. This decision is sound.", color: "var(--color-stamp-ship)" },
-  { key: "kill", label: "Kill It", description: "Stop. This isn't the right move.", color: "var(--color-stamp-kill)" },
-  { key: "revise", label: "Send Back", description: "Revise and resubmit with changes.", color: "var(--color-stamp-revise)" },
-  { key: "mistrial", label: "Mistrial", description: "Need more data to make the call.", color: "var(--color-stamp-mistrial)" },
+const RULING_OPTIONS: { key: Ruling; label: string; description: string; sentence: string; color: string; bgClass: string }[] = [
+  { key: "ship", label: "Ship It", description: "Full speed ahead.", sentence: "The evidence is sufficient. Proceed with confidence.", color: "var(--color-stamp-ship)", bgClass: "hover:bg-stamp-ship/5" },
+  { key: "kill", label: "Kill It", description: "Stop. Not the right move.", sentence: "The cost outweighs the benefit. Abandon this path.", color: "var(--color-stamp-kill)", bgClass: "hover:bg-stamp-kill/5" },
+  { key: "revise", label: "Send Back", description: "Revise and resubmit.", sentence: "Good idea, wrong plan. Sharpen the case.", color: "var(--color-stamp-revise)", bgClass: "hover:bg-stamp-revise/5" },
+  { key: "mistrial", label: "Mistrial", description: "Need more data.", sentence: "Insufficient evidence. Investigate further.", color: "var(--color-stamp-mistrial)", bgClass: "hover:bg-stamp-mistrial/5" },
 ];
 
 function RulingContent() {
@@ -20,44 +19,40 @@ function RulingContent() {
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Ruling | null>(null);
-  const [readyToRule, setReadyToRule] = useState(false);
-  const { playGavel, playStamp } = useSound();
-  const playedRef = useRef(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [readyClicked, setReadyClicked] = useState(false);
+  const { playGavelKnock, playPaperRustle, playSwoosh } = useSoundEffects();
+  const mounted = useRef(false);
 
   useEffect(() => {
+    mounted.current = true;
     const id = searchParams.get("id");
     if (!id) return;
     fetch(`/api/trial?id=${id}`)
       .then((r) => r.json())
-      .then(setTrial)
-      .finally(() => {
-        setLoading(false);
-        if (!playedRef.current) {
-          setTimeout(() => { playGavel(); playedRef.current = true; }, 300);
-        }
-      });
-  }, [searchParams, playGavel]);
+      .then((data) => {
+        if (mounted.current) setTrial(data);
+      })
+      .finally(() => setLoading(false));
+    return () => { mounted.current = false; };
+  }, [searchParams]);
 
-  function handleSelect(key: Ruling) {
-    setSelected(key);
-    playStamp();
-  }
+  const handleReadyToRule = () => {
+    setReadyClicked(true);
+    playGavelKnock();
+    setTimeout(() => {
+      setShowOptions(true);
+      playPaperRustle();
+      playSwoosh();
+    }, 800);
+  };
 
   function handleSubmit() {
     if (!selected || !trial) return;
-    playGavel();
-
-    if (typeof window !== "undefined" && window.pendo) {
-      window.pendo.track("verdict_delivered", {
-        trial_id: trial.id,
-        ruling: selected,
-        gut_call: trial.intake.gutCall ?? "none",
-        gut_mismatch: trial.intake.gutCall ? selected !== trial.intake.gutCall : false,
-        case_title: trial.case_title,
-        is_sample: trial.isSample ?? false,
-      });
-    }
-
+    playGavelKnock();
+    // Track ruling in localStorage
+    const count = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
+    localStorage.setItem("fc-cases-tried", String(count + 1));
     router.push(`/verdict/${trial.id}?ruling=${selected}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : ""));
   }
 
@@ -66,7 +61,6 @@ function RulingContent() {
 
   return (
     <div className="min-h-screen flex flex-col wood-panel">
-      <div className="courtroom-scene" />
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href={`/trial/cross?id=${trial.id}`} className="flex items-center gap-2 group">
@@ -81,68 +75,112 @@ function RulingContent() {
 
       <main className="flex-1 px-6 py-12 relative z-10">
         <div className="max-w-3xl mx-auto animate-page-enter">
-          <CaseDocketHeader
-            caseTitle={trial.case_title}
-            caseId={trial.id}
-            stageLabel="The Ruling"
-            stageNum={5}
-          />
+          <div className="text-center mb-4">
+            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-gold-500">Stage 5 of 5</span>
+          </div>
 
           <StageProgress current={5} />
 
-          {/* Dramatic pause: click to reveal options */}
-          {!readyToRule ? (
-            <div className="text-center animate-fade-in-up">
-              <div className="inline-flex items-center gap-3 mb-6">
-                <CourtSeal className="w-8 h-8 text-gold-500" />
-                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-court-100">
-                  Ready to rule, Your Honor?
-                </h1>
-                <CourtSeal className="w-8 h-8 text-gold-500" />
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-3 mb-2 animate-fade-in-up">
+              <CourtSeal className="w-7 h-7 text-gold-500" />
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-court-100">
+                How do you rule, Your Honor?
+              </h1>
+              <CourtSeal className="w-7 h-7 text-gold-500" />
+            </div>
+            <p className="text-court-400 text-sm font-legal animate-fade-in-up stagger-1">
+              Case: <span className="text-court-200">{trial.case_title}</span>
+            </p>
+          </div>
+
+          {/* Dramatic pause - click to reveal options */}
+          {!showOptions ? (
+            <div className="text-center animate-fade-in-up stagger-2">
+              <div className="parchment p-8 mb-8 max-w-md mx-auto">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <CourtSeal className="w-6 h-6 text-gold-500" animated />
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">The Bench</span>
+                  <CourtSeal className="w-6 h-6 text-gold-500" animated />
+                </div>
+                <p className="text-court-300 font-legal italic text-base leading-relaxed mb-6">
+                  &ldquo;You have heard both sides. The evidence has been presented.
+                  The arguments have been made. Now you must decide.&rdquo;
+                </p>
+                <div className="flex items-center justify-center gap-3 text-court-500 text-xs mb-6">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-4M12 8h.01" />
+                  </svg>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em]">Choose wisely</span>
+                </div>
+                <button
+                  onClick={handleReadyToRule}
+                  disabled={readyClicked}
+                  className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+                >
+                  {readyClicked ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                      Summoning the options...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                      </svg>
+                      Ready to rule
+                    </>
+                  )}
+                </button>
               </div>
-              <p className="text-court-400 text-sm font-legal mb-8 max-w-md mx-auto">
-                You&apos;ve heard both sides. The evidence is before you.
-                <br />
-                <span className="text-court-300">The court awaits your judgment.</span>
-              </p>
-              <button
-                onClick={() => {
-                  setReadyToRule(true);
-                  playGavel();
-                }}
-                className="group inline-flex items-center gap-2.5 px-10 py-4 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-lg hover-lift btn-press"
-              >
-                <svg width="18" height="18" viewBox="0 0 56 56" fill="none" className="text-court-950/60">
-                  <rect x="16" y="42" width="24" height="4" rx="1" fill="currentColor" opacity="0.35" />
-                  <rect x="25" y="22" width="6" height="22" rx="1.5" fill="currentColor" opacity="0.55" />
-                  <rect x="13" y="6" width="30" height="18" rx="3" fill="currentColor" opacity="0.85" />
-                </svg>
-                Bang the gavel — I am ready
-              </button>
             </div>
           ) : (
             <>
-              <div className="text-center mb-8 animate-fade-in-down">
-                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-court-100">
-                  How do you rule, Your Honor?
-                </h1>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10 animate-fade-in-up">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
                 {RULING_OPTIONS.map((option, i) => {
-                  const preview = selected === option.key
-                    ? trial.verdicts[option.key].sentence
-                    : trial.verdicts[option.key].sentence;
+                  const isSelected = selected === option.key;
                   return (
-                    <RulingPreviewCard
-                      key={option.key}
-                      label={option.label}
-                      description={option.description}
-                      preview={preview}
-                      color={option.color}
-                      isSelected={selected === option.key}
-                      onClick={() => handleSelect(option.key)}
-                    />
+                    <ScrollworkBorder key={option.key}>
+                      <button
+                        onClick={() => setSelected(option.key)}
+                        className={`w-full border rounded-sm text-left transition-all duration-300 animate-fade-in-up cursor-pointer ${
+                          isSelected
+                            ? "border-gold-500 bg-gold-500/10 shadow-[0_0_20px_rgba(212,175,55,0.12)]"
+                            : `border-court-700 bg-court-900/50 ${option.bgClass} hover:border-court-500`
+                        }`}
+                        style={{ animationDelay: `${i * 0.1}s` }}
+                      >
+                        <div className="p-5">
+                          <div className="flex items-center gap-3 mb-2.5">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              isSelected ? "border-gold-500" : "border-court-500"
+                            }`}>
+                              {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-gold-500 animate-seal-appear" />}
+                            </div>
+                            <span className={`font-serif text-lg font-bold transition-colors ${
+                              isSelected ? "gold-foil" : "text-court-200"
+                            }`}>
+                              {option.label}
+                            </span>
+                          </div>
+                          <p className="text-court-500 text-xs ml-8 leading-relaxed mb-2">{option.description}</p>
+                          {isSelected && (
+                            <div className="ml-8 mt-2 pt-2 border-t border-gold-500/20">
+                              <p className="font-legal text-court-400 text-xs italic animate-fade-in-up">
+                                &ldquo;{option.sentence}&rdquo;
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        {isSelected && (
+                          <div className="h-0.5 bg-gradient-to-r from-gold-500 to-transparent" />
+                        )}
+                      </button>
+                    </ScrollworkBorder>
                   );
                 })}
               </div>
@@ -151,7 +189,7 @@ function RulingContent() {
                 <button
                   onClick={handleSubmit}
                   disabled={!selected}
-                  className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base hover-lift btn-press"
+                  className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
                 >
                   Read the verdict
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
@@ -171,6 +209,7 @@ function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
       <div className="flex flex-col items-center gap-4">
+        <CourtSeal className="w-8 h-8 text-gold-500" animated />
         <div className="text-court-400 font-serif">Preparing the bench...</div>
       </div>
     </div>

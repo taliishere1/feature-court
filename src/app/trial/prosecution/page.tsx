@@ -4,36 +4,44 @@ import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CaseDocketHeader, LegalPaper } from "@/components/court-components";
-import { useSound } from "@/lib/use-sound";
+import { CourtSeal, StageProgress, CaseDocketHeader, useSoundEffects, ObjectionStamp } from "@/components/court-components";
 
 function ProsecutionContent() {
   const searchParams = useSearchParams();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { playGavel } = useSound();
-  const playedRef = useRef(false);
+  const [objectionIdx, setObjectionIdx] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const { playGavelKnock, playPaperRustle } = useSoundEffects();
+  const mounted = useRef(false);
 
   useEffect(() => {
+    mounted.current = true;
     const id = searchParams.get("id");
     if (!id) return;
     fetch(`/api/trial?id=${id}`)
       .then((r) => r.json())
-      .then(setTrial)
-      .finally(() => {
-        setLoading(false);
-        if (!playedRef.current) {
-          setTimeout(() => { playGavel(); playedRef.current = true; }, 300);
+      .then((data) => {
+        if (mounted.current) {
+          setTrial(data);
+          setRevealed(true);
+          playGavelKnock();
         }
-      });
-  }, [searchParams, playGavel]);
+      })
+      .finally(() => setLoading(false));
+    return () => { mounted.current = false; };
+  }, [searchParams, playGavelKnock]);
+
+  const handleObjection = (idx: number) => {
+    setObjectionIdx(idx);
+    setTimeout(() => setObjectionIdx(null), 800);
+  };
 
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
   return (
     <div className="min-h-screen flex flex-col wood-panel">
-      <div className="courtroom-scene" />
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href={`/trial/arraignment?id=${trial.id}`} className="flex items-center gap-2 group">
@@ -53,18 +61,15 @@ function ProsecutionContent() {
 
       <main className="flex-1 px-6 py-12 relative z-10">
         <div className="max-w-3xl mx-auto animate-page-enter">
-          <CaseDocketHeader
-            caseTitle={trial.case_title}
-            caseId={trial.id}
-            stageLabel="Prosecution"
-            stageNum={2}
-          />
+          <div className="text-center mb-4">
+            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 2 of 5</span>
+          </div>
 
           <StageProgress current={2} />
 
           {/* Prosecutor identity */}
-          <div className="text-center mb-8 animate-fade-in-up">
-            <div className="inline-flex items-center gap-4 border border-court-700 rounded-sm px-6 py-3 bg-court-900/60 hover-lift">
+          <div className={`text-center mb-8 transition-all duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
+            <div className="inline-flex items-center gap-4 border border-court-700 rounded-sm px-6 py-3 bg-court-900/60 animate-card-lift">
               <div className="w-10 h-10 rounded-full border-2 border-court-600 flex items-center justify-center">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-court-400">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinecap="round" />
@@ -78,17 +83,17 @@ function ProsecutionContent() {
           </div>
 
           {/* Opening statement */}
-          <LegalPaper className="mb-8 animate-fade-in-up stagger-1">
-            <div className="flex items-center gap-2 mb-3">
+          <div className={`parchment-ruled p-6 mb-8 transition-all duration-700 delay-100 ${revealed ? "opacity-100" : "opacity-0"}`}>
+            <div className="flex items-center gap-2 mb-3 relative z-10">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Opening Statement</span>
             </div>
-            <div className="border-l-2 border-court-600 pl-4">
+            <div className="border-l-2 border-court-600 pl-4 relative z-10">
               <p className="text-court-200 text-base leading-relaxed font-legal tracking-wide italic">
                 &ldquo;{trial.prosecution.opening}&rdquo;
               </p>
               <p className="text-court-600 text-[10px] font-mono uppercase tracking-[0.2em] mt-3">— The Prosecution</p>
             </div>
-          </LegalPaper>
+          </div>
 
           {/* Arguments */}
           <div className="space-y-3">
@@ -96,14 +101,19 @@ function ProsecutionContent() {
             {trial.prosecution.arguments.map((arg, i) => (
               <div
                 key={i}
-                className="group parchment p-4 animate-evidence-slide hover-lift"
+                className="group parchment-ruled p-4 animate-evidence-slide relative overflow-hidden cursor-pointer"
                 style={{ animationDelay: `${0.25 + i * 0.15}s` }}
+                onClick={() => handleObjection(i)}
               >
-                <div className="flex gap-4" style={{ position: "relative", zIndex: 2 }}>
+                {objectionIdx === i && <ObjectionStamp active />}
+                <div className="flex gap-4 relative z-10">
                   <span className="font-mono text-[10px] text-gold-500/80 mt-0.5 shrink-0">
                     Exhibit {String(i + 1).padStart(2, "0")}
                   </span>
                   <span className="text-court-200 text-sm leading-relaxed font-legal">{arg}</span>
+                </div>
+                <div className="absolute bottom-1 right-2 opacity-0 group-hover:opacity-40 transition-opacity">
+                  <span className="font-mono text-[8px] text-court-500 uppercase tracking-[0.1em]">Click to object</span>
                 </div>
               </div>
             ))}
@@ -112,8 +122,8 @@ function ProsecutionContent() {
           <div className="text-center mt-12 animate-fade-in-up stagger-5">
             <Link
               href={`/trial/defense?id=${trial.id}`}
-              onClick={() => playGavel()}
-              className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base hover-lift btn-press"
+              className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+              onClick={() => playPaperRustle()}
             >
               Hear the defense
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
@@ -132,6 +142,7 @@ function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
       <div className="flex flex-col items-center gap-4">
+        <CourtSeal className="w-8 h-8 text-gold-500" animated />
         <div className="text-court-400 font-serif">Calling the first witness...</div>
       </div>
     </div>
