@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { DustMotes } from "@/components/court-components";
+import { DustMotes, AmbientCourtHum } from "@/components/court-components";
 
 export const metadata: Metadata = {
   title: "Feature Court — Put your product decision on trial",
@@ -20,6 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="min-h-full antialiased">
+        <AmbientCourtHum />
         <DustMotes count={6} />
         {children}
       </body>

@@ -3,16 +3,21 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CourtSeal, OrnateDivider, GoldParticles, InteractiveGavel, useSoundEffects } from "@/components/court-components";
+import { Ruling } from "@/lib/types";
 
 export default function LandingPage() {
   const { playGavelKnock, playSwoosh } = useSoundEffects();
   const [casesTried, setCasesTried] = useState(0);
   const [shaking, setShaking] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [lastRuling, setLastRuling] = useState<Ruling | null>(null);
 
   useEffect(() => {
-    // Load case count from localStorage
     const count = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
     setCasesTried(count);
+    const s = parseInt(localStorage.getItem("fc-streak") || "0", 10);
+    setStreak(s);
+    setLastRuling(localStorage.getItem("fc-last-ruling") as Ruling | null);
   }, []);
 
   const handleGavelStrike = () => {
@@ -61,10 +66,15 @@ export default function LandingPage() {
         </div>
         {casesTried > 0 && (
           <div className="border-t border-court-800 px-6 py-1.5">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-6xl mx-auto flex items-center justify-between">
               <p className="text-[10px] text-court-500 font-legal italic">
                 Welcome back, Your Honor. You&apos;ve been busy.
               </p>
+              {streak >= 2 && lastRuling && (
+                <p className="text-[9px] text-court-500 font-mono tracking-wide hidden sm:block">
+                  <span className="text-gold-500">{streak}</span>-case {lastRuling} streak
+                </p>
+              )}
             </div>
           </div>
         )}

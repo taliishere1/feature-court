@@ -38,6 +38,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
   const [ruling, setRuling] = useState<Ruling | null>(null);
   const [gutCall, setGutCall] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userSigned, setUserSigned] = useState(false);
 
   // Ceremony sequence stages
   const [ceremony, setCeremony] = useState({
@@ -53,6 +54,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
   const [toastMessage, setToastMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [screenDim, setScreenDim] = useState(false);
+  const [showKillOverlay, setShowKillOverlay] = useState(false);
 
   const { playGavelKnock, playStampSlam, playPaperRustle, playConfetti, playSwoosh } = useSoundEffects();
 
@@ -86,6 +88,10 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
       const t4 = setTimeout(() => {
         playStampSlam();
         setCeremony((c) => ({ ...c, stamp: true }));
+        if (ruling === "kill") {
+          setShowKillOverlay(true);
+          setTimeout(() => setShowKillOverlay(false), 2000);
+        }
       }, 1800);
       const t5 = setTimeout(() => {
         playPaperRustle();
@@ -169,7 +175,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
 
           {/* Official Verdict Certificate */}
           <ScrollworkBorder>
-            <div className="verdict-certificate p-6 md:p-8 overflow-hidden">
+            <div className={`verdict-certificate verdict-certificate-${ruling} p-6 md:p-8 overflow-hidden ${ceremony.gavel ? "" : "opacity-0"} transition-opacity duration-1000`}>
               {/* Background accent glow for ruling */}
               <div
                 className="absolute inset-0 opacity-30 pointer-events-none"
@@ -177,6 +183,36 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
                   background: `radial-gradient(ellipse at 50% 50%, ${accentColor} 0%, transparent 70%)`,
                 }}
               />
+
+              {/* Kill It dramatic red stamp overlay */}
+              {ruling === "kill" && showKillOverlay && (
+                <div className="absolute inset-0 pointer-events-none z-20 animate-kill-stamp flex items-center justify-center">
+                  <div
+                    className="w-full h-full flex items-center justify-center"
+                    style={{
+                      background: "radial-gradient(ellipse at 50% 50%, rgba(139,26,26,0.25) 0%, transparent 60%)",
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center -rotate-6">
+                    <div
+                      className="px-12 py-6 border-4 border-stamp-kill"
+                      style={{
+                        background: "rgba(139,26,26,0.15)",
+                        boxShadow: "0 0 60px rgba(139,26,26,0.3), inset 0 0 30px rgba(139,26,26,0.1)",
+                      }}
+                    >
+                      <p className="font-serif text-4xl sm:text-5xl font-black tracking-[0.2em] text-stamp-kill" style={{ textShadow: "0 0 20px rgba(139,26,26,0.4)" }}>
+                        KILL IT
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Red wash behind Kill It */}
+              {ruling === "kill" && showKillOverlay && (
+                <div className="absolute inset-0 pointer-events-none z-10 animate-kill-wash" />
+              )}
 
               {/* Letterhead */}
               <div className={`text-center border-b border-court-700 pb-5 mb-6 transition-all duration-1000 relative z-10 ${ceremony.gavel ? "opacity-100" : "opacity-0"}`}>
@@ -255,9 +291,9 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
                 </div>
               )}
 
-              {/* Signature block */}
+              {/* Signature block — interactive, click to sign */}
               <div className={`relative z-10 ${ceremony.signature ? "opacity-100" : "opacity-0"}`}>
-                <SignatureBlock />
+                <SignatureBlock interactive onSign={() => setUserSigned(true)} />
               </div>
 
               {/* Footer */}

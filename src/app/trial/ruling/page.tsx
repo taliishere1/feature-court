@@ -53,6 +53,19 @@ function RulingContent() {
     // Track ruling in localStorage
     const count = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
     localStorage.setItem("fc-cases-tried", String(count + 1));
+    // Store individual ruling for stats
+    const rulings = JSON.parse(localStorage.getItem("fc-rulings") || "[]");
+    rulings.push({ id: trial.id, ruling: selected, caseTitle: trial.case_title, timestamp: Date.now() });
+    localStorage.setItem("fc-rulings", JSON.stringify(rulings));
+    // Track streak
+    const lastRuling = localStorage.getItem("fc-last-ruling") || "";
+    const streak = parseInt(localStorage.getItem("fc-streak") || "0", 10);
+    if (lastRuling === selected) {
+      localStorage.setItem("fc-streak", String(streak + 1));
+    } else {
+      localStorage.setItem("fc-streak", "1");
+    }
+    localStorage.setItem("fc-last-ruling", selected);
     router.push(`/verdict/${trial.id}?ruling=${selected}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : ""));
   }
 
