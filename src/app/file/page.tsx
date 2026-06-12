@@ -45,7 +45,7 @@ export default function FileCasePage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            <span className="font-serif text-base text-court-300 group-hover:text-court-100 transition-colors">Feature Court</span>
+            <span className="font-display text-base text-court-300 group-hover:text-court-100 transition-colors tracking-wider">Feature Court</span>
           </Link>
           <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em]">Form No. FC-001</span>
         </div>
@@ -58,7 +58,7 @@ export default function FileCasePage() {
             <div className="flex items-center justify-center gap-3 mb-3">
               <CourtSeal className="w-8 h-8 text-gold-500" />
               <div>
-                <h2 className="font-serif text-lg text-court-100 tracking-wide">Feature Court</h2>
+                <h2 className="font-display text-lg text-court-100 tracking-wider">Feature Court</h2>
                 <p className="text-[9px] text-court-600 font-mono uppercase tracking-[0.2em]">District of Product Decisions</p>
               </div>
               <CourtSeal className="w-8 h-8 text-gold-500" />
@@ -72,7 +72,7 @@ export default function FileCasePage() {
           <div className="parchment-ruled p-6 md:p-8">
             <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
               <div className="animate-fade-in-up stagger-1">
-                <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
+                <label className="flex items-center gap-2 text-court-200 font-display text-sm tracking-wider mb-1.5">
                   <span className="text-gold-500 font-mono text-[10px]">§1</span>
                   The proposal
                 </label>
@@ -88,7 +88,7 @@ export default function FileCasePage() {
               </div>
 
               <div className="animate-fade-in-up stagger-2">
-                <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
+                <label className="flex items-center gap-2 text-court-200 font-display text-sm tracking-wider mb-1.5">
                   <span className="text-gold-500 font-mono text-[10px]">§2</span>
                   Who it serves
                 </label>
@@ -104,7 +104,7 @@ export default function FileCasePage() {
               </div>
 
               <div className="animate-fade-in-up stagger-3">
-                <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
+                <label className="flex items-center gap-2 text-court-200 font-display text-sm tracking-wider mb-1.5">
                   <span className="text-gold-500 font-mono text-[10px]">§3</span>
                   Why now
                 </label>
@@ -120,7 +120,7 @@ export default function FileCasePage() {
               </div>
 
               <div className="animate-fade-in-up stagger-4">
-                <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
+                <label className="flex items-center gap-2 text-court-200 font-display text-sm tracking-wider mb-1.5">
                   <span className="text-gold-500 font-mono text-[10px]">§4</span>
                   What you&apos;d give up
                 </label>
@@ -136,7 +136,7 @@ export default function FileCasePage() {
               </div>
 
               <div className="animate-fade-in-up stagger-5 pt-2">
-                <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
+                <label className="flex items-center gap-2 text-court-200 font-display text-sm tracking-wider mb-1.5">
                   <span className="text-gold-500 font-mono text-[10px]">§5</span>
                   Your gut call
                   <span className="text-court-500 font-sans text-[10px] font-normal">(sealed from the court)</span>

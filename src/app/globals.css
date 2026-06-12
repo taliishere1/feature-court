@@ -1,22 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,900&family=Inter:wght@300;400;500;600;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap');
 
 @import "tailwindcss";
 
 @theme {
-  --color-court-950: #120c0a;
-  --color-court-900: #1c1411;
-  --color-court-850: #231a15;
-  --color-court-800: #2b201a;
-  --color-court-750: #362a22;
-  --color-court-700: #46362b;
-  --color-court-600: #5e4a3c;
-  --color-court-500: #7d6452;
-  --color-court-400: #9c836f;
-  --color-court-300: #bfab98;
-  --color-court-200: #d9caba;
-  --color-court-100: #ede4d9;
+  /* Warm mahogany courtroom palette */
+  --color-court-950: #120a08;
+  --color-court-900: #1c100c;
+  --color-court-850: #261812;
+  --color-court-800: #302018;
+  --color-court-750: #3d2a20;
+  --color-court-700: #4d3628;
+  --color-court-600: #664a36;
+  --color-court-500: #8a664a;
+  --color-court-400: #a8886c;
+  --color-court-300: #c7aa90;
+  --color-court-200: #ddc8b4;
+  --color-court-100: #ede0d4;
   --color-court-50: #f5efe8;
 
+  /* Bright gold / brass */
   --color-gold-700: #7d5a00;
   --color-gold-600: #a87a00;
   --color-gold-500: #d4a017;
@@ -25,20 +27,24 @@
   --color-gold-200: #f5db80;
   --color-gold-100: #fae8b0;
 
+  /* Judge robe reds */
   --color-robe-900: #1a0a0c;
   --color-robe-800: #2d1216;
   --color-robe-700: #401a20;
   --color-robe-600: #5a2630;
 
-  --color-stamp-ship: #059669;
+  /* Stamp colors */
+  --color-stamp-ship: #0d9488;
   --color-stamp-kill: #dc2626;
-  --color-stamp-revise: #b45309;
+  --color-stamp-revise: #d97706;
   --color-stamp-mistrial: #7c3aed;
 
-  --font-serif: 'Playfair Display', Georgia, serif;
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'Courier Prime', 'Courier New', monospace;
-  --font-legal: 'Cormorant Garamond', 'Georgia', serif;
+  /* New fonts */
+  --font-display: 'Bebas Neue', 'Impact', sans-serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  --font-serif: 'Lora', Georgia, serif;
+  --font-legal: 'Lora', 'Georgia', serif;
   --font-certificate: 'EB Garamond', 'Georgia', serif;
 }
 
@@ -48,21 +54,20 @@ body {
   font-family: var(--font-sans);
   background-color: var(--color-court-950);
   background-image:
-    radial-gradient(ellipse at 50% 0%, rgba(217, 119, 6, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 100% 50%, rgba(139, 92, 246, 0.02) 0%, transparent 40%),
-    radial-gradient(ellipse at 0% 100%, rgba(5, 150, 105, 0.02) 0%, transparent 30%);
+    radial-gradient(ellipse at 50% 0%, rgba(212, 160, 23, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 50%, rgba(92, 48, 36, 0.03) 0%, transparent 40%);
   color: var(--color-court-100);
   -webkit-font-smoothing: antialiased;
 }
 
-/* ─── New App Background ─── */
+/* ─── Warm Wood Panel Background ─── */
 
 .wood-panel {
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(217, 119, 6, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 30%, rgba(139, 92, 246, 0.03) 0%, transparent 40%),
-    radial-gradient(ellipse at 20% 70%, rgba(5, 150, 105, 0.02) 0%, transparent 30%),
-    linear-gradient(180deg, #030712 0%, #0a0f1e 30%, #0f1629 60%, #030712 100%);
+    radial-gradient(ellipse at 50% 0%, rgba(212, 160, 23, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 30%, rgba(61, 42, 32, 0.04) 0%, transparent 40%),
+    radial-gradient(ellipse at 20% 70%, rgba(102, 74, 54, 0.03) 0%, transparent 30%),
+    linear-gradient(180deg, #120a08 0%, #1c100c 30%, #261812 60%, #120a08 100%);
 }
 
 .wood-panel::before {
@@ -71,56 +76,59 @@ body {
   inset: 0;
   background:
     repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 80px,
-      rgba(255, 255, 255, 0.015) 80px,
-      rgba(255, 255, 255, 0.015) 81px
-    ),
-    repeating-linear-gradient(
       90deg,
       transparent,
-      transparent 80px,
-      rgba(255, 255, 255, 0.015) 80px,
-      rgba(255, 255, 255, 0.015) 81px
+      transparent 120px,
+      rgba(255, 255, 255, 0.008) 120px,
+      rgba(255, 255, 255, 0.008) 121px
     );
   pointer-events: none;
   z-index: 0;
 }
 
-/* ─── Glass Card ─── */
+/* ─── Warm Light Beam ─── */
+
+.light-beam {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(212, 160, 23, 0.03) 0%,
+    transparent 40%,
+    transparent 100%
+  );
+}
+
+/* ─── Glass Card (replaces parchment) ─── */
 
 .parchment {
   position: relative;
-  background: rgba(20, 30, 52, 0.6);
+  background: linear-gradient(135deg, rgba(48, 32, 24, 0.7), rgba(38, 24, 18, 0.8));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(90, 110, 148, 0.15);
-  border-radius: 8px;
+  border: 1px solid rgba(102, 74, 54, 0.2);
+  border-radius: 0;
 }
 
 .parchment::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.03) 0%, transparent 50%, rgba(5, 150, 105, 0.02) 100%);
+  background: linear-gradient(135deg, rgba(212, 160, 23, 0.03) 0%, transparent 50%);
   pointer-events: none;
-  border-radius: 8px;
 }
-
-.parchment::after {
-  display: none;
-}
-
-/* ─── Glass Card Ruled ─── */
 
 .parchment-ruled {
   position: relative;
-  background: rgba(20, 30, 52, 0.5);
+  background: linear-gradient(135deg, rgba(48, 32, 24, 0.6), rgba(38, 24, 18, 0.7));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(90, 110, 148, 0.12);
-  border-radius: 8px;
+  border: 1px solid rgba(102, 74, 54, 0.15);
 }
 
 .parchment-ruled::before {
@@ -132,26 +140,20 @@ body {
       0deg,
       transparent,
       transparent 24px,
-      rgba(245, 158, 11, 0.04) 24px,
-      rgba(245, 158, 11, 0.04) 25px
+      rgba(212, 160, 23, 0.03) 24px,
+      rgba(212, 160, 23, 0.03) 25px
     );
   pointer-events: none;
-  border-radius: 8px;
-}
-
-.parchment-ruled::after {
-  display: none;
 }
 
 /* ─── Verdict Certificate ─── */
 
 .verdict-certificate {
   position: relative;
-  background: rgba(10, 15, 30, 0.7);
+  background: linear-gradient(135deg, rgba(48, 32, 24, 0.8), rgba(38, 24, 18, 0.9));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(90, 110, 148, 0.2);
-  border-radius: 12px;
+  border: 1px solid rgba(102, 74, 54, 0.25);
 }
 
 .verdict-certificate::before {
@@ -163,34 +165,27 @@ body {
       0deg,
       transparent,
       transparent 40px,
-      rgba(255, 255, 255, 0.015) 40px,
-      rgba(255, 255, 255, 0.015) 41px
+      rgba(255, 255, 255, 0.008) 40px,
+      rgba(255, 255, 255, 0.008) 41px
     ),
     repeating-linear-gradient(
       90deg,
       transparent,
       transparent 40px,
-      rgba(255, 255, 255, 0.015) 40px,
-      rgba(255, 255, 255, 0.015) 41px
+      rgba(255, 255, 255, 0.008) 40px,
+      rgba(255, 255, 255, 0.008) 41px
     );
   pointer-events: none;
-  border-radius: 12px;
 }
 
-/* ─── Bench accent ─── */
-
-.bench-accent {
-  border-color: rgba(90, 110, 148, 0.2) !important;
-}
-
-/* ─── Ribbon Banner ─── */
+/* ─── Red Ribbon Banner ─── */
 
 .ribbon-banner {
   text-align: center;
   margin-bottom: 2rem;
 }
 
-/* ─── Confetti container ─── */
+/* ─── Confetti ─── */
 
 .confetti-container {
   position: fixed;
@@ -200,7 +195,7 @@ body {
   overflow: hidden;
 }
 
-/* ─── Toast Notification ─── */
+/* ─── Toast ─── */
 
 .toast-notification {
   position: fixed;
@@ -208,12 +203,11 @@ body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
-  background: rgba(20, 30, 52, 0.9);
+  background: rgba(48, 32, 24, 0.95);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(90, 110, 148, 0.2);
+  border: 1px solid rgba(212, 160, 23, 0.3);
   padding: 0.75rem 1.5rem;
-  border-radius: 6px;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--color-court-200);
@@ -229,7 +223,7 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--color-court-600); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-court-500); }
 
-/* ─── Kill It Dramatic Overlay ─── */
+/* ─── Kill It Overlay ─── */
 
 @keyframes kill-stamp-slam {
   0% { transform: scale(4) rotate(-25deg); opacity: 0; }
@@ -241,34 +235,19 @@ body {
 
 @keyframes kill-red-wash {
   0% { opacity: 0; }
-  50% { opacity: 0.08; }
-  100% { opacity: 0.04; }
+  50% { opacity: 0.1; }
+  100% { opacity: 0.05; }
 }
 
 .animate-kill-stamp { animation: kill-stamp-slam 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 .animate-kill-wash { animation: kill-red-wash 1s ease-out forwards; }
 
-/* ─── Ruling-Themed Certificate Border ─── */
+/* ─── Ruling Certificate Borders ─── */
 
-.verdict-certificate-ship {
-  border-color: rgba(5, 150, 105, 0.3) !important;
-  box-shadow: 0 0 30px rgba(0,0,0,0.4), inset 0 0 20px rgba(5, 150, 105, 0.04);
-}
-
-.verdict-certificate-kill {
-  border-color: rgba(220, 38, 38, 0.3) !important;
-  box-shadow: 0 0 30px rgba(0,0,0,0.4), inset 0 0 20px rgba(220, 38, 38, 0.04);
-}
-
-.verdict-certificate-revise {
-  border-color: rgba(217, 119, 6, 0.3) !important;
-  box-shadow: 0 0 30px rgba(0,0,0,0.4), inset 0 0 20px rgba(217, 119, 6, 0.04);
-}
-
-.verdict-certificate-mistrial {
-  border-color: rgba(124, 58, 237, 0.3) !important;
-  box-shadow: 0 0 30px rgba(0,0,0,0.4), inset 0 0 20px rgba(124, 58, 237, 0.04);
-}
+.verdict-certificate-ship { border-color: rgba(13, 148, 136, 0.3) !important; box-shadow: 0 0 30px rgba(0,0,0,0.4); }
+.verdict-certificate-kill { border-color: rgba(220, 38, 38, 0.3) !important; box-shadow: 0 0 30px rgba(0,0,0,0.4); }
+.verdict-certificate-revise { border-color: rgba(217, 119, 6, 0.3) !important; box-shadow: 0 0 30px rgba(0,0,0,0.4); }
+.verdict-certificate-mistrial { border-color: rgba(124, 58, 237, 0.3) !important; box-shadow: 0 0 30px rgba(0,0,0,0.4); }
 
 /* ─── Keyframes ─── */
 
@@ -323,8 +302,8 @@ body {
 }
 
 @keyframes card-lift {
-  0% { transform: translateY(0); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-  100% { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08); }
+  0% { transform: translateY(0); box-shadow: 0 0 0 0 rgba(212, 160, 23, 0); }
+  100% { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(212, 160, 23, 0.08); }
 }
 
 @keyframes ribbon-slide {
@@ -335,11 +314,6 @@ body {
 @keyframes signature-draw {
   0% { stroke-dashoffset: 300; }
   100% { stroke-dashoffset: 0; }
-}
-
-@keyframes toasty-slide {
-  0% { transform: translateX(-50%) translateY(20px); opacity: 0; }
-  100% { transform: translateX(-50%) translateY(0); opacity: 1; }
 }
 
 @keyframes ink-splash {
@@ -353,19 +327,9 @@ body {
   100% { transform: translateY(0); }
 }
 
-@keyframes swoosh-in {
-  0% { opacity: 0; transform: translateX(20px); }
-  100% { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes swoosh-out {
-  0% { opacity: 1; transform: translateX(0); }
-  100% { opacity: 0; transform: translateX(-20px); }
-}
-
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.2); }
-  50% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.4); }
+  0%, 100% { box-shadow: 0 0 8px rgba(212, 160, 23, 0.2); }
+  50% { box-shadow: 0 0 16px rgba(212, 160, 23, 0.4); }
 }
 
 @keyframes particle-float {
@@ -373,13 +337,6 @@ body {
   10% { opacity: 0.3; }
   90% { opacity: 0.3; }
   100% { transform: translateY(-100vh) translateX(100px) rotate(360deg); opacity: 0; }
-}
-
-@keyframes dust-float {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.04; }
-  25% { transform: translate(30px, -20px) scale(1.2); }
-  50% { transform: translate(-20px, -40px) scale(0.9); }
-  75% { transform: translate(15px, -60px) scale(1.1); }
 }
 
 @keyframes toast-slide {
@@ -392,7 +349,7 @@ body {
   100% { transform: translateY(110vh) rotate(720deg) scale(0.3); opacity: 0; }
 }
 
-/* ─── Utility Animation Classes ─── */
+/* ─── Animation Classes ─── */
 
 .animate-seal-appear { animation: seal-appear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 .animate-stamp-impact { animation: stamp-impact 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
@@ -402,14 +359,14 @@ body {
 .animate-screen-shake { animation: screen-shake 0.5s ease-out; }
 .animate-gavel-strike { animation: gavel-strike 0.6s ease-in-out; }
 .animate-card-lift { transition: transform 0.2s, box-shadow 0.2s; }
-.animate-card-lift:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08); }
+.animate-card-lift:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(212, 160, 23, 0.08); }
 .animate-ribbon-slide { animation: ribbon-slide 0.6s ease-out forwards; }
 .animate-signature-draw { animation: signature-draw 1.5s ease-out forwards; }
 .animate-ink-splash { animation: ink-splash 0.6s ease-out forwards; }
 .animate-button-press:active { animation: button-press 0.15s ease-out; }
-.animate-swoosh-in { animation: swoosh-in 0.3s ease-out forwards; }
-.animate-swoosh-out { animation: swoosh-out 0.3s ease-out forwards; }
 .animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+
+/* ─── Objection Overlay ─── */
 
 @keyframes objection-flash {
   0% { opacity: 0; }
@@ -434,7 +391,7 @@ body {
 .objection-flash { animation: objection-flash 1.5s ease-out forwards; }
 .objection-screen-shake { animation: objection-screen-shake 0.6s ease-out; }
 
-/* ─── Dialogue Box ─── */
+/* ─── Anime VN Dialogue Box ─── */
 
 .dialogue-box {
   position: fixed;
@@ -449,11 +406,9 @@ body {
 .dialogue-box-inner {
   max-width: 40rem;
   margin: 0 auto;
-  background: rgba(15, 22, 41, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(90, 110, 148, 0.15);
-  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(38, 24, 18, 0.97), rgba(28, 16, 12, 0.98));
+  border: 1px solid rgba(212, 160, 23, 0.2);
+  border-bottom: 3px solid rgba(212, 160, 23, 0.4);
   padding: 1rem 1.25rem;
   pointer-events: auto;
 }
@@ -463,17 +418,20 @@ body {
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(212, 160, 23, 0.1);
+  padding-bottom: 0.5rem;
 }
 
 .dialogue-box-name {
-  font-family: var(--font-serif);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .dialogue-box-body {
-  font-family: var(--font-legal);
+  font-family: var(--font-serif);
   font-size: 1rem;
   line-height: 1.6;
   color: var(--color-court-200);
@@ -484,54 +442,43 @@ body {
   text-align: center;
   margin-top: 0.5rem;
   font-size: 0.7rem;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   color: var(--color-gold-500);
   letter-spacing: 0.1em;
   animation: glow-pulse 1.5s ease-in-out infinite;
 }
 
-/* ─── Evidence Card ─── */
+/* ─── Evidence Board Card ─── */
 
 .evidence-card {
-  background: rgba(20, 30, 52, 0.6);
+  background: linear-gradient(135deg, rgba(48, 32, 24, 0.7), rgba(38, 24, 18, 0.8));
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(90, 110, 148, 0.12);
-  border-left: 3px solid var(--card-accent, #d97706);
-  border-radius: 8px;
+  border: 1px solid rgba(102, 74, 54, 0.15);
   transition: all 0.2s ease;
-}
-
-.evidence-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 50%);
-  transition: opacity 0.2s;
-  pointer-events: none;
-  border-radius: 8px;
+  position: relative;
 }
 
 .evidence-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  border-color: var(--card-accent, #d97706);
-}
-
-.evidence-card:hover::before {
-  opacity: 1;
+  border-color: var(--card-accent, #d4a017);
 }
 
 .evidence-card-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  border-bottom: 1px solid rgba(90, 110, 148, 0.08);
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(102, 74, 54, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-/* ─── Animations for evidence cards ─── */
+/* ─── Evidence Card Animations ─── */
 
 @keyframes card-slide-in-left {
   0% { opacity: 0; transform: translateX(-30px); }
@@ -546,18 +493,18 @@ body {
 .animate-card-left { animation: card-slide-in-left 0.5s ease-out forwards; }
 .animate-card-right { animation: card-slide-in-right 0.5s ease-out forwards; }
 
-/* ─── Spotlight / Interrogation ─── */
+/* ─── Spotlight ─── */
 
 .spotlight-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.3) 70%);
+  background: radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.4) 70%);
   transition: opacity 0.5s;
 }
 
-/* ─── Letterbox Effect (Dramatic Pause) ─── */
+/* ─── Letterbox ─── */
 
 @keyframes letterbox-open {
   0% { transform: scaleY(0); }
@@ -575,7 +522,7 @@ body {
   left: 0;
   right: 0;
   height: 33vh;
-  background: #030712;
+  background: #120a08;
   z-index: 40;
   transform-origin: top;
   animation: letterbox-open 0.4s ease-out forwards;
@@ -588,7 +535,7 @@ body {
   left: 0;
   right: 0;
   height: 33vh;
-  background: #030712;
+  background: #120a08;
   z-index: 40;
   transform-origin: bottom;
   animation: letterbox-open 0.4s ease-out forwards;
@@ -609,17 +556,17 @@ body {
 
 .animate-dramatic-zoom { animation: dramatic-zoom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
-/* ─── Courtroom Background (SVG wrapper) ─── */
+/* ─── Courtroom Background SVG ─── */
 
 .courtroom-bg {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  color: rgba(90, 110, 148, 0.5);
+  color: rgba(138, 102, 74, 0.3);
 }
 
-/* ─── Cinematic Landing Page ─── */
+/* ─── Cinematic Landing ─── */
 
 @keyframes seal-expand {
   0% { transform: scale(0) rotate(-180deg); opacity: 0; filter: brightness(2) blur(4px); }
@@ -628,20 +575,19 @@ body {
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
-@keyframes title-gold-shimmer {
-  0% { background-position: -200% center; opacity: 0; transform: translateY(30px); }
-  30% { opacity: 1; transform: translateY(0); }
-  100% { background-position: 200% center; }
+@keyframes title-reveal {
+  0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-@keyframes banner-slide-in {
-  0% { transform: translateX(-30px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 0.6; }
+@keyframes subtitle-slide {
+  0% { opacity: 0; transform: translateX(-40px); }
+  100% { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes banner-slide-in-right {
-  0% { transform: translateX(30px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 0.6; }
+@keyframes subtitle-slide-right {
+  0% { opacity: 0; transform: translateX(40px); }
+  100% { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes tagline-fade {
@@ -659,82 +605,34 @@ body {
   100% { transform: translateX(300%) skewX(-15deg); }
 }
 
-@keyframes gavel-drop-in {
-  0% { transform: translateY(-80px) rotate(-20deg); opacity: 0; }
-  60% { transform: translateY(5px) rotate(5deg); opacity: 1; }
-  80% { transform: translateY(-3px) rotate(-2deg); }
-  100% { transform: translateY(0) rotate(0deg); opacity: 1; }
-}
-
-.animate-seal-expand { animation: seal-expand 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-.animate-title-shimmer { animation: title-gold-shimmer 2s ease-out forwards; background-size: 200% auto; }
-.animate-banner-left { animation: banner-slide-in 0.8s ease-out forwards; }
-.animate-banner-right { animation: banner-slide-in-right 0.8s ease-out forwards; }
+.animate-seal-expand { animation: seal-expand 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-title-reveal { animation: title-reveal 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-banner-left { animation: subtitle-slide 0.8s ease-out forwards; }
+.animate-banner-right { animation: subtitle-slide-right 0.8s ease-out forwards; }
 .animate-tagline { animation: tagline-fade 0.8s ease-out forwards; }
 .animate-cta-rise { animation: cta-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-light-sweep { animation: light-sweep 3s ease-in-out forwards; }
-.animate-gavel-drop { animation: gavel-drop-in 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-
-/* ─── Courtroom Columns ─── */
-
-.courtroom-column {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 60px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.courtroom-column::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 2px;
-  background: linear-gradient(180deg,
-    transparent,
-    rgba(245, 158, 11, 0.06) 15%,
-    rgba(245, 158, 11, 0.1) 50%,
-    rgba(245, 158, 11, 0.06) 85%,
-    transparent
-  );
-}
-
-.courtroom-column::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 6px;
-  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.2), transparent);
-  border-radius: 0 0 50% 50%;
-}
+.animate-light-sweep { animation: light-sweep 3s ease-in-out infinite; }
 
 /* ─── Gold foil text ─── */
 
 .gold-foil {
-  background: linear-gradient(135deg, #d97706, #f59e0b, #fbbf24, #f59e0b, #d97706);
+  background: linear-gradient(135deg, #c8983c, #d4a017, #f0cd50, #d4a017, #c8983c);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* ─── Stamp text colors ─── */
+/* ─── Stamp colors ─── */
 
-.text-stamp-ship { color: #059669; }
+.text-stamp-ship { color: #0d9488; }
 .text-stamp-kill { color: #dc2626; }
 .text-stamp-revise { color: #d97706; }
 .text-stamp-mistrial { color: #7c3aed; }
-.border-stamp-ship { border-color: #059669; }
+.border-stamp-ship { border-color: #0d9488; }
 .border-stamp-kill { border-color: #dc2626; }
 .border-stamp-revise { border-color: #d97706; }
 .border-stamp-mistrial { border-color: #7c3aed; }
-.bg-stamp-ship { background-color: rgba(5, 150, 105, 0.1); }
+.bg-stamp-ship { background-color: rgba(13, 148, 136, 0.1); }
 .bg-stamp-kill { background-color: rgba(220, 38, 38, 0.1); }
 .bg-stamp-revise { background-color: rgba(217, 119, 6, 0.1); }
 .bg-stamp-mistrial { background-color: rgba(124, 58, 237, 0.1); }

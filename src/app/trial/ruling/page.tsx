@@ -108,7 +108,7 @@ function RulingContent() {
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-3 mb-2 animate-fade-in-up">
               <CourtSeal className="w-7 h-7 text-gold-500" />
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-court-100">
+              <h1 className="font-display text-3xl sm:text-4xl font-normal tracking-[0.04em] text-court-100">
                 How do you rule, Your Honor?
               </h1>
               <CourtSeal className="w-7 h-7 text-gold-500" />
@@ -178,7 +178,7 @@ function RulingContent() {
                             }`}>
                               {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-gold-500 animate-seal-appear" />}
                             </div>
-                            <span className={`font-serif text-lg font-bold transition-colors ${
+                            <span className={`font-display text-lg transition-colors ${
                               isSelected ? "gold-foil" : "text-court-200"
                             }`}>
                               {option.label}

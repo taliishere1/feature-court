@@ -86,7 +86,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <CourtSeal className="w-9 h-9 text-gold-500" />
-            <span className="font-serif text-xl text-court-100 tracking-wide">
+            <span className="font-display text-lg text-court-100 tracking-wider">
               Feature Court
             </span>
           </div>
@@ -132,7 +132,7 @@ export default function LandingPage() {
           <div className={`mb-4 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0"}`}>
             {intro.title && (
               <h1
-                className="animate-title-shimmer font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.05] text-transparent bg-clip-text"
+                className="animate-title-reveal font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-normal tracking-[0.04em] leading-[1.0] text-transparent bg-clip-text"
                 style={{ backgroundImage: "linear-gradient(135deg, #c4b098 0%, #d4af37 30%, #f0d974 50%, #d4af37 70%, #c4b098 100%)" }}
               >
                 FEATURE COURT

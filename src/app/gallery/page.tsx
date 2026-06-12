@@ -74,7 +74,7 @@ export default function GalleryPage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            <span className="font-serif text-base text-court-300 group-hover:text-court-100 transition-colors">Feature Court</span>
+            <span className="font-display text-base text-court-300 group-hover:text-court-100 transition-colors tracking-wider">Feature Court</span>
           </Link>
           <div className="flex items-center gap-4">
             {!loading && trials.length > 0 && (
@@ -103,7 +103,7 @@ export default function GalleryPage() {
               <CourtSeal className="w-8 h-8 text-gold-500" />
               <div>
                 <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-gold-500">The Docket</span>
-                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-court-100 mt-1">
+                <h1 className="font-display text-4xl sm:text-5xl font-normal tracking-[0.04em] text-court-100 mt-1">
                   Hall of Verdicts
                 </h1>
               </div>
@@ -156,7 +156,7 @@ export default function GalleryPage() {
             <div className="flex items-center justify-center py-20">
               <div className="flex flex-col items-center gap-4">
                 <CourtSeal className="w-8 h-8 text-gold-500" animated />
-                <div className="text-court-400 font-serif">Loading the docket...</div>
+                <div className="text-court-400 font-display text-sm">Loading the docket...</div>
               </div>
             </div>
           ) : trials.length === 0 ? (
@@ -164,7 +164,7 @@ export default function GalleryPage() {
               <div className="mb-4 relative z-10 flex justify-center">
                 <JudgePortrait />
               </div>
-              <p className="text-court-500 font-serif text-lg mb-2 relative z-10">The docket is empty</p>
+              <p className="text-court-500 font-display text-lg mb-2 relative z-10">The docket is empty</p>
               <p className="text-court-600 text-sm mb-6 relative z-10">No verdicts have been delivered yet.</p>
               <Link
                 href="/file"
@@ -194,7 +194,7 @@ export default function GalleryPage() {
                       <span className="font-mono text-[9px] text-gold-500 uppercase tracking-[0.15em] ml-auto">Sample</span>
                     )}
                   </div>
-                  <p className="font-serif text-court-100 font-bold text-base mb-2 leading-snug group-hover:text-gold-200 transition-colors relative z-10">
+                  <p className="font-display text-lg font-normal tracking-[0.04em] text-court-100 leading-snug group-hover:text-gold-200 transition-colors relative z-10">
                     {trial.case_title}
                   </p>
                   <p className="text-court-500 text-xs leading-relaxed mb-3 line-clamp-2 font-legal relative z-10">

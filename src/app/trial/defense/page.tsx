@@ -119,7 +119,7 @@ function DefenseContent() {
               <div className="inline-flex items-center gap-3 border border-court-700 rounded-sm px-5 py-2.5 bg-court-900/60">
                 <DefensePortrait size="thumb" />
                 <div className="text-left">
-                  <h2 className="font-serif text-sm text-court-100">The Advocate</h2>
+                  <h2 className="font-display text-xs tracking-wider text-court-100">The Advocate</h2>
                   <p className="text-court-600 text-[9px] font-mono uppercase tracking-[0.15em]">True believer, sharp optimist</p>
                 </div>
               </div>
