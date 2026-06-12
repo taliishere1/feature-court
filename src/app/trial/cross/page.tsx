@@ -31,6 +31,16 @@ function CrossContent() {
     if (answers.some((a) => !a.trim())) return;
     setSubmitting(true);
     const id = searchParams.get("id");
+
+    if (typeof window !== "undefined" && window.pendo) {
+      window.pendo.track("cross_examination_submitted", {
+        trial_id: id,
+        question_count: trial?.cross_examination.length ?? 0,
+        total_answer_length: answers.reduce((sum, a) => sum + a.length, 0),
+        case_title: trial?.case_title ?? "",
+      });
+    }
+
     router.push(`/trial/ruling?id=${id}`);
   }
 
