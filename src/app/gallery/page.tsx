@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { CourtSeal, OrnateDivider, useSoundEffects } from "@/components/court-components";
+import { CourtSeal, OrnateDivider, CourtroomBackground, JudgePortrait, useSoundEffects } from "@/components/court-components";
 
 interface RulingRecord {
   id: string;
@@ -66,7 +66,8 @@ export default function GalleryPage() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col wood-panel">
+    <div className="min-h-screen flex flex-col wood-panel relative">
+      <CourtroomBackground opacity={0.08} />
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
@@ -160,16 +161,11 @@ export default function GalleryPage() {
             </div>
           ) : trials.length === 0 ? (
             <div className="text-center py-20 border border-dashed border-court-700 rounded-sm max-w-lg mx-auto parchment-ruled">
-              <div className="mb-4 relative z-10">
-                <svg width="36" height="36" viewBox="0 0 48 48" fill="none" className="mx-auto text-court-600">
-                  <rect x="6" y="8" width="36" height="32" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                  <line x1="14" y1="18" x2="34" y2="18" stroke="currentColor" strokeWidth="1.5" />
-                  <line x1="14" y1="24" x2="30" y2="24" stroke="currentColor" strokeWidth="1.5" />
-                  <line x1="14" y1="30" x2="26" y2="30" stroke="currentColor" strokeWidth="1.5" />
-                </svg>
+              <div className="mb-4 relative z-10 flex justify-center">
+                <JudgePortrait />
               </div>
               <p className="text-court-500 font-serif text-lg mb-2 relative z-10">The docket is empty</p>
-              <p className="text-court-600 text-sm mb-6 relative z-10">Be the first to put a decision on trial.</p>
+              <p className="text-court-600 text-sm mb-6 relative z-10">No verdicts have been delivered yet.</p>
               <Link
                 href="/file"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"

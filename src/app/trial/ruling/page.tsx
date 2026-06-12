@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { CourtSeal, StageProgress, OrnateDivider, ScrollworkBorder, useSoundEffects } from "@/components/court-components";
+import { CourtSeal, StageProgress, OrnateDivider, ScrollworkBorder, CourtroomBackground, JudgePortrait, useSoundEffects, DramaticPause } from "@/components/court-components";
 
 const RULING_OPTIONS: { key: Ruling; label: string; description: string; sentence: string; color: string; bgClass: string }[] = [
   { key: "ship", label: "Ship It", description: "Full speed ahead.", sentence: "The evidence is sufficient. Proceed with confidence.", color: "var(--color-stamp-ship)", bgClass: "hover:bg-stamp-ship/5" },
@@ -21,6 +21,8 @@ function RulingContent() {
   const [selected, setSelected] = useState<Ruling | null>(null);
   const [showOptions, setShowOptions] = useState(false);
   const [readyClicked, setReadyClicked] = useState(false);
+  const [letterbox, setLetterbox] = useState(false);
+  const [dramaticPause, setDramaticPause] = useState(false);
   const { playGavelKnock, playPaperRustle, playSwoosh } = useSoundEffects();
   const mounted = useRef(false);
 
@@ -39,25 +41,27 @@ function RulingContent() {
 
   const handleReadyToRule = () => {
     setReadyClicked(true);
+    setLetterbox(true);
     playGavelKnock();
+    // Dramatic pause with letterbox
+    setTimeout(() => { setDramaticPause(true); }, 300);
     setTimeout(() => {
+      setDramaticPause(false);
+      setLetterbox(false);
       setShowOptions(true);
       playPaperRustle();
       playSwoosh();
-    }, 800);
+    }, 1500);
   };
 
   function handleSubmit() {
     if (!selected || !trial) return;
     playGavelKnock();
-    // Track ruling in localStorage
     const count = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
     localStorage.setItem("fc-cases-tried", String(count + 1));
-    // Store individual ruling for stats
     const rulings = JSON.parse(localStorage.getItem("fc-rulings") || "[]");
     rulings.push({ id: trial.id, ruling: selected, caseTitle: trial.case_title, timestamp: Date.now() });
     localStorage.setItem("fc-rulings", JSON.stringify(rulings));
-    // Track streak
     const lastRuling = localStorage.getItem("fc-last-ruling") || "";
     const streak = parseInt(localStorage.getItem("fc-streak") || "0", 10);
     if (lastRuling === selected) {
@@ -73,10 +77,17 @@ function RulingContent() {
   if (!trial) return <NotFoundState />;
 
   return (
-    <div className="min-h-screen flex flex-col wood-panel">
+    <div className={`min-h-screen flex flex-col wood-panel relative ${letterbox ? "letterbox-active" : ""}`}>
+      <CourtroomBackground opacity={0.1} />
+      <DramaticPause active={dramaticPause} />
+
+      {/* Letterbox bars */}
+      <div className="letterbox-top" />
+      <div className="letterbox-bottom" />
+
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href={`/trial/cross?id=${trial.id}`} className="flex items-center gap-2 group">
+          <Link href={`/trial/cross?id=${trial.id}`} className={`flex items-center gap-2 group ${showOptions ? "" : ""}`}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
@@ -120,13 +131,6 @@ function RulingContent() {
                   &ldquo;You have heard both sides. The evidence has been presented.
                   The arguments have been made. Now you must decide.&rdquo;
                 </p>
-                <div className="flex items-center justify-center gap-3 text-court-500 text-xs mb-6">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 16v-4M12 8h.01" />
-                  </svg>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.15em]">Choose wisely</span>
-                </div>
                 <button
                   onClick={handleReadyToRule}
                   disabled={readyClicked}

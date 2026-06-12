@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
-import { CourtSeal, StageProgress, TypewriterText, OrnateDivider, CaseDocketHeader, useSoundEffects } from "@/components/court-components";
+import { CourtSeal, StageProgress, TypewriterText, OrnateDivider, CourtroomBackground, BailiffPortrait, DialogueBox, useSoundEffects } from "@/components/court-components";
 
 function ArraignmentContent() {
   const searchParams = useSearchParams();
@@ -13,7 +13,15 @@ function ArraignmentContent() {
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
   const [bailiffStage, setBailiffStage] = useState(0);
+  const [dialogueIndex, setDialogueIndex] = useState(0);
+  const [showCharge, setShowCharge] = useState(false);
+  const [showContinue, setShowContinue] = useState(false);
   const { playGavelKnock, playPaperRustle, playSwoosh } = useSoundEffects();
+
+  const bailiffDialogues = [
+    "All rise for the Honorable Court of Product Decisions...",
+    "The court is now in session. The Honorable You presiding.",
+  ];
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -41,11 +49,15 @@ function ArraignmentContent() {
     load();
   }, [searchParams]);
 
+  // Gavel sequence on load
   useEffect(() => {
     if (!loading && trial) {
       const t1 = setTimeout(() => { setBailiffStage(1); playGavelKnock(); }, 300);
       const t2 = setTimeout(() => { setBailiffStage(2); playGavelKnock(); }, 700);
-      const t3 = setTimeout(() => { setBailiffStage(3); playGavelKnock(); }, 1100);
+      const t3 = setTimeout(() => {
+        setBailiffStage(3);
+        playGavelKnock();
+      }, 1100);
       const t4 = setTimeout(() => {
         setRevealed(true);
         playPaperRustle();
@@ -54,6 +66,33 @@ function ArraignmentContent() {
       return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
     }
   }, [loading, trial, playGavelKnock, playPaperRustle, playSwoosh]);
+
+  const handleDialogueComplete = useCallback(() => {
+    if (dialogueIndex < bailiffDialogues.length - 1) {
+      setShowContinue(true);
+    } else {
+      setShowCharge(true);
+    }
+  }, [dialogueIndex, bailiffDialogues.length]);
+
+  const advanceDialogue = useCallback(() => {
+    if (dialogueIndex < bailiffDialogues.length - 1) {
+      setDialogueIndex((i) => i + 1);
+      setShowContinue(false);
+    }
+  }, [dialogueIndex, bailiffDialogues.length]);
+
+  // Keyboard support
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        if (showContinue) advanceDialogue();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showContinue, advanceDialogue]);
 
   if (loading) {
     return (
@@ -80,7 +119,9 @@ function ArraignmentContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col wood-panel">
+    <div className="min-h-screen flex flex-col wood-panel relative">
+      <CourtroomBackground opacity={0.1} />
+
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="font-serif text-base text-court-300 hover:text-court-100 transition-colors">
@@ -92,7 +133,7 @@ function ArraignmentContent() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 py-12 relative z-10">
+      <main className="flex-1 px-6 py-12 relative z-10 pb-36">
         <div className="max-w-3xl mx-auto animate-page-enter">
           <div className="text-center mb-6">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 1 of 5</span>
@@ -106,7 +147,7 @@ function ArraignmentContent() {
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className={`w-1.5 h-6 rounded-full transition-all duration-500 ${
+                  className={`w-1.5 rounded-full transition-all duration-500 ${
                     bailiffStage > i ? "bg-gold-500/80 scale-y-100" : "bg-court-700 scale-y-50"
                   }`}
                   style={{ height: bailiffStage > i ? `${24 - i * 4}px` : "6px" }}
@@ -115,60 +156,77 @@ function ArraignmentContent() {
             </div>
           </div>
 
-          {/* Bailiff announcement */}
-          <div className={`text-center mb-12 transition-all duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
-            <p className="text-court-400 text-xs font-mono uppercase tracking-widest mb-6">
-              All rise. The Honorable&nbsp;
-              <span className="gold-foil not-italic font-bold">You</span>
-              &nbsp;presiding.
-            </p>
+          {/* Charge reveal */}
+          <div className={`text-center mb-10 transition-all duration-700 ${showCharge ? "opacity-100" : "opacity-0"}`}>
+            <div className="animate-dramatic-zoom">
+              <div className="parchment p-8 max-w-2xl mx-auto">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <CourtSeal className="w-6 h-6 text-gold-500" />
+                  <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-gold-500">The Charge</span>
+                  <CourtSeal className="w-6 h-6 text-gold-500" />
+                </div>
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-court-100 leading-tight mb-4">
+                  {trial.case_title}
+                </h1>
+                <OrnateDivider className="mb-4" />
+                <p className="text-court-300 text-base leading-relaxed font-legal tracking-wide italic drop-cap">
+                  &ldquo;{trial.charge}&rdquo;
+                </p>
+              </div>
 
-            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-court-100 leading-tight mb-4">
-              <TypewriterText text={trial.case_title} speed={20} delay={600} tag="span" />
-            </h1>
+              {/* Case summary */}
+              <div className="parchment-ruled p-6 mt-6 text-left max-w-lg mx-auto">
+                <div className="flex items-center gap-2 mb-4 relative z-10">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gold-500">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Filing Summary</span>
+                </div>
+                <div className="space-y-3 relative z-10">
+                  <SummaryRow label="Proposal" value={trial.intake.proposal} />
+                  <SummaryRow label="Serves" value={trial.intake.audience} />
+                  <SummaryRow label="Timing" value={trial.intake.whyNow} />
+                  <SummaryRow label="Cost" value={trial.intake.tradeoff} />
+                </div>
+              </div>
 
-            <OrnateDivider className="mb-5" />
-
-            <div className="max-w-xl mx-auto">
-              <p className="text-court-300 text-base sm:text-lg mt-4 leading-relaxed font-legal tracking-wide italic drop-cap">
-                &ldquo;{trial.charge}&rdquo;
-              </p>
+              {/* Proceed CTA */}
+              <div className="text-center mt-8">
+                <Link
+                  href={`/trial/prosecution?id=${trial.id}`}
+                  className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+                >
+                  Hear the prosecution
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
             </div>
-          </div>
-
-          {/* Charges */}
-          <div className={`parchment-ruled p-6 mb-12 transition-all duration-700 delay-300 ${revealed ? "opacity-100" : "opacity-0"}`}>
-            <div className="flex items-center gap-2 mb-4 relative z-10">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gold-500">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">The Charges — Based on the Filing</span>
-            </div>
-            <div className="space-y-3 relative z-10">
-              <SummaryRow label="Proposal" value={trial.intake.proposal} />
-              <SummaryRow label="Serves" value={trial.intake.audience} />
-              <SummaryRow label="Timing" value={trial.intake.whyNow} />
-              <SummaryRow label="Cost" value={trial.intake.tradeoff} />
-            </div>
-          </div>
-
-          {/* Proceed CTA */}
-          <div className={`text-center animate-fade-in-up delay-500 ${revealed ? "" : "opacity-0"}`}>
-            <Link
-              href={`/trial/prosecution?id=${trial.id}`}
-              className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
-            >
-              Hear the prosecution
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
-            <p className="text-court-600 text-[10px] mt-3 font-mono uppercase tracking-[0.2em]">
-              The People&apos;s Skeptic will make the case against
-            </p>
           </div>
         </div>
       </main>
+
+      {/* Dialogue box - bailiff */}
+      {revealed && !showCharge && (
+        <DialogueBox
+          portrait={<BailiffPortrait size="thumb" reaction="neutral" />}
+          name="Bailiff"
+          text={bailiffDialogues[dialogueIndex]}
+          color="#a67c00"
+          typingSpeed={25}
+          onComplete={handleDialogueComplete}
+          showContinue={showContinue}
+        />
+      )}
+
+      {/* Click to advance overlay */}
+      {showContinue && (
+        <div
+          className="fixed inset-0 z-30 cursor-pointer"
+          onClick={advanceDialogue}
+        />
+      )}
     </div>
   );
 }

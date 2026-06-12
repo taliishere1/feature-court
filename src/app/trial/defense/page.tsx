@@ -1,19 +1,29 @@
 "use client";
 
-import { Suspense, useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { CourtSeal, StageProgress, useSoundEffects, ObjectionStamp } from "@/components/court-components";
+import { CourtSeal, StageProgress, CourtroomBackground, DefensePortrait, DialogueBox, EvidenceCard, ObjectionOverlay, useSoundEffects } from "@/components/court-components";
 
 function DefenseContent() {
   const searchParams = useSearchParams();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [objectionIdx, setObjectionIdx] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [dialogueIndex, setDialogueIndex] = useState(0);
+  const [showEvidence, setShowEvidence] = useState(false);
+  const [showContinue, setShowContinue] = useState(false);
+  const [objectionActive, setObjectionActive] = useState(false);
+  const [objectionArg, setObjectionArg] = useState<number | null>(null);
+  const [showNext, setShowNext] = useState(false);
   const { playGavelKnock, playPaperRustle } = useSoundEffects();
   const mounted = useRef(false);
+
+  const defenseDialogues = [
+    `If my colleague is done with the theatrics... let me tell you why this matters.`,
+    `Here's what has been overlooked. These are the reasons this move makes sense.`,
+  ];
 
   useEffect(() => {
     mounted.current = true;
@@ -32,16 +42,57 @@ function DefenseContent() {
     return () => { mounted.current = false; };
   }, [searchParams, playGavelKnock]);
 
-  const handleObjection = (idx: number) => {
-    setObjectionIdx(idx);
-    setTimeout(() => setObjectionIdx(null), 800);
-  };
+  const handleDialogueComplete = useCallback(() => {
+    if (dialogueIndex < defenseDialogues.length - 1) {
+      setShowContinue(true);
+    } else {
+      setShowEvidence(true);
+    }
+  }, [dialogueIndex, defenseDialogues.length]);
+
+  const advanceDialogue = useCallback(() => {
+    if (dialogueIndex < defenseDialogues.length - 1) {
+      setDialogueIndex((i) => i + 1);
+      setShowContinue(false);
+    }
+  }, [dialogueIndex, defenseDialogues.length]);
+
+  const handleEvidenceClick = useCallback((idx: number) => {
+    if (objectionActive) return;
+    setObjectionActive(true);
+    setObjectionArg(idx);
+    setTimeout(() => {
+      setObjectionActive(false);
+      setObjectionArg(null);
+      if (idx === (trial?.defense.arguments.length || 0) - 1) {
+        setShowNext(true);
+      }
+    }, 1500);
+  }, [objectionActive, trial]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.key === " " || e.key === "Enter") && showContinue) {
+        e.preventDefault();
+        advanceDialogue();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showContinue, advanceDialogue]);
+
+  useEffect(() => {
+    if (showEvidence) playPaperRustle();
+  }, [showEvidence, playPaperRustle]);
 
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
   return (
-    <div className="min-h-screen flex flex-col wood-panel">
+    <div className="min-h-screen flex flex-col wood-panel relative">
+      <CourtroomBackground opacity={0.1} />
+      <ObjectionOverlay active={objectionActive} side="defense" />
+
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href={`/trial/prosecution?id=${trial.id}`} className="flex items-center gap-2 group">
@@ -50,16 +101,11 @@ function DefenseContent() {
             </svg>
             <span className="text-[10px] text-court-400 group-hover:text-court-200 font-mono uppercase tracking-[0.15em] transition-colors">Back</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gold-500">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-            </svg>
-            <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">The Defense</span>
-          </div>
+          <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">The Defense</span>
         </div>
       </header>
 
-      <main className="flex-1 px-6 py-12 relative z-10">
+      <main className="flex-1 px-6 py-12 relative z-10 pb-36">
         <div className="max-w-3xl mx-auto animate-page-enter">
           <div className="text-center mb-4">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 3 of 5</span>
@@ -67,70 +113,82 @@ function DefenseContent() {
 
           <StageProgress current={3} />
 
-          <div className={`text-center mb-8 transition-all duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
-            <div className="inline-flex items-center gap-4 border border-court-700 rounded-sm px-6 py-3 bg-court-900/60 animate-card-lift">
-              <div className="w-10 h-10 rounded-full border-2 border-gold-500/50 flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gold-400">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" />
-                </svg>
-              </div>
-              <div className="text-left">
-                <h2 className="font-serif text-base text-court-100">The Advocate</h2>
-                <p className="text-court-600 text-[10px] font-mono uppercase tracking-[0.15em]">True believer, sharp optimist</p>
+          {/* Defense identity badge */}
+          {revealed && (
+            <div className="text-center mb-6 animate-fade-in-up">
+              <div className="inline-flex items-center gap-3 border border-court-700 rounded-sm px-5 py-2.5 bg-court-900/60">
+                <DefensePortrait size="thumb" />
+                <div className="text-left">
+                  <h2 className="font-serif text-sm text-court-100">The Advocate</h2>
+                  <p className="text-court-600 text-[9px] font-mono uppercase tracking-[0.15em]">True believer, sharp optimist</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          <div className={`parchment-ruled p-6 mb-8 transition-all duration-700 delay-100 ${revealed ? "opacity-100" : "opacity-0"}`}>
-            <div className="flex items-center gap-2 mb-3 relative z-10">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Opening Statement</span>
-            </div>
-            <div className="border-l-2 border-gold-500/60 pl-4 relative z-10">
-              <p className="text-court-200 text-base leading-relaxed font-legal tracking-wide italic">
+          {/* Opening statement */}
+          {revealed && (
+            <div className="parchment-ruled p-5 mb-6 animate-fade-in-up max-w-lg mx-auto">
+              <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
+              <p className="text-court-200 text-sm leading-relaxed font-legal italic relative z-10">
                 &ldquo;{trial.defense.opening}&rdquo;
               </p>
-              <p className="text-court-600 text-[10px] font-mono uppercase tracking-[0.2em] mt-3">— The Defense</p>
             </div>
-          </div>
+          )}
 
-          <div className="space-y-3">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-4 animate-fade-in-up stagger-2">Rebuttals</span>
-            {trial.defense.arguments.map((arg, i) => (
-              <div
-                key={i}
-                className="group parchment-ruled p-4 animate-evidence-slide relative overflow-hidden cursor-pointer"
-                style={{ animationDelay: `${0.25 + i * 0.15}s` }}
-                onClick={() => handleObjection(i)}
+          {/* Evidence cards */}
+          {showEvidence && (
+            <div className="space-y-3 max-w-2xl mx-auto">
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500 text-center mb-4">Click each exhibit to examine</p>
+              {trial.defense.arguments.map((arg, i) => (
+                <EvidenceCard
+                  key={i}
+                  exhibit={String(i + 1)}
+                  side="defense"
+                  index={i}
+                  onClick={() => handleEvidenceClick(i)}
+                >
+                  {arg}
+                </EvidenceCard>
+              ))}
+            </div>
+          )}
+
+          {/* Next button */}
+          {showNext && (
+            <div className="text-center mt-8 animate-fade-in-up">
+              <Link
+                href={`/trial/cross?id=${trial.id}`}
+                className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+                onClick={() => playPaperRustle()}
               >
-                {objectionIdx === i && <ObjectionStamp active />}
-                <div className="flex gap-4 relative z-10">
-                  <span className="font-mono text-[10px] text-gold-500/80 mt-0.5 shrink-0">
-                    Rebuttal {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="text-court-200 text-sm leading-relaxed font-legal">{arg}</span>
-                </div>
-                <div className="absolute bottom-1 right-2 opacity-0 group-hover:opacity-40 transition-opacity">
-                  <span className="font-mono text-[8px] text-court-500 uppercase tracking-[0.1em]">Click to object</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-12 animate-fade-in-up stagger-5">
-            <Link
-              href={`/trial/cross?id=${trial.id}`}
-              className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
-              onClick={() => playPaperRustle()}
-            >
-              Cross-examination
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
-            <p className="text-court-600 text-[10px] mt-3 font-mono uppercase tracking-[0.2em]">The court wants to hear from you</p>
-          </div>
+                Cross-examination
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          )}
         </div>
       </main>
+
+      {/* Dialogue box - defense */}
+      {revealed && !showNext && (
+        <>
+          <DialogueBox
+            portrait={<DefensePortrait size="thumb" reaction={dialogueIndex === 0 ? "serious" : "neutral"} />}
+            name="The Advocate"
+            text={defenseDialogues[dialogueIndex]}
+            color="#2563eb"
+            typingSpeed={30}
+            onComplete={handleDialogueComplete}
+            showContinue={showContinue}
+          />
+          {showContinue && (
+            <div className="fixed inset-0 z-30 cursor-pointer" onClick={advanceDialogue} />
+          )}
+        </>
+      )}
     </div>
   );
 }

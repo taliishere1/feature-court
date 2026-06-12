@@ -515,20 +515,26 @@ export function TypewriterText({
   delay = 0,
   className = "",
   tag: Tag = "p",
+  onComplete,
 }: {
   text: string;
   speed?: number;
   delay?: number;
   className?: string;
   tag?: "p" | "h1" | "h2" | "h3" | "span" | "div";
+  onComplete?: () => void;
 }) {
   const [displayed, setDisplayed] = useState("");
   const [started, setStarted] = useState(false);
+  const completedRef = useRef(false);
 
   useEffect(() => {
+    setDisplayed("");
+    setStarted(false);
+    completedRef.current = false;
     const timer = setTimeout(() => setStarted(true), delay);
     return () => clearTimeout(timer);
-  }, [delay]);
+  }, [delay, text]);
 
   useEffect(() => {
     if (!started) return;
@@ -536,10 +542,16 @@ export function TypewriterText({
     const interval = setInterval(() => {
       i++;
       setDisplayed(text.slice(0, i));
-      if (i >= text.length) clearInterval(interval);
+      if (i >= text.length) {
+        clearInterval(interval);
+        if (!completedRef.current) {
+          completedRef.current = true;
+          onComplete?.();
+        }
+      }
     }, speed);
     return () => clearInterval(interval);
-  }, [started, text, speed]);
+  }, [started, text, speed, onComplete]);
 
   return (
     <Tag className={className}>
@@ -928,6 +940,380 @@ export function ObjectionStamp({ active, onComplete }: { active: boolean; onComp
         <div className="px-8 py-4 border-4 border-red-700 bg-red-900/30 rotate-[-8deg]">
           <p className="font-serif text-3xl font-black tracking-[0.2em] text-red-600">OBJECTION!</p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Courtroom Background (SVG Scene) ───
+
+export function CourtroomBackground({ opacity = 0.12 }: { opacity?: number }) {
+  return (
+    <div className="courtroom-bg" style={{ opacity }}>
+      <svg
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+        className="w-full h-full"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* Vaulted ceiling */}
+        <path d="M0 0 L1440 0 L1440 120 Q1080 30 720 60 Q360 30 0 120 Z" fill="currentColor" opacity="0.08" />
+        <path d="M0 120 Q360 30 720 60 Q1080 30 1440 120 L1440 140 Q1080 50 720 80 Q360 50 0 140 Z" fill="currentColor" opacity="0.05" />
+
+        {/* Left column */}
+        <rect x="60" y="60" width="40" height="840" rx="4" fill="currentColor" opacity="0.06" />
+        <rect x="50" y="55" width="60" height="12" rx="2" fill="currentColor" opacity="0.1" />
+        <rect x="50" y="893" width="60" height="12" rx="2" fill="currentColor" opacity="0.1" />
+        <rect x="65" y="72" width="30" height="826" fill="currentColor" opacity="0.03" />
+
+        {/* Right column */}
+        <rect x="1340" y="60" width="40" height="840" rx="4" fill="currentColor" opacity="0.06" />
+        <rect x="1330" y="55" width="60" height="12" rx="2" fill="currentColor" opacity="0.1" />
+        <rect x="1330" y="893" width="60" height="12" rx="2" fill="currentColor" opacity="0.1" />
+        <rect x="1345" y="72" width="30" height="826" fill="currentColor" opacity="0.03" />
+
+        {/* Left column capital */}
+        <path d="M40 55 L140 55 L130 70 L50 70 Z" fill="currentColor" opacity="0.08" />
+        <path d="M40 888 L140 888 L130 900 L50 900 Z" fill="currentColor" opacity="0.08" />
+
+        {/* Right column capital */}
+        <path d="M1300 55 L1400 55 L1390 70 L1310 70 Z" fill="currentColor" opacity="0.08" />
+        <path d="M1300 888 L1400 888 L1390 900 L1310 900 Z" fill="currentColor" opacity="0.08" />
+
+        {/* Judge's bench */}
+        <rect x="540" y="300" width="360" height="180" rx="4" fill="currentColor" opacity="0.08" />
+        <rect x="530" y="300" width="380" height="8" rx="2" fill="currentColor" opacity="0.12" />
+        <rect x="550" y="310" width="340" height="6" fill="currentColor" opacity="0.06" />
+        <rect x="540" y="460" width="360" height="5" fill="currentColor" opacity="0.1" />
+        {/* Bench seal */}
+        <circle cx="720" cy="390" r="36" stroke="currentColor" opacity="0.15" strokeWidth="1" />
+        <circle cx="720" cy="390" r="24" stroke="currentColor" opacity="0.1" strokeWidth="0.5" />
+        {/* Bench front panel */}
+        <rect x="580" y="400" width="280" height="60" rx="2" fill="currentColor" opacity="0.04" />
+
+        {/* Light beam */}
+        <path d="M600 0 L840 0 L960 300 L480 300 Z" fill="currentColor" opacity="0.03" />
+        <path d="M640 0 L800 0 L880 300 L560 300 Z" fill="currentColor" opacity="0.02" />
+
+        {/* Floor */}
+        <rect x="0" y="600" width="1440" height="300" fill="currentColor" opacity="0.04" />
+        <rect x="0" y="600" width="1440" height="2" fill="currentColor" opacity="0.08" />
+        {/* Floor lines */}
+        <line x1="0" y1="660" x2="1440" y2="660" stroke="currentColor" opacity="0.03" strokeWidth="0.5" />
+        <line x1="0" y1="720" x2="1440" y2="720" stroke="currentColor" opacity="0.03" strokeWidth="0.5" />
+        <line x1="0" y1="780" x2="1440" y2="780" stroke="currentColor" opacity="0.03" strokeWidth="0.5" />
+        <line x1="0" y1="840" x2="1440" y2="840" stroke="currentColor" opacity="0.03" strokeWidth="0.5" />
+      </svg>
+    </div>
+  );
+}
+
+// ─── Character Portraits ───
+
+type PortraitReaction = "neutral" | "serious" | "objecting";
+
+function PortraitHead({ expression = "neutral", color }: { expression: PortraitReaction; color: string }) {
+  const eyebrowY = expression === "serious" || expression === "objecting" ? "-1" : "0";
+  const mouthD = expression === "objecting"
+    ? "M 38 54 Q 42 56 46 54"
+    : expression === "serious"
+    ? "M 38 54 Q 42 53 46 54"
+    : "M 38 53 Q 42 56 46 53";
+  const mouthStroke = expression === "objecting" ? "2" : "1.5";
+  return (
+    <>
+      {/* Head shape */}
+      <ellipse cx="42" cy="38" rx="16" ry="20" fill={color} opacity="0.3" />
+      <ellipse cx="42" cy="38" rx="16" ry="20" stroke={color} strokeWidth="1.5" fill="none" opacity="0.5" />
+      {/* Eyes */}
+      <circle cx="36" cy="34" r="2" fill={color} opacity="0.7" />
+      <circle cx="48" cy="34" r="2" fill={color} opacity="0.7" />
+      {/* Eyebrows */}
+      <line x1="32" y1={eyebrowY === "-1" ? "27" : "28"} x2="39" y2={eyebrowY === "-1" ? "26" : "28"} stroke={color} strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
+      <line x1="45" y1={eyebrowY === "-1" ? "26" : "28"} x2="52" y2={eyebrowY === "-1" ? "27" : "28"} stroke={color} strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
+      {/* Mouth */}
+      <path d={mouthD} stroke={color} strokeWidth={mouthStroke} fill="none" opacity="0.6" strokeLinecap="round" />
+    </>
+  );
+}
+
+export function ProsecutorPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: "full" | "thumb" }) {
+  const w = size === "full" ? 180 : 48;
+  const h = size === "full" ? 200 : 52;
+  const s = size === "full" ? 1 : 0.26;
+  const color = "#b91c1c";
+  return (
+    <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
+      {/* Shoulders / Suit */}
+      <path d="M 10 90 L 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60 L 74 90 Z" fill={color} opacity="0.2" />
+      <path d="M 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60" stroke={color} strokeWidth="1.5" fill="none" opacity="0.4" />
+      {/* Pointing arm */}
+      <path d="M 66 60 Q 80 45 74 35" stroke={color} strokeWidth="2.5" fill="none" opacity="0.5" strokeLinecap="round" />
+      <circle cx="74" cy="34" r="3" fill={color} opacity="0.5" />
+      {/* Collar */}
+      <path d="M 36 48 L 42 58 L 48 48" stroke={color} strokeWidth="1" fill="none" opacity="0.4" />
+      {/* Lapel badge */}
+      <circle cx="42" cy="62" r="3" stroke={color} strokeWidth="0.8" fill={color} opacity="0.15" />
+      {/* Head */}
+      <PortraitHead expression={reaction === "objecting" ? "objecting" : reaction} color={color} />
+    </svg>
+  );
+}
+
+export function DefensePortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: "full" | "thumb" }) {
+  const w = size === "full" ? 180 : 48;
+  const h = size === "full" ? 200 : 52;
+  const color = "#2563eb";
+  return (
+    <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
+      {/* Shoulders / Suit */}
+      <path d="M 10 90 L 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60 L 74 90 Z" fill={color} opacity="0.15" />
+      <path d="M 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60" stroke={color} strokeWidth="1.5" fill="none" opacity="0.35" />
+      {/* Open palms gesture */}
+      <path d="M 66 55 Q 78 48 80 40" stroke={color} strokeWidth="2" fill="none" opacity="0.45" strokeLinecap="round" />
+      <path d="M 18 55 Q 6 48 4 40" stroke={color} strokeWidth="2" fill="none" opacity="0.45" strokeLinecap="round" />
+      <circle cx="80" cy="39" r="3" fill={color} opacity="0.4" />
+      <circle cx="4" cy="39" r="3" fill={color} opacity="0.4" />
+      {/* Collar */}
+      <path d="M 36 48 L 42 58 L 48 48" stroke={color} strokeWidth="1" fill="none" opacity="0.4" />
+      {/* Lapel badge */}
+      <circle cx="42" cy="62" r="3" stroke={color} strokeWidth="0.8" fill={color} opacity="0.15" />
+      {/* Head */}
+      <PortraitHead expression={reaction === "objecting" ? "serious" : reaction} color={color} />
+    </svg>
+  );
+}
+
+export function BailiffPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: "full" | "thumb" }) {
+  const w = size === "full" ? 180 : 48;
+  const h = size === "full" ? 200 : 52;
+  const color = "#a67c00";
+  return (
+    <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
+      {/* Shoulders / Uniform */}
+      <path d="M 10 90 L 16 58 Q 18 52 24 50 L 60 50 Q 66 52 68 58 L 74 90 Z" fill={color} opacity="0.15" />
+      <path d="M 16 58 Q 18 52 24 50 L 60 50 Q 66 52 68 58" stroke={color} strokeWidth="1.5" fill="none" opacity="0.35" />
+      {/* Collar / Tie */}
+      <path d="M 36 46 L 42 56 L 48 46" fill={color} opacity="0.1" />
+      <path d="M 40 48 L 42 56 L 44 48" stroke={color} strokeWidth="0.8" fill="none" opacity="0.3" />
+      {/* Badge */}
+      <circle cx="42" cy="60" r="4" stroke={color} strokeWidth="0.6" fill={color} opacity="0.1" />
+      {/* Head */}
+      <PortraitHead expression={reaction} color={color} />
+    </svg>
+  );
+}
+
+export function JudgePortrait({ reaction = "neutral" }: { reaction?: PortraitReaction }) {
+  const color = "#6b7280";
+  return (
+    <svg width={180} height={200} viewBox="0 0 84 96" className="shrink-0">
+      {/* Robe */}
+      <path d="M 8 96 L 14 52 Q 16 46 22 44 L 62 44 Q 68 46 70 52 L 76 96 Z" fill={color} opacity="0.12" />
+      <path d="M 14 52 Q 16 46 22 44 L 62 44 Q 68 46 70 52" stroke={color} strokeWidth="1.5" fill="none" opacity="0.3" />
+      {/* Collar / Judicial tabs */}
+      <rect x="36" y="44" width="12" height="3" rx="1" fill={color} opacity="0.08" />
+      <rect x="34" y="48" width="16" height="2" rx="1" fill={color} opacity="0.06" />
+      {/* Head */}
+      <PortraitHead expression={reaction} color={color} />
+      {/* Gray hair / judicial look */}
+      <ellipse cx="42" cy="22" rx="14" ry="4" fill={color} opacity="0.08" />
+    </svg>
+  );
+}
+
+// ─── Dialogue Box ───
+
+interface DialogueBoxProps {
+  portrait: React.ReactNode;
+  name: string;
+  text: string;
+  color?: string;
+  typingSpeed?: number;
+  onComplete?: () => void;
+  showContinue?: boolean;
+}
+
+export function DialogueBox({
+  portrait,
+  name,
+  text,
+  color = "#d4af37",
+  typingSpeed = 25,
+  onComplete,
+  showContinue = true,
+}: DialogueBoxProps) {
+  const [typing, setTyping] = useState(false);
+  const [typingDone, setTypingDone] = useState(false);
+
+  useEffect(() => {
+    setTypingDone(false);
+    if (text) {
+      setTyping(true);
+    }
+  }, [text]);
+
+  const handleTypeComplete = useCallback(() => {
+    setTypingDone(true);
+    onComplete?.();
+  }, [onComplete]);
+
+  return (
+    <div className="dialogue-box">
+      <div className="dialogue-box-inner">
+        <div className="dialogue-box-top">
+          <div className="w-8 h-8 rounded-full border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
+            style={{ borderColor: `${color}40` }}>
+            {portrait}
+          </div>
+          <span className="dialogue-box-name" style={{ color }}>{name}</span>
+        </div>
+        <div className="dialogue-box-body">
+          {typing && (
+            <TypewriterText text={text} speed={typingSpeed} tag="span" onComplete={handleTypeComplete} />
+          )}
+        </div>
+        {showContinue && typingDone && (
+          <div className="dialogue-box-continue">▼ Continue</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Objection Overlay (Full-Screen) ───
+
+export function ObjectionOverlay({
+  active,
+  side = "prosecution",
+  onComplete,
+}: {
+  active: boolean;
+  side?: "prosecution" | "defense";
+  onComplete?: () => void;
+}) {
+  const [showing, setShowing] = useState(false);
+
+  useEffect(() => {
+    if (active) {
+      setShowing(true);
+      const timer = setTimeout(() => {
+        setShowing(false);
+        onComplete?.();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [active, onComplete]);
+
+  if (!showing) return null;
+
+  const flashColor = side === "prosecution" ? "rgba(185, 28, 28, 0.5)" : "rgba(37, 99, 235, 0.5)";
+  const textColor = side === "prosecution" ? "text-red-500" : "text-blue-500";
+  const borderColor = side === "prosecution" ? "border-red-700" : "border-blue-700";
+
+  return (
+    <div className="fixed inset-0 z-50 pointer-events-none">
+      <div
+        className="absolute inset-0 objection-flash"
+        style={{ background: flashColor }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center objection-screen-shake">
+        <div className={`objection-text ${textColor} ${borderColor}`}>
+          <div className={`border-4 ${borderColor} px-8 py-4`}
+            style={{ background: side === "prosecution" ? "rgba(185,28,28,0.1)" : "rgba(37,99,235,0.1)" }}>
+            <p className="font-serif text-5xl sm:text-6xl font-black tracking-[0.2em]">
+              {side === "prosecution" ? "OBJECTION!" : "HOLD IT!"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Evidence Card ───
+
+interface EvidenceCardProps {
+  exhibit: string;
+  children: React.ReactNode;
+  side?: "prosecution" | "defense";
+  index?: number;
+  onClick?: () => void;
+}
+
+export function EvidenceCard({ exhibit, children, side = "prosecution", index = 0, onClick }: EvidenceCardProps) {
+  const accentColor = side === "prosecution" ? "#b91c1c" : "#2563eb";
+  const animClass = side === "prosecution" ? "animate-card-left" : "animate-card-right";
+  const delay = index * 0.15;
+
+  return (
+    <div
+      className={`evidence-card ${animClass} ${onClick ? "cursor-pointer" : ""}`}
+      style={
+        {
+          "--card-accent": accentColor,
+          animationDelay: `${delay}s`,
+        } as React.CSSProperties
+      }
+      onClick={onClick}
+    >
+      <div className="evidence-card-header">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="1.5">
+          {side === "prosecution" ? (
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeLinecap="round" />
+          ) : (
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" />
+          )}
+        </svg>
+        <span className="font-mono text-[9px] uppercase tracking-[0.2em]" style={{ color: accentColor }}>
+          {side === "prosecution" ? `Prosecution Exhibit ${exhibit}` : `Defense Exhibit ${exhibit}`}
+        </span>
+      </div>
+      <div className="p-4">
+        <p className="text-court-200 text-sm leading-relaxed font-legal">{children}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Dramatic Pause ───
+
+export function DramaticPause({
+  active,
+  onComplete,
+}: {
+  active: boolean;
+  onComplete?: () => void;
+}) {
+  const [dots, setDots] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      setDots(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setDots((d) => {
+        if (d >= 3) {
+          clearInterval(interval);
+          onComplete?.();
+          return 3;
+        }
+        return d + 1;
+      });
+    }, 400);
+    return () => clearInterval(interval);
+  }, [active, onComplete]);
+
+  if (!active) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div className="animate-fade-in-up">
+        <p className="font-mono text-2xl text-court-400 tracking-[0.5em]">
+          {". ".repeat(dots).trim() || "."}
+        </p>
       </div>
     </div>
   );
