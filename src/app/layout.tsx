@@ -21,8 +21,7 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className="min-h-full antialiased">
         <AmbientCourtHum />
-        <DustMotes count={8} />
-        <div className="light-beam" />
+        <DustMotes count={6} />
         {children}
       </body>
     </html>

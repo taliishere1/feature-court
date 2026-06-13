@@ -2,114 +2,71 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { CourtSeal, OrnateDivider, GoldParticles, InteractiveGavel, CourtroomBackground, useSoundEffects } from "@/components/court-components";
+import { CourtSeal, InteractiveGavel, useSoundEffects } from "@/components/court-components";
 import { Ruling } from "@/lib/types";
 
 export default function LandingPage() {
-  const { playGavelKnock, playSwoosh, playPaperRustle } = useSoundEffects();
+  const { playGavelKnock, playPaperRustle } = useSoundEffects();
   const [casesTried, setCasesTried] = useState(0);
-  const [shaking, setShaking] = useState(false);
   const [streak, setStreak] = useState(0);
   const [lastRuling, setLastRuling] = useState<Ruling | null>(null);
 
-  // Cinematic intro sequence
-  const [intro, setIntro] = useState({
-    dark: true,
-    title: false,
-    tagline: false,
-    cta: false,
-  });
-
-  const hasPlayedRef = useRef(false);
+  // Intro sequence
+  const [intro, setIntro] = useState({ content: false, cta: false });
+  const played = useRef(false);
 
   useEffect(() => {
     const count = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
     setCasesTried(count);
-    const s = parseInt(localStorage.getItem("fc-streak") || "0", 10);
-    setStreak(s);
+    setStreak(parseInt(localStorage.getItem("fc-streak") || "0", 10));
     setLastRuling(localStorage.getItem("fc-last-ruling") as Ruling | null);
   }, []);
 
   useEffect(() => {
-    if (hasPlayedRef.current) return;
-    hasPlayedRef.current = true;
-
-    const isReturning = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10) > 0;
-    const speed = isReturning ? 0.5 : 1;
-
-    const t0 = setTimeout(() => setIntro((s) => ({ ...s, dark: false })), 200 * speed);
-    const t1 = setTimeout(() => {
-      playGavelKnock();
-      setIntro((s) => ({ ...s, title: true }));
+    if (played.current) return;
+    played.current = true;
+    const speed = casesTried > 0 ? 0.5 : 1;
+    setTimeout(() => {
+      setIntro((s) => ({ ...s, content: true }));
       playPaperRustle();
-    }, 600 * speed);
-    const t2 = setTimeout(() => {
-      setIntro((s) => ({ ...s, tagline: true }));
-    }, 1600 * speed);
-    const t3 = setTimeout(() => {
+    }, 200 * speed);
+    setTimeout(() => {
       setIntro((s) => ({ ...s, cta: true }));
-      playSwoosh();
-    }, 2800 * speed);
-
-    return () => {
-      [t0, t1, t2, t3].forEach(clearTimeout);
-    };
-  }, [playGavelKnock, playPaperRustle, playSwoosh]);
+    }, 800 * speed);
+  }, [casesTried, playPaperRustle]);
 
   const handleGavelStrike = () => {
     playGavelKnock();
-    setShaking(true);
-    setTimeout(() => setShaking(false), 500);
   };
 
   return (
-    <div className={`min-h-screen flex flex-col wood-panel relative ${shaking ? "animate-screen-shake" : ""}`}>
-      <GoldParticles count={15} />
-      <CourtroomBackground opacity={0.08} />
-
-      {/* Initial dark overlay */}
-      {intro.dark && (
-        <div className="fixed inset-0 bg-court-950 z-50 animate-fade-in-down" />
-      )}
-
-      {/* Light beam sweep */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden opacity-[0.02]">
-        <div className="absolute inset-0 animate-light-sweep bg-gradient-to-r from-transparent via-gold-500 to-transparent" />
-      </div>
+    <div className="min-h-screen flex flex-col app-bg relative">
 
       {/* Header */}
-      <header
-        className={`border-b border-court-800 relative z-10 transition-all duration-1000 ${
-          intro.title ? "opacity-100" : "opacity-0 -translate-y-4"
-        }`}
-      >
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CourtSeal className="w-9 h-9 text-gold-500" />
-            <span className="font-display text-lg text-court-100 tracking-wider">
-              Feature Court
-            </span>
+      <header className={`relative z-10 border-b border-court-800/50 transition-all duration-700 ${intro.content ? "opacity-100" : "opacity-0"}`}>
+        <div className="max-w-5xl mx-auto px-6 h-12 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <CourtSeal className="w-5 h-5 text-gold-400" />
+            <span className="text-sm font-serif text-court-200 tracking-wide">Feature Court</span>
           </div>
           <div className="flex items-center gap-4">
             {casesTried > 0 && (
-              <span className="text-[10px] font-mono text-court-500 uppercase tracking-[0.15em] hidden sm:block">
-                <span className="text-gold-500">{casesTried}</span> case{casesTried !== 1 ? "s" : ""} tried
+              <span className="text-[11px] text-court-500">
+                <span className="text-gold-400">{casesTried}</span> case{casesTried !== 1 ? "s" : ""}
               </span>
             )}
-            <Link href="/gallery" className="group flex items-center gap-2 text-sm text-court-400 hover:text-court-200 transition-colors">
+            <Link href="/gallery" className="text-xs text-court-500 hover:text-court-200 transition-colors">
               Hall of Verdicts
             </Link>
           </div>
         </div>
         {casesTried > 0 && (
-          <div className="border-t border-court-800 px-6 py-1.5">
-            <div className="max-w-6xl mx-auto flex items-center justify-between">
-              <p className="text-[10px] text-court-500 font-legal italic">
-                Welcome back, Your Honor. You&apos;ve been busy.
-              </p>
+          <div className="border-t border-court-800/50 px-6 py-1">
+            <div className="max-w-5xl mx-auto flex items-center justify-between">
+              <p className="text-[10px] text-court-500 italic font-body">Welcome back, Your Honor.</p>
               {streak >= 2 && lastRuling && (
-                <p className="text-[9px] text-court-500 font-mono tracking-wide hidden sm:block">
-                  <span className="text-gold-500">{streak}</span>-case {lastRuling} streak
+                <p className="text-[10px] text-court-500">
+                  <span className="text-gold-400">{streak}</span>-case {lastRuling} streak
                 </p>
               )}
             </div>
@@ -118,89 +75,81 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-16 relative z-10">
-        <div className="max-w-3xl mx-auto text-center">
-          {/* Pulsing gavel */}
-          <div className={`mb-4 transition-all duration-700 ${intro.title ? "opacity-100" : "opacity-0"}`}>
-            <InteractiveGavel onStrike={handleGavelStrike} className="mx-auto" />
-          </div>
-          <p className={`text-court-600 text-[9px] font-mono uppercase tracking-[0.3em] mb-6 transition-all duration-700 ${intro.title && !intro.tagline ? "opacity-100" : "opacity-0"}`}>
-            Click the gavel
-          </p>
+      <main className="flex-1 flex flex-col items-center justify-center px-6 relative z-10">
+        <div className="max-w-lg mx-auto text-center">
 
-          {/* Main Title */}
-          <div className={`mb-4 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0"}`}>
-            {intro.title && (
-              <h1
-                className="animate-title-reveal font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-normal tracking-[0.04em] leading-[1.0] text-transparent bg-clip-text"
-                style={{ backgroundImage: "linear-gradient(135deg, #c4b098 0%, #d4af37 30%, #f0d974 50%, #d4af37 70%, #c4b098 100%)" }}
-              >
-                FEATURE COURT
-              </h1>
-            )}
-          </div>
-
-          {/* Tagline */}
-          <div className={`transition-all duration-700 ${intro.tagline ? "opacity-100 animate-tagline" : "opacity-0"}`}>
-            <div className="flex items-center gap-3 justify-center mb-6">
-              <svg width="60" height="10" viewBox="0 0 60 10" className="text-gold-500 animate-banner-left" fill="none">
-                <path d="M0 5 Q15 0 30 5 Q45 10 60 5" stroke="currentColor" strokeWidth="0.5" />
-              </svg>
-              <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.35em] text-gold-500/80">
+          {/* Gavel + Title */}
+          <div className={`transition-all duration-700 ${intro.content ? "animate-fade-up" : "opacity-0"}`}>
+            <div className="mb-5">
+              <div className="inline-flex items-center gap-2 text-[10px] text-court-500 font-mono uppercase tracking-[0.25em] mb-4">
+                <span className="accent-bar-left inline-block" />
                 In the Court of Product Decisions
-              </span>
-              <svg width="60" height="10" viewBox="0 0 60 10" className="text-gold-500 animate-banner-right" fill="none">
-                <path d="M0 5 Q15 0 30 5 Q45 10 60 5" stroke="currentColor" strokeWidth="0.5" />
-              </svg>
+                <span className="accent-bar-left inline-block" />
+              </div>
+
+              <h1 className="font-serif text-4xl sm:text-5xl text-court-100 leading-[1.1] mb-4 tracking-tight">
+                Feature Court
+              </h1>
+
+              <p className="text-sm text-court-400 leading-relaxed max-w-sm mx-auto font-body">
+                Put your product decision on trial. The prosecution tears it apart. The defense fights for it. You deliver the verdict.
+              </p>
             </div>
-            <p className="text-court-400 text-base sm:text-lg max-w-lg mx-auto mb-10 leading-relaxed font-legal tracking-wide">
-              The prosecution tears it apart. The defense fights for it.
-              <br />
-              <span className="text-court-200">You deliver the verdict.</span>
-            </p>
           </div>
 
-          {/* CTA buttons */}
-          <div className={`flex flex-col sm:flex-row gap-4 justify-center items-center ${intro.cta ? "animate-cta-rise" : "opacity-0 pointer-events-none"}`}>
-            <Link href="/file" className="group inline-flex items-center gap-2.5 px-9 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press animate-card-lift">
+          {/* CTA */}
+          <div className={`flex items-center justify-center gap-3 transition-all duration-700 ${intro.cta ? "animate-fade-up" : "opacity-0 pointer-events-none"}`}>
+            <Link
+              href="/file"
+              className="btn btn-primary"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <line x1="9" y1="15" x2="15" y2="15" />
+              </svg>
               File a case
             </Link>
-            <Link href="/trial/arraignment?sample=0" className="group inline-flex items-center gap-2.5 px-9 py-3.5 border border-court-600 hover:border-court-400 text-court-300 hover:text-court-100 font-medium rounded-sm transition-all duration-200 text-base animate-button-press animate-card-lift">
-              Try a sample case
+            <Link
+              href="/trial/arraignment?sample=0"
+              className="btn btn-secondary"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 3L14 7L18 8L15 11L16 15L12 13L8 15L9 11L6 8L10 7L12 3Z" />
+              </svg>
+              Sample case
             </Link>
           </div>
 
           {casesTried > 0 && intro.cta && (
-            <p className="text-court-600 text-[9px] font-mono uppercase tracking-[0.2em] mt-6 animate-fade-in-up">
-              You have presided over <span className="text-gold-500 font-semibold">{casesTried}</span> case{casesTried !== 1 ? "s" : ""}
-              {streak >= 2 && lastRuling && (
-                <> · <span className="text-court-500">{streak}</span>-case streak</>
-              )}
+            <p className="text-[10px] text-court-500 font-mono mt-5">
+              {casesTried} case{casesTried !== 1 ? "s" : ""} presided
+              {streak >= 2 && lastRuling && <> &middot; {streak}-{lastRuling} streak</>}
             </p>
           )}
         </div>
 
         {/* How it works */}
-        <div className={`mt-20 max-w-4xl w-full transition-all duration-1000 ${intro.cta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-          <OrnateDivider className="mb-10" />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className={`max-w-2xl w-full mt-16 transition-all duration-1000 ${intro.cta ? "opacity-100" : "opacity-0"}`}>
+          <div className="accent-bar mb-6" />
+          <div className="grid grid-cols-3 gap-4">
             {steps.map((step, i) => (
-              <div key={step.title} className="group text-center p-6 border border-court-800/60 hover:border-court-600/60 transition-all duration-300 rounded-sm animate-card-lift" style={{ animationDelay: `${i * 0.15}s` }}>
-                <div className="w-10 h-10 mx-auto mb-4 rounded-full border border-court-700 flex items-center justify-center group-hover:border-gold-500/50 transition-colors bench-accent">
-                  <span className="font-mono text-xs text-gold-500">{String(i + 1).padStart(2, "0")}</span>
-                </div>
-                <h3 className="font-serif text-base font-semibold text-court-200 mb-2">{step.title}</h3>
-                <p className="text-court-500 text-sm leading-relaxed">{step.description}</p>
+              <div key={step.title} className="stage-card text-center">
+                <p className="text-[10px] font-mono text-gold-500/60 mb-2">{String(i + 1).padStart(2, "0")}</p>
+                <h3 className="text-xs font-medium text-court-200 mb-1 font-serif">{step.title}</h3>
+                <p className="text-[11px] text-court-500 leading-relaxed font-body">{step.description}</p>
               </div>
             ))}
           </div>
         </div>
       </main>
 
-      <footer className="border-t border-court-800 px-6 py-4 relative z-10">
-        <div className="max-w-6xl mx-auto flex items-center justify-between text-court-600 text-xs">
-          <span className="font-mono">© Feature Court · World Product Day Hackathon 2026</span>
-          <span className="font-mono tracking-wider">All Rise · All Ship · All Kill</span>
+      {/* Footer */}
+      <footer className="border-t border-court-800/50 px-6 py-3 relative z-10">
+        <div className="max-w-5xl mx-auto flex items-center justify-between text-[10px] text-court-600">
+          <span className="font-mono">Feature Court &middot; 2026</span>
+          <span className="font-mono tracking-wider">All Rise</span>
         </div>
       </footer>
     </div>
@@ -208,7 +157,7 @@ export default function LandingPage() {
 }
 
 const steps = [
-  { title: "Present Your Case", description: "File the product decision you're wrestling with. The court needs the facts." },
-  { title: "Hear the Arguments", description: "The prosecution tears it down. The defense fights for it. Cross-examination follows." },
-  { title: "Deliver Your Verdict", description: "Rule from the bench. Ship it, kill it, revise it, or call a mistrial." },
+  { title: "Present Your Case", description: "File the product decision you're wrestling with." },
+  { title: "Hear the Arguments", description: "Both sides make their case. Cross-examination follows." },
+  { title: "Deliver Your Verdict", description: "Ship it, kill it, revise it, or call a mistrial." },
 ];
