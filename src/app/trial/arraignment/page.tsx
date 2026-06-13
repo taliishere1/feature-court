@@ -103,8 +103,8 @@ function ArraignmentContent() {
             <div key={i} className="w-2 h-8 rounded-full bg-gold-500/60 animate-pulse" style={{ animationDelay: `${i * 0.15}s` }} />
           ))}
         </div>
-        <div className="font-display text-base text-court-400 animate-pulse">The court is assembling...</div>
-        <div className="font-serif text-court-500 text-sm italic animate-fade-in-up">All riiise...</div>
+        <div className="font-serif text-court-400 text-lg animate-pulse">The court is assembling...</div>
+        <div className="font-legal text-court-500 text-sm italic animate-fade-in-up">All riiise...</div>
       </div>
     );
   }
@@ -124,7 +124,7 @@ function ArraignmentContent() {
 
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="font-display text-sm text-court-300 hover:text-court-100 transition-colors tracking-wider">
+          <Link href="/" className="font-serif text-base text-court-300 hover:text-court-100 transition-colors">
             Feature Court
           </Link>
           <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em]">
@@ -165,7 +165,7 @@ function ArraignmentContent() {
                   <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-gold-500">The Charge</span>
                   <CourtSeal className="w-6 h-6 text-gold-500" />
                 </div>
-                <h1 className="font-display text-3xl sm:text-4xl font-normal tracking-[0.04em] text-court-100 leading-tight mb-4">
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-court-100 leading-tight mb-4">
                   {trial.case_title}
                 </h1>
                 <OrnateDivider className="mb-4" />
@@ -244,7 +244,7 @@ export default function ArraignmentPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center wood-panel">
-        <div className="font-display text-base text-court-400 animate-pulse">The court is assembling...</div>
+        <div className="font-serif text-court-400 text-lg animate-pulse">The court is assembling...</div>
       </div>
     }>
       <ArraignmentContent />
