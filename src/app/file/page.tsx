@@ -51,7 +51,7 @@ export default function FileCasePage() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 py-12 relative z-10">
+      <main className="flex-1 px-6 py-8 relative z-10">
         <div className="max-w-xl mx-auto animate-page-enter">
           {/* Letterhead with ceremonial border */}
           <div className="text-center border-b border-court-700 pb-5 mb-8">
