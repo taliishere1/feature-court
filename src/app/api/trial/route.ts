@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TrialData, IntakeForm, SAMPLE_CASES } from '@/lib/types';
+import { TrialData, IntakeForm } from '@/lib/types';
 import { setTrial, getTrial } from '@/lib/store';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -126,10 +126,8 @@ export async function POST(request: NextRequest) {
   try {
     let trialData: Omit<TrialData, 'id' | 'createdAt' | 'isSample'>;
 
-    // Try to use AI if API key is configured, otherwise fall back to mock
-    if (process.env.ANTHROPIC_API_KEY) {
-      trialData = await generateWithClaude(intake);
-    } else if (process.env.OPENAI_API_KEY) {
+    // Use OpenAI if key is configured, otherwise fall back to mock
+    if (process.env.OPENAI_API_KEY) {
       trialData = await generateWithOpenAI(intake);
     } else {
       trialData = generateMockTrial(intake);
@@ -159,67 +157,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function generateWithClaude(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
-  const systemPrompt = `You are the engine behind FEATURE COURT, where product decisions go on trial. You write three distinct voices: the BAILIFF (dry, theatrical), the PROSECUTION ("The People's Skeptic," a 15-year staff PM who hunts weak metrics, missing users, scope creep, and "why now"), and the DEFENSE ("The Advocate," a sharp optimist who steel-mans the upside). Be specific to THIS decision — never generic. Every argument must reference the actual proposal, user, timing, or tradeoff given. Be witty but substantive: the humor rides on top of a real product insight. Do not invent facts about real companies, real metrics, or real events. Ground everything only in what the user provided. The "useful" fields (real_risk, strongest_ignored_argument, test_first) must be genuinely actionable — what a great staff PM would actually say. Return ONLY valid JSON matching this schema — no prose outside the JSON.
-
-{
-  "charge": "string — the Bailiff's formal reading of what's on trial",
-  "case_title": "string — e.g. 'The People v. The Dark Mode Toggle'",
-  "prosecution": {
-    "opening": "string — one sharp line",
-    "arguments": ["string", "string", "string"]
-  },
-  "defense": {
-    "opening": "string — one sharp line",
-    "arguments": ["string", "string", "string"]
-  },
-  "cross_examination": ["string — a pointed question", "string — another"],
-  "verdicts": {
-    "ship": { "sentence": "funny one-liner", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },
-    "kill": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },
-    "revise": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },
-    "mistrial": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." }
-  }
-}`;
-
-  const userMessage = `Generate a Feature Court trial for this product decision:
-
-Proposal: ${intake.proposal}
-Who it serves: ${intake.audience}
-Why now: ${intake.whyNow}
-Tradeoff: ${intake.tradeoff}`;
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY!,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Claude API error: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  const content = data.content?.[0]?.text || '';
-
-  // Extract JSON from the response
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('No JSON found in Claude response');
-
-  const parsed = JSON.parse(jsonMatch[0]);
-  return validateTrialJSON(parsed, intake);
-}
-
 async function generateWithOpenAI(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
   const systemPrompt = `You are the engine behind FEATURE COURT, where product decisions go on trial. You write three distinct voices: the BAILIFF (dry, theatrical), the PROSECUTION ("The People's Skeptic," a 15-year staff PM who hunts weak metrics, missing users, scope creep, and "why now"), and the DEFENSE ("The Advocate," a sharp optimist who steel-mans the upside). Be specific to THIS decision. Every argument must reference the actual proposal, user, timing, or tradeoff given. Be witty but substantive. Do not invent facts about real companies or real events. Return ONLY valid JSON matching the schema.`;
 
@@ -230,7 +167,7 @@ async function generateWithOpenAI(intake: IntakeForm): Promise<Omit<TrialData, '
       'Authorization': `Bearer ${process.env.OPENAI_API_KEY!}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.4',
       messages: [
         { role: 'system', content: systemPrompt },
         {
