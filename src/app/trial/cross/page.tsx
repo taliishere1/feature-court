@@ -17,7 +17,7 @@ const BAILIFF_REACTIONS: Record<string, Record<number, string>> = {
   },
   contrarian: {
     0: "Bold. The prosecution will have words about this.",
-    1: "Interesting angle. The Advocate would agree.",
+    1: "Interesting angle. Edward \"Edge\" Case would agree.",
   },
   practical: {
     0: "A pragmatic answer. The numbers matter here.",
@@ -263,7 +263,7 @@ function CrossContent() {
         <>
           <DialogueBox
             portrait={<BailiffPortrait size="thumb" />}
-            name="Bailiff Blackstone"
+            name="Sprint"
             text={bailiffText}
             color="#a67c00"
             typingSpeed={25}
