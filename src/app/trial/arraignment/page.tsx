@@ -19,8 +19,8 @@ function ArraignmentContent() {
   const { playGavelKnock, playPaperRustle, playSwoosh } = useSoundEffects();
 
   const bailiffDialogues = [
-    "All rise for the Honorable Court of Product Decisions...",
-    "The court is now in session. The Honorable You presiding.",
+    "All rise for the Honorable Judge of Product Decisions...",
+    "The court is now in session. The Honorable Judge of Product Decisions presiding.",
   ];
 
   useEffect(() => {
@@ -211,7 +211,7 @@ function ArraignmentContent() {
       {revealed && !showCharge && (
         <DialogueBox
           portrait={<BailiffPortrait size="thumb" reaction="neutral" />}
-          name="Bailiff"
+          name="Bailiff J. Docket"
           text={bailiffDialogues[dialogueIndex]}
           color="#a67c00"
           typingSpeed={25}

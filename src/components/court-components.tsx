@@ -952,7 +952,7 @@ export function LoadingCeremony({ message = "The court is assembling..." }: { me
         {/* Bailiff quote cycling */}
         <div className="font-legal text-court-500 text-sm italic max-w-md text-center animate-fade-in-up">
           {gavelCount === 0 && "All riiise..."}
-          {gavelCount === 1 && "The Honorable Court is now in session..."}
+          {gavelCount === 1 && "The Honorable Judge of Product Decisions is now in session..."}
           {gavelCount === 2 && "May the evidence be presented fairly..."}
           {gavelCount >= 3 && "Proceed, counselor..."}
         </div>

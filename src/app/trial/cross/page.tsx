@@ -263,7 +263,7 @@ function CrossContent() {
         <>
           <DialogueBox
             portrait={<BailiffPortrait size="thumb" />}
-            name="Bailiff"
+            name="Bailiff J. Docket"
             text={bailiffText}
             color="#a67c00"
             typingSpeed={25}
