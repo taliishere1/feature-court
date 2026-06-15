@@ -45,7 +45,7 @@ export default function FileCasePage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            <span className="font-serif text-base text-court-300 group-hover:text-court-100 transition-colors">Feature Court</span>
+            <span className="font-display text-base text-gold-500">FEATURE COURT</span>
           </Link>
           <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em]">Form No. FC-001</span>
         </div>
@@ -58,7 +58,7 @@ export default function FileCasePage() {
             <div className="flex items-center justify-center gap-3 mb-3">
               <CourtSeal className="w-8 h-8 text-gold-500" />
               <div>
-                <h2 className="font-serif text-lg text-court-100 tracking-wide">Feature Court</h2>
+                <h2 className="font-display text-lg text-gold-500 tracking-tight">FEATURE COURT</h2>
                 <p className="text-[9px] text-court-600 font-mono uppercase tracking-[0.2em]">District of Product Decisions</p>
               </div>
               <CourtSeal className="w-8 h-8 text-gold-500" />

@@ -108,7 +108,7 @@ function RulingContent() {
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-3 mb-2 animate-fade-in-up">
               <CourtSeal className="w-7 h-7 text-gold-500" />
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-court-100">
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-gold-500">
                 How do you rule, Your Honor?
               </h1>
               <CourtSeal className="w-7 h-7 text-gold-500" />

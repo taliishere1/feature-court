@@ -160,7 +160,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            <span className="font-serif text-base text-court-300 group-hover:text-court-100 transition-colors">Feature Court</span>
+            <span className="font-display text-base text-gold-500">FEATURE COURT</span>
           </Link>
           <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">Final Verdict</span>
         </div>
@@ -219,7 +219,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <CourtSeal className="w-7 h-7 text-gold-500" />
                   <div>
-                    <p className="font-serif text-base text-court-100 tracking-wide">Feature Court</p>
+                    <p className="font-display text-base text-gold-500 tracking-tight">FEATURE COURT</p>
                     <p className="text-[8px] text-court-600 font-mono uppercase tracking-[0.25em]">District of Product Decisions</p>
                   </div>
                   <CourtSeal className="w-7 h-7 text-gold-500" />
@@ -232,7 +232,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
 
               {/* Case title */}
               <div className={`text-center mb-5 transition-all duration-1000 delay-200 relative z-10 ${ceremony.gavel ? "opacity-100" : "opacity-0"}`}>
-                <h1 className="font-serif text-lg sm:text-xl font-bold text-court-100 leading-tight">
+                <h1 className="font-display text-lg sm:text-xl font-bold text-gold-500 leading-tight">
                   {trial.case_title}
                 </h1>
               </div>

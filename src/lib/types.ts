@@ -49,24 +49,24 @@ export interface VerdictDisplay {
 
 export const SAMPLE_CASES: IntakeForm[] = [
   {
-    proposal: 'Build a mobile app for our SaaS analytics dashboard',
-    audience: 'Existing desktop power users who want to check metrics on the go',
-    whyNow: 'Competitors are launching mobile companions and our NPS is dropping among commuters',
-    tradeoff: '6 months of engineering time away from the core platform roadmap',
+    proposal: 'Switch our SaaS pricing from per-seat to usage-based billing',
+    audience: 'SMBs who churn when headcount grows, and enterprises who want pay-as-you-go',
+    whyNow: 'Our biggest competitor switched to usage-based pricing last quarter and we\'re losing 30% of enterprise evaluations to them',
+    tradeoff: '3-4 months of engineering on billing infrastructure + risk of short-term revenue decline during transition',
     gutCall: 'unsure',
   },
   {
-    proposal: 'Add a dark mode toggle to the product',
-    audience: 'All users who work late or have visual sensitivities',
-    whyNow: 'It\'s the #1 most requested feature in our feedback tool for 8 months straight',
-    tradeoff: 'Significant design system work across 200+ components with minimal revenue impact',
+    proposal: 'Add an AI-powered feature discovery assistant as a premium add-on tier',
+    audience: 'Enterprise power users who want personalized onboarding and workflow suggestions',
+    whyNow: 'Enterprise churn analysis shows 45% of users never discover core features within their first 30 days',
+    tradeoff: 'Dedicated ML team for 6 months + ongoing LLM inference costs that eat into the premium margin',
     gutCall: 'ship',
   },
   {
-    proposal: 'Cut the "comments" feature from our publishing platform',
-    audience: 'The 12% of power users who actively use comments',
-    whyNow: 'Comments generate 70% of moderation cost but only 2% of engagement time',
-    tradeoff: 'Losing a vocal community segment and potential engagement surface area',
+    proposal: 'Remove the free tier and require a credit card for trials',
+    audience: '~40K free-tier users who convert at 2%, and new acquisition top-of-funnel',
+    whyNow: 'Free tier infrastructure costs $80K/month and conversion has dropped from 8% to 2% over the last year',
+    tradeoff: 'Slowing new user acquisition by ~60% and risking negative brand perception in the dev community',
     gutCall: 'kill',
   },
 ];

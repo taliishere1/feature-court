@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&family=DM+Serif+Display:ital@0;1&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&display=swap');
 
 @import "tailwindcss";
 
@@ -35,11 +35,12 @@
   --color-stamp-revise: #b45309;
   --color-stamp-mistrial: #7c3aed;
 
+  --font-display: 'Playfair Display', Georgia, serif;
   --font-serif: 'DM Serif Display', Georgia, serif;
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
-  --font-legal: 'Cormorant Garamond', 'Georgia', serif;
-  --font-certificate: 'EB Garamond', 'Georgia', serif;
+  --font-sans: 'Cormorant Garamond', 'Georgia', serif;
+  --font-mono: 'Cormorant Garamond', 'Georgia', serif;
+  --font-legal: 'EB Garamond', 'Georgia', serif;
+  --font-certificate: 'Playfair Display', 'Georgia', serif;
 }
 
 /* ─── Base ─── */
@@ -438,11 +439,11 @@ body {
 
 .dialogue-box {
   position: fixed;
-  bottom: 0;
+  bottom: 2rem;
   left: 0;
   right: 0;
   z-index: 30;
-  padding: 1rem 1.5rem 2rem;
+  padding: 1rem 1.5rem;
   pointer-events: none;
 }
 
