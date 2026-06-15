@@ -211,7 +211,7 @@ function ArraignmentContent() {
       {revealed && !showCharge && (
         <DialogueBox
           portrait={<BailiffPortrait size="thumb" reaction="neutral" />}
-          name="Bailiff J. Docket"
+          name="Bailiff Blackstone"
           text={bailiffDialogues[dialogueIndex]}
           color="#a67c00"
           typingSpeed={25}

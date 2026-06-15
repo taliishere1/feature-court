@@ -119,8 +119,8 @@ function DefenseContent() {
               <div className="inline-flex items-center gap-3 border border-court-700 rounded-sm px-5 py-2.5 bg-court-900/60">
                 <DefensePortrait size="thumb" />
                 <div className="text-left">
-                  <h2 className="font-serif text-sm text-court-100">Sam Shepherd</h2>
-                  <p className="text-court-600 text-[9px] font-mono uppercase tracking-[0.15em]">Principal PM · The Product Champion</p>
+                  <h2 className="font-serif text-sm text-court-100">Atticus Quinn</h2>
+                  <p className="text-court-600 text-[9px] font-mono uppercase tracking-[0.15em]">The Defense</p>
                 </div>
               </div>
             </div>
@@ -177,7 +177,7 @@ function DefenseContent() {
         <>
           <DialogueBox
             portrait={<DefensePortrait size="thumb" reaction={dialogueIndex === 0 ? "serious" : "neutral"} />}
-            name="Sam Shepherd"
+            name="Atticus Quinn"
             text={defenseDialogues[dialogueIndex]}
             color="#2563eb"
             typingSpeed={30}
