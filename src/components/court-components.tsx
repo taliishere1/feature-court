@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import Image from "next/image";
 
 // ─── Sound Effects (Web Audio API) ───
 
@@ -1006,6 +1007,39 @@ export function CourtroomBackground({ opacity = 0.12 }: { opacity?: number }) {
         <line x1="0" y1="840" x2="1440" y2="840" stroke="currentColor" opacity="0.03" strokeWidth="0.5" />
       </svg>
     </div>
+  );
+}
+
+// ─── Character Image Loader ───
+
+function CharacterImage({
+  src,
+  alt,
+  width,
+  height,
+  children,
+}: {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  children: React.ReactNode;
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) return <>{children}</>;
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      className="shrink-0 object-contain"
+      unoptimized
+      onError={() => setHasError(true)}
+      priority
+    />
   );
 }
 

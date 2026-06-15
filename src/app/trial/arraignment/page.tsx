@@ -124,8 +124,8 @@ function ArraignmentContent() {
 
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="font-serif text-base text-court-300 hover:text-court-100 transition-colors">
-            Feature Court
+          <Link href="/" className="font-display text-base text-gold-500">
+            FEATURE COURT
           </Link>
           <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em]">
             Docket No. {trial.id.slice(0, 8).toUpperCase()}
@@ -133,7 +133,7 @@ function ArraignmentContent() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 py-8 relative z-10">
+      <main className="flex-1 px-6 pt-8 pb-48 relative z-10">
         <div className="max-w-3xl mx-auto animate-page-enter">
           <div className="text-center mb-6">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 1 of 5</span>

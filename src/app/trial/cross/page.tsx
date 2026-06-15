@@ -167,7 +167,7 @@ function CrossContent() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 py-8 relative z-10">
+      <main className="flex-1 px-6 pt-8 pb-48 relative z-10">
         <div className="max-w-3xl mx-auto animate-page-enter">
           <div className="text-center mb-4">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 4 of 5</span>

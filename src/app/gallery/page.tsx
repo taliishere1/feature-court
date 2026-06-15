@@ -74,7 +74,7 @@ export default function GalleryPage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            <span className="font-serif text-base text-court-300 group-hover:text-court-100 transition-colors">Feature Court</span>
+            <span className="font-display text-base text-gold-500">FEATURE COURT</span>
           </Link>
           <div className="flex items-center gap-4">
             {!loading && trials.length > 0 && (
@@ -95,7 +95,7 @@ export default function GalleryPage() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 py-16 relative z-10">
+      <main className="flex-1 px-6 py-8 relative z-10">
         <div className="max-w-6xl mx-auto animate-page-enter">
           {/* Header */}
           <div className="text-center mb-8">
@@ -103,7 +103,7 @@ export default function GalleryPage() {
               <CourtSeal className="w-8 h-8 text-gold-500" />
               <div>
                 <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-gold-500">The Docket</span>
-                <h1 className="font-serif text-3xl sm:text-4xl font-bold text-court-100 mt-1">
+                <h1 className="font-display text-3xl sm:text-4xl font-bold text-gold-500 mt-1">
                   Hall of Verdicts
                 </h1>
               </div>
