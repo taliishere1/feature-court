@@ -171,6 +171,25 @@ export function useSoundEffects() {
 // ─── Ornate Court Seal ───
 
 export function CourtSeal({ className = "w-12 h-12", animated = false }: { className?: string; animated?: boolean }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (!imgError) {
+    return (
+      <div className={`relative ${animated ? "animate-seal-appear" : ""}`}>
+        <Image
+          src="/images/seal.png"
+          alt="Court seal"
+          width={48}
+          height={48}
+          className={`${className} object-contain`}
+          unoptimized
+          onError={() => setImgError(true)}
+          priority
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`relative ${animated ? "animate-seal-appear" : ""}`}>
       <svg viewBox="0 0 100 100" fill="none" className={className}>
@@ -343,12 +362,36 @@ export function StageProgress({ current }: { current: number }) {
 
 export function InteractiveGavel({ onStrike, className = "" }: { onStrike?: () => void; className?: string }) {
   const [striking, setStriking] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const handleClick = () => {
     setStriking(true);
     onStrike?.();
     setTimeout(() => setStriking(false), 600);
   };
+
+  if (!imgError) {
+    return (
+      <button
+        onClick={handleClick}
+        className={`cursor-pointer focus:outline-none ${className}`}
+        aria-label="Strike gavel"
+      >
+        <div className={striking ? "animate-gavel-strike" : ""}>
+          <Image
+            src="/images/gavel.png"
+            alt="Gavel"
+            width={72}
+            height={72}
+            className="shrink-0 object-contain"
+            unoptimized
+            onError={() => setImgError(true)}
+            priority
+          />
+        </div>
+      </button>
+    );
+  }
 
   return (
     <button
@@ -949,6 +992,24 @@ export function ObjectionStamp({ active, onComplete }: { active: boolean; onComp
 // ─── Courtroom Background (SVG Scene) ───
 
 export function CourtroomBackground({ opacity = 0.12 }: { opacity?: number }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (!imgError) {
+    return (
+      <div className="courtroom-bg" style={{ opacity }}>
+        <Image
+          src="/images/courtroom.png"
+          alt="Courtroom"
+          fill
+          className="object-cover"
+          unoptimized
+          onError={() => setImgError(true)}
+          priority
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="courtroom-bg" style={{ opacity }}>
       <svg
@@ -1075,23 +1136,24 @@ function PortraitHead({ expression = "neutral", color }: { expression: PortraitR
 export function ProsecutorPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: "full" | "thumb" }) {
   const w = size === "full" ? 180 : 48;
   const h = size === "full" ? 200 : 52;
-  const s = size === "full" ? 1 : 0.26;
   const color = "#b91c1c";
   return (
-    <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
-      {/* Shoulders / Suit */}
-      <path d="M 10 90 L 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60 L 74 90 Z" fill={color} opacity="0.2" />
-      <path d="M 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60" stroke={color} strokeWidth="1.5" fill="none" opacity="0.4" />
-      {/* Pointing arm */}
-      <path d="M 66 60 Q 80 45 74 35" stroke={color} strokeWidth="2.5" fill="none" opacity="0.5" strokeLinecap="round" />
-      <circle cx="74" cy="34" r="3" fill={color} opacity="0.5" />
-      {/* Collar */}
-      <path d="M 36 48 L 42 58 L 48 48" stroke={color} strokeWidth="1" fill="none" opacity="0.4" />
-      {/* Lapel badge */}
-      <circle cx="42" cy="62" r="3" stroke={color} strokeWidth="0.8" fill={color} opacity="0.15" />
-      {/* Head */}
-      <PortraitHead expression={reaction === "objecting" ? "objecting" : reaction} color={color} />
-    </svg>
+    <CharacterImage src="/images/prosecutor.png" alt="Prosecutor" width={w} height={h}>
+      <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
+        {/* Shoulders / Suit */}
+        <path d="M 10 90 L 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60 L 74 90 Z" fill={color} opacity="0.2" />
+        <path d="M 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60" stroke={color} strokeWidth="1.5" fill="none" opacity="0.4" />
+        {/* Pointing arm */}
+        <path d="M 66 60 Q 80 45 74 35" stroke={color} strokeWidth="2.5" fill="none" opacity="0.5" strokeLinecap="round" />
+        <circle cx="74" cy="34" r="3" fill={color} opacity="0.5" />
+        {/* Collar */}
+        <path d="M 36 48 L 42 58 L 48 48" stroke={color} strokeWidth="1" fill="none" opacity="0.4" />
+        {/* Lapel badge */}
+        <circle cx="42" cy="62" r="3" stroke={color} strokeWidth="0.8" fill={color} opacity="0.15" />
+        {/* Head */}
+        <PortraitHead expression={reaction === "objecting" ? "objecting" : reaction} color={color} />
+      </svg>
+    </CharacterImage>
   );
 }
 
@@ -1100,22 +1162,24 @@ export function DefensePortrait({ reaction = "neutral", size = "full" }: { react
   const h = size === "full" ? 200 : 52;
   const color = "#2563eb";
   return (
-    <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
-      {/* Shoulders / Suit */}
-      <path d="M 10 90 L 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60 L 74 90 Z" fill={color} opacity="0.15" />
-      <path d="M 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60" stroke={color} strokeWidth="1.5" fill="none" opacity="0.35" />
-      {/* Open palms gesture */}
-      <path d="M 66 55 Q 78 48 80 40" stroke={color} strokeWidth="2" fill="none" opacity="0.45" strokeLinecap="round" />
-      <path d="M 18 55 Q 6 48 4 40" stroke={color} strokeWidth="2" fill="none" opacity="0.45" strokeLinecap="round" />
-      <circle cx="80" cy="39" r="3" fill={color} opacity="0.4" />
-      <circle cx="4" cy="39" r="3" fill={color} opacity="0.4" />
-      {/* Collar */}
-      <path d="M 36 48 L 42 58 L 48 48" stroke={color} strokeWidth="1" fill="none" opacity="0.4" />
-      {/* Lapel badge */}
-      <circle cx="42" cy="62" r="3" stroke={color} strokeWidth="0.8" fill={color} opacity="0.15" />
-      {/* Head */}
-      <PortraitHead expression={reaction === "objecting" ? "serious" : reaction} color={color} />
-    </svg>
+    <CharacterImage src="/images/defense.png" alt="Defense" width={w} height={h}>
+      <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
+        {/* Shoulders / Suit */}
+        <path d="M 10 90 L 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60 L 74 90 Z" fill={color} opacity="0.15" />
+        <path d="M 18 60 Q 20 55 25 52 L 59 52 Q 64 55 66 60" stroke={color} strokeWidth="1.5" fill="none" opacity="0.35" />
+        {/* Open palms gesture */}
+        <path d="M 66 55 Q 78 48 80 40" stroke={color} strokeWidth="2" fill="none" opacity="0.45" strokeLinecap="round" />
+        <path d="M 18 55 Q 6 48 4 40" stroke={color} strokeWidth="2" fill="none" opacity="0.45" strokeLinecap="round" />
+        <circle cx="80" cy="39" r="3" fill={color} opacity="0.4" />
+        <circle cx="4" cy="39" r="3" fill={color} opacity="0.4" />
+        {/* Collar */}
+        <path d="M 36 48 L 42 58 L 48 48" stroke={color} strokeWidth="1" fill="none" opacity="0.4" />
+        {/* Lapel badge */}
+        <circle cx="42" cy="62" r="3" stroke={color} strokeWidth="0.8" fill={color} opacity="0.15" />
+        {/* Head */}
+        <PortraitHead expression={reaction === "objecting" ? "serious" : reaction} color={color} />
+      </svg>
+    </CharacterImage>
   );
 }
 
@@ -1124,36 +1188,40 @@ export function BailiffPortrait({ reaction = "neutral", size = "full" }: { react
   const h = size === "full" ? 200 : 52;
   const color = "#a67c00";
   return (
-    <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
-      {/* Shoulders / Uniform */}
-      <path d="M 10 90 L 16 58 Q 18 52 24 50 L 60 50 Q 66 52 68 58 L 74 90 Z" fill={color} opacity="0.15" />
-      <path d="M 16 58 Q 18 52 24 50 L 60 50 Q 66 52 68 58" stroke={color} strokeWidth="1.5" fill="none" opacity="0.35" />
-      {/* Collar / Tie */}
-      <path d="M 36 46 L 42 56 L 48 46" fill={color} opacity="0.1" />
-      <path d="M 40 48 L 42 56 L 44 48" stroke={color} strokeWidth="0.8" fill="none" opacity="0.3" />
-      {/* Badge */}
-      <circle cx="42" cy="60" r="4" stroke={color} strokeWidth="0.6" fill={color} opacity="0.1" />
-      {/* Head */}
-      <PortraitHead expression={reaction} color={color} />
-    </svg>
+    <CharacterImage src="/images/bailiff.png" alt="Bailiff" width={w} height={h}>
+      <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
+        {/* Shoulders / Uniform */}
+        <path d="M 10 90 L 16 58 Q 18 52 24 50 L 60 50 Q 66 52 68 58 L 74 90 Z" fill={color} opacity="0.15" />
+        <path d="M 16 58 Q 18 52 24 50 L 60 50 Q 66 52 68 58" stroke={color} strokeWidth="1.5" fill="none" opacity="0.35" />
+        {/* Collar / Tie */}
+        <path d="M 36 46 L 42 56 L 48 46" fill={color} opacity="0.1" />
+        <path d="M 40 48 L 42 56 L 44 48" stroke={color} strokeWidth="0.8" fill="none" opacity="0.3" />
+        {/* Badge */}
+        <circle cx="42" cy="60" r="4" stroke={color} strokeWidth="0.6" fill={color} opacity="0.1" />
+        {/* Head */}
+        <PortraitHead expression={reaction} color={color} />
+      </svg>
+    </CharacterImage>
   );
 }
 
 export function JudgePortrait({ reaction = "neutral" }: { reaction?: PortraitReaction }) {
   const color = "#6b7280";
   return (
-    <svg width={180} height={200} viewBox="0 0 84 96" className="shrink-0">
-      {/* Robe */}
-      <path d="M 8 96 L 14 52 Q 16 46 22 44 L 62 44 Q 68 46 70 52 L 76 96 Z" fill={color} opacity="0.12" />
-      <path d="M 14 52 Q 16 46 22 44 L 62 44 Q 68 46 70 52" stroke={color} strokeWidth="1.5" fill="none" opacity="0.3" />
-      {/* Collar / Judicial tabs */}
-      <rect x="36" y="44" width="12" height="3" rx="1" fill={color} opacity="0.08" />
-      <rect x="34" y="48" width="16" height="2" rx="1" fill={color} opacity="0.06" />
-      {/* Head */}
-      <PortraitHead expression={reaction} color={color} />
-      {/* Gray hair / judicial look */}
-      <ellipse cx="42" cy="22" rx="14" ry="4" fill={color} opacity="0.08" />
-    </svg>
+    <CharacterImage src="/images/judge.png" alt="Judge" width={180} height={200}>
+      <svg width={180} height={200} viewBox="0 0 84 96" className="shrink-0">
+        {/* Robe */}
+        <path d="M 8 96 L 14 52 Q 16 46 22 44 L 62 44 Q 68 46 70 52 L 76 96 Z" fill={color} opacity="0.12" />
+        <path d="M 14 52 Q 16 46 22 44 L 62 44 Q 68 46 70 52" stroke={color} strokeWidth="1.5" fill="none" opacity="0.3" />
+        {/* Collar / Judicial tabs */}
+        <rect x="36" y="44" width="12" height="3" rx="1" fill={color} opacity="0.08" />
+        <rect x="34" y="48" width="16" height="2" rx="1" fill={color} opacity="0.06" />
+        {/* Head */}
+        <PortraitHead expression={reaction} color={color} />
+        {/* Gray hair / judicial look */}
+        <ellipse cx="42" cy="22" rx="14" ry="4" fill={color} opacity="0.08" />
+      </svg>
+    </CharacterImage>
   );
 }
 
