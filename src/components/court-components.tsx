@@ -10,9 +10,10 @@ export function useSoundEffects() {
 
   const getContext = useCallback(() => {
     if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const Ctx = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (Ctx) audioCtxRef.current = new Ctx();
     }
-    return audioCtxRef.current;
+    return audioCtxRef.current as AudioContext;
   }, []);
 
   const playGavelKnock = useCallback(() => {
@@ -1356,7 +1357,7 @@ export function EvidenceCard({ exhibit, children, side = "prosecution", index = 
         {
           "--card-accent": accentColor,
           animationDelay: `${delay}s`,
-        } as React.CSSProperties
+        } as React.CSSProperties & Record<string, string>
       }
       onClick={onClick}
     >

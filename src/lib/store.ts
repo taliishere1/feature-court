@@ -1,8 +1,7 @@
 import { TrialData } from './types';
 
 // In-memory store for trial data.
-// For a hackathon this is fine — data persists for the life of the server.
-// In production, swap this for Supabase or similar.
+// Trials persist for the life of the server process.
 const store = new Map<string, TrialData>();
 
 export function getTrial(id: string): TrialData | undefined {

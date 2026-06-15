@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
 import { CourtSeal, WaxSeal, ScrollworkBorder, OrnateDivider, GoldParticles, TypewriterText, ConfettiEffect, SignatureBlock, LegalRibbon, ToastNotification, useSoundEffects } from "@/components/court-components";
@@ -136,7 +136,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
   const accentColor = RULING_ACCENTS[ruling];
 
   return (
-    <div className="min-h-screen flex flex-col wood-panel relative" style={{ "--verdict-accent": accentColor } as React.CSSProperties}>
+    <div className="min-h-screen flex flex-col wood-panel relative" style={{ "--verdict-accent": accentColor } as React.CSSProperties & Record<string, string>}>
       <GoldParticles count={12} />
       <ConfettiEffect active={showConfetti} duration={4000} />
       {screenDim && (
