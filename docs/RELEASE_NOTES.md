@@ -27,6 +27,27 @@ These rules are **non-negotiable** and must be followed for every entry:
 =======================================================
 -->
 
+## 2026-06-15T18:00:00 — Security Enhancements
+
+**Category:** Security Enhancement
+
+**Summary:**
+We've made security enhancements to better protect your data.
+
+**Details:**
+- The app now handles unexpected errors gracefully with a user-friendly message instead of a blank screen.
+
+---
+
+## 2026-06-15T18:00:00 — Removed Unused Dependency
+
+**Category:** Removed
+
+**Summary:**
+Removed an unused library to improve load times and reduce the app's size.
+
+---
+
 
 
 <!--

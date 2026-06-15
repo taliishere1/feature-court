@@ -213,6 +213,8 @@ Return the JSON in this exact format:
 }
 
 function validateTrialJSON(json: any, intake: IntakeForm): Omit<TrialData, 'id' | 'createdAt' | 'isSample'> {
+  // json is typed as any intentionally — this is a runtime validation function
+  // that validates arbitrary JSON from external APIs. Every field is checked at runtime.
   const required = ['charge', 'case_title', 'prosecution', 'defense', 'cross_examination', 'verdicts'];
   for (const key of required) {
     if (!json[key]) throw new Error(`Missing required field: ${key}`);
