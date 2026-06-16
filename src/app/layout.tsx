@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: "Feature Court — Put your product decision on trial",
   description:
     "Your product decision goes on trial. The prosecution tears it apart, the defense fights for it, and you deliver the verdict.",
+  icons: {
+    icon: "/favicon.svg",
+  },
   openGraph: {
     title: "Feature Court",
     description: "Put your product decision on trial.",
