@@ -420,6 +420,7 @@ function twReducer(state: TWState, action: TWAction): TWState {
 
   useEffect(() => {
     dispatch({ type: 'RESET' });
+    completedRef.current = false;
     const timer = setTimeout(() => dispatch({ type: 'START' }), delay);
     return () => clearTimeout(timer);
   }, [delay, text]);
@@ -631,7 +632,7 @@ export function RubberStamp({
   color?: string;
   offset?: boolean;
 }) {
-  const rotation = offset ? 2 : 0;
+  const [rotation] = useState(() => offset ? (Math.random() - 0.5) * 6 : 0);
   const inkDx = 1;
   const inkDy = 1;
 
