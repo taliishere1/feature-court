@@ -72,7 +72,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center px-8 py-4 relative z-10">
+      <main className="flex-1 flex flex-col items-center px-8 pt-2 pb-12 relative z-10">
         <div className="max-w-2xl mx-auto text-center">
 
           {/* Title */}
