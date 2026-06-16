@@ -187,7 +187,7 @@ export default function FileCasePage() {
 
           {/* Footer */}
           <p className="text-center text-court-600 text-xs font-mono mt-6 uppercase tracking-wider">
-            By submitting, you consent to judgment by a jury of your peers.
+            By submitting, you consent to judgment by this court.
           </p>
         </div>
       </main>
