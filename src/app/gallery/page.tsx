@@ -71,6 +71,9 @@ export default function GalleryPage() {
                 <span className="text-gold-500">{trials.length}</span> case{trials.length !== 1 ? "s" : ""} on docket
               </span>
             )}
+            <Link href="/guide" className="text-[10px] text-court-400 hover:text-court-200 font-mono uppercase tracking-[0.15em] transition-colors">
+              Guide
+            </Link>
             <div className="flex items-center gap-2">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gold-500">
                 <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
