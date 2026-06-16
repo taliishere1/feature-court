@@ -94,7 +94,7 @@ function ArraignmentContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
         <div className="font-serif text-court-400 text-lg animate-pulse">The court is assembling...</div>
-        <div className="font-legal text-court-500 text-sm italic animate-fade-in-up">All riiise...</div>
+        <div className="font-legal text-court-400 text-base italic animate-fade-in-up">All riiise...</div>
       </div>
     );
   }

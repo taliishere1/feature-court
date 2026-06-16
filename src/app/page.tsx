@@ -131,7 +131,6 @@ export default function LandingPage() {
       <footer className="border-t border-court-800 px-8 py-4 relative z-10">
         <div className="max-w-6xl mx-auto flex items-center justify-between text-court-600 text-xs">
           <span>FEATURE COURT</span>
-          <span>All Rise &middot; All Ship &middot; All Kill</span>
         </div>
       </footer>
     </div>
