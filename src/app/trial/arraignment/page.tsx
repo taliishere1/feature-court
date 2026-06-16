@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
-import { StageProgress, TypewriterText, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
 
 function ArraignmentContent() {
   const searchParams = useSearchParams();

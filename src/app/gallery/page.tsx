@@ -36,10 +36,22 @@ const RULING_BG: Record<Ruling, string> = {
 export default function GalleryPage() {
   const [trials, setTrials] = useState<TrialData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [rulings, setRulings] = useState<RulingRecord[]>([]);
-  const [streak, setStreak] = useState(0);
-  const [lastRuling, setLastRuling] = useState<Ruling | null>(null);
-  const [casesTried, setCasesTried] = useState(0);
+  const [rulings] = useState<RulingRecord[]>(() => {
+    if (typeof window === "undefined") return [];
+    return JSON.parse(localStorage.getItem("fc-rulings") || "[]");
+  });
+  const [streak] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem("fc-streak") || "0", 10);
+  });
+  const [lastRuling] = useState<Ruling | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("fc-last-ruling") as Ruling | null;
+  });
+  const [casesTried] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
+  });
 
   useEffect(() => {
     fetch("/api/trial?all=true")
@@ -48,12 +60,6 @@ export default function GalleryPage() {
         setTrials(data.filter((t: TrialData) => !t.isSample));
       })
       .finally(() => setLoading(false));
-    // Load stored rulings from localStorage
-    const stored = JSON.parse(localStorage.getItem("fc-rulings") || "[]");
-    setRulings(stored);
-    setStreak(parseInt(localStorage.getItem("fc-streak") || "0", 10));
-    setLastRuling(localStorage.getItem("fc-last-ruling") as Ruling | null);
-    setCasesTried(parseInt(localStorage.getItem("fc-cases-tried") || "0", 10));
   }, []);
 
   const totalVerdicts = rulings.length;

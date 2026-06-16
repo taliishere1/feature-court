@@ -1,20 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { CourtroomBackground, CourtSeal, InteractiveGavel } from "@/components/court-components";
 import { Ruling } from "@/lib/types";
 
-function getIsReturning() {
-  if (typeof window === "undefined") return false;
-  return parseInt(localStorage.getItem("fc-cases-tried") || "0", 10) > 0;
-}
-
 export default function LandingPage() {
-  const [casesTried, setCasesTried] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [lastRuling, setLastRuling] = useState<Ruling | null>(null);
-  const isReturning = useRef(getIsReturning()).current;
+  const [casesTried] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
+  });
+  const [streak] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return parseInt(localStorage.getItem("fc-streak") || "0", 10);
+  });
+  const [lastRuling] = useState<Ruling | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("fc-last-ruling") as Ruling | null;
+  });
+  const [isReturning] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return parseInt(localStorage.getItem("fc-cases-tried") || "0", 10) > 0;
+  });
 
   const [intro, setIntro] = useState({
     dark: !isReturning,
@@ -22,13 +29,6 @@ export default function LandingPage() {
     tagline: isReturning,
     cta: isReturning,
   });
-
-  useEffect(() => {
-    const count = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
-    setCasesTried(count);
-    setStreak(parseInt(localStorage.getItem("fc-streak") || "0", 10));
-    setLastRuling(localStorage.getItem("fc-last-ruling") as Ruling | null);
-  }, []);
 
   useEffect(() => {
     if (isReturning) return;
@@ -132,7 +132,7 @@ export default function LandingPage() {
         {/* How it works */}
         <div className={`mt-24 max-w-3xl w-full transition-all duration-1000 ${intro.cta ? "opacity-100" : "opacity-0 translate-y-8"}`}>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {steps.map((step, i) => (
+            {steps.map((step) => (
               <div key={step.title} className="text-center">
                 <h3 className="font-serif text-lg font-medium text-gold-400 mb-2">{step.title}</h3>
                 <p className="text-court-400 text-base leading-relaxed">{step.description}</p>

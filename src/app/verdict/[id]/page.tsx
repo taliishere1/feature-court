@@ -38,8 +38,6 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
   const [ruling, setRuling] = useState<Ruling | null>(null);
   const [gutCall, setGutCall] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userSigned, setUserSigned] = useState(false);
-
   // Ceremony sequence stages
   const [ceremony, setCeremony] = useState({
     gavel: false,
@@ -53,7 +51,6 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
   const [showConfetti, setShowConfetti] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
-  const [screenDim, setScreenDim] = useState(false);
   const [showKillOverlay, setShowKillOverlay] = useState(false);
 
   useEffect(() => {
@@ -74,15 +71,14 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
     load();
   }, [params]);
 
+  // Derive screenDim from ceremony state instead of separate setState
+  const screenDim = !loading && trial && ruling && !ceremony.gavel;
+
   // Run ceremony sequence when loaded
   useEffect(() => {
     if (!loading && trial && ruling) {
-      setScreenDim(true);
-      const t1 = setTimeout(() => {}, 400);
-      const t2 = setTimeout(() => {}, 800);
       const t3 = setTimeout(() => {
         setCeremony((c) => ({ ...c, gavel: true }));
-        setScreenDim(false);
       }, 1200);
       const t4 = setTimeout(() => {
         setCeremony((c) => ({ ...c, stamp: true }));
@@ -111,7 +107,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
       }, 6000);
 
       return () => {
-        [t1, t2, t3, t4, t5, t6, t7, t8, t9].forEach(clearTimeout);
+        [t3, t4, t5, t6, t7, t8, t9].forEach(clearTimeout);
       };
     }
   }, [loading, trial, ruling]);
@@ -272,7 +268,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
 
               {/* Signature block — interactive, click to sign */}
               <div className={`relative z-10 ${ceremony.signature ? "opacity-100" : "opacity-0"}`}>
-                <SignatureBlock interactive onSign={() => setUserSigned(true)} />
+                <SignatureBlock interactive />
               </div>
 
               {/* Footer */}

@@ -27,6 +27,15 @@ These rules are **non-negotiable** and must be followed for every entry:
 =======================================================
 -->
 
+## 2026-06-16T18:00:00 — Improved AI Trial Quality
+
+**Category:** Improvement
+
+**Summary:**
+Courtroom trials are now generated using our latest AI model for sharper arguments, wittier dialogue, and more insightful verdicts.
+
+---
+
 ## 2026-06-15T18:00:00 — Security Enhancements
 
 **Category:** Security Enhancement

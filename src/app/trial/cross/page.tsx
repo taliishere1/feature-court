@@ -29,6 +29,12 @@ const BAILIFF_REACTIONS: Record<string, Record<number, string>> = {
   },
 };
 
+const BAILIFF_DIALOGUES: string[] = [
+  "The court has heard both sides. Before you rule, you must answer.",
+  "Let us begin with the first question.",
+  "Well reasoned. One more question to answer.",
+];
+
 const CHOICES: Record<number, { label: string; reaction: keyof typeof BAILIFF_REACTIONS; text: string }[]> = {
   0: [
     { label: "The metric goes flat", reaction: "honest", text: "I'll watch it closely and kill this if it dips." },
@@ -57,12 +63,6 @@ function CrossContent() {
   const [bailiffDialogueIndex, setBailiffDialogueIndex] = useState(0);
   const mounted = useRef(false);
 
-  const bailiffDialogues = [
-    "The court has heard both sides. Before you rule, you must answer.",
-    "The court awaits your answer...",
-    "One more question, Your Honor.",
-  ];
-
   useEffect(() => {
     mounted.current = true;
     const id = searchParams.get("id");
@@ -87,7 +87,7 @@ function CrossContent() {
     setShowContinue(false);
     if (bailiffDialogueIndex === 0) {
       setBailiffDialogueIndex(1);
-      setBailiffText(bailiffDialogues[1]);
+      setBailiffText(BAILIFF_DIALOGUES[1]);
       setShowQuestion(0);
     }
   }, [bailiffDialogueIndex]);
@@ -109,7 +109,7 @@ function CrossContent() {
       if (questionIdx === 0) {
         setShowQuestion(1);
         setBailiffDialogueIndex(2);
-        setBailiffText(bailiffDialogues[2]);
+        setBailiffText(BAILIFF_DIALOGUES[2]);
       }
     }, 1200);
   }, []);
