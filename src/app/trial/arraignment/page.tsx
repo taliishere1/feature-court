@@ -21,6 +21,7 @@ function ArraignmentContent() {
   const router = useRouter();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [dialogueIndex, setDialogueIndex] = useState(0);
@@ -39,7 +40,10 @@ function ArraignmentContent() {
     let cancelled = false;
 
     async function pollTrial(trialId: string) {
-      while (!cancelled) {
+      let retries = 0;
+      const MAX_RETRIES = 150; // 150 × 2s = 5 min — 5 sequential API calls can take a while
+
+      while (!cancelled && retries < MAX_RETRIES) {
         try {
           const res = await fetch(`/api/trial?id=${trialId}`);
           const data: TrialData = await res.json();
@@ -67,7 +71,14 @@ function ArraignmentContent() {
           // Retry on transient errors
         }
 
+        retries++;
         await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      // Exceeded retries — show error state
+      if (!cancelled) {
+        setError(true);
+        setLoading(false);
       }
     }
 
@@ -143,6 +154,24 @@ function ArraignmentContent() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [showContinue, advanceDialogue]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
+        <p className="text-court-400 font-serif">The court was unable to assemble this case.</p>
+        <p className="text-court-600 text-sm font-legal">Generation exceeded the time limit. Please try again.</p>
+        <Link
+          href="/file"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
+        >
+          File a new case
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </Link>
+      </div>
+    );
+  }
 
   if (loading) {
     const step = Math.min(generationStep, 5);
