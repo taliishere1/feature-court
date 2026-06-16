@@ -1079,6 +1079,15 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
     }
   }, [text]);
 
+  // If typing is false but text exists and we're not done, mark as done
+  // (covers the static <span> branch when TypewriterText doesn't run)
+  useEffect(() => {
+    if (text && !typing && !typingDone) {
+      tbDispatch({ type: 'FINISH_TYPING' });
+      onComplete?.();
+    }
+  }, [text, typing, typingDone, onComplete]);
+
   const handleTypeComplete = useCallback(() => {
     tbDispatch({ type: 'FINISH_TYPING' });
     onComplete?.();
