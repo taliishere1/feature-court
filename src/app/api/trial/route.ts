@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { TrialData, IntakeForm } from '@/lib/types';
 import { setTrial, getTrial } from '@/lib/store';
 import { v4 as uuidv4 } from 'uuid';
-import OpenAI from 'openai';
 
 // Simple in-memory rate limiting (IP-based)
 const ipCounts = new Map<string, { count: number; resetAt: number }>();
@@ -86,14 +85,14 @@ export async function GET(request: NextRequest) {
 
   if (all) {
     const { getPublicTrials } = await import('@/lib/store');
-    return NextResponse.json(getPublicTrials());
+    return NextResponse.json(await getPublicTrials());
   }
 
   if (!id) {
     return NextResponse.json({ error: 'Missing id' }, { status: 400 });
   }
 
-  const trial = getTrial(id);
+  const trial = await getTrial(id);
   if (!trial) {
     return NextResponse.json({ error: 'Trial not found' }, { status: 404 });
   }
@@ -127,9 +126,9 @@ export async function POST(request: NextRequest) {
   try {
     let trialData: Omit<TrialData, 'id' | 'createdAt' | 'isSample'>;
 
-    // Use OpenAI if key is configured, otherwise fall back to mock
-    if (process.env.OPENAI_API_KEY) {
-      trialData = await generateWithOpenAI(intake);
+    // Use Supabase Edge Function for OpenAI generation, fall back to mock
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY) {
+      trialData = await generateWithEdgeFunction(intake);
     } else {
       trialData = generateMockTrial(intake);
     }
@@ -141,7 +140,7 @@ export async function POST(request: NextRequest) {
       isSample,
     };
 
-    setTrial(id, trial);
+    await setTrial(id, trial);
     return NextResponse.json(trial);
   } catch (error) {
     console.error('AI generation failed:', error);
@@ -153,52 +152,34 @@ export async function POST(request: NextRequest) {
       createdAt: Date.now(),
       isSample,
     };
-    setTrial(id, trial);
+    await setTrial(id, trial);
     return NextResponse.json(trial);
   }
 }
 
-async function generateWithOpenAI(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
-  const openai = new OpenAI();
+async function generateWithEdgeFunction(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
 
-  const systemPrompt = `You are the engine behind FEATURE COURT, where product decisions go on trial. You write three distinct voices: the BAILIFF "Bailiff Sprint" (dry, theatrical, always rushing the docket), the PROSECUTION "Prosecutor Mary T. Bug" (sharp, relentless, exposes every flaw with surgical precision), and the DEFENSE "Defense Attorney Edward 'Edge' Case" (optimistic, principled, steel-mans the upside with conviction). Be specific to THIS decision. Every argument must reference the actual proposal, user, timing, or tradeoff given. Be witty but substantive. Do not invent facts about real companies or real events. Return ONLY valid JSON matching the schema.`;
-
-  const userInput = `Generate a Feature Court trial for this product decision:
-Proposal: ${intake.proposal}
-Who it serves: ${intake.audience}
-Why now: ${intake.whyNow}
-Tradeoff: ${intake.tradeoff}
-
-Return the JSON in this exact format:
-{
-  "charge": "...",
-  "case_title": "...",
-  "prosecution": { "opening": "...", "arguments": ["...", "...", "..."] },
-  "defense": { "opening": "...", "arguments": ["...", "...", "..."] },
-  "cross_examination": ["...", "..."],
-  "verdicts": {
-    "ship": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },
-    "kill": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },
-    "revise": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },
-    "mistrial": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." }
-  }
-}`;
-
-  const response = await openai.responses.create({
-    model: 'gpt-5.4',
-    instructions: systemPrompt,
-    input: userInput,
-    max_output_tokens: 8192,
+  const response = await fetch(`${supabaseUrl}/functions/v1/generate-trial`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseKey}`,
+    },
+    body: JSON.stringify({ intake }),
   });
 
-  const content = response.output_text;
-  if (!content) throw new Error('No content in OpenAI response');
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Edge function error ${response.status}: ${errText}`);
+  }
 
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('No JSON found in OpenAI response');
-
-  const parsed = JSON.parse(jsonMatch[0]);
-  return validateTrialJSON(parsed, intake);
+  const trialData = await response.json();
+  return {
+    intake,
+    ...trialData,
+  };
 }
 
 function validateTrialJSON(json: Record<string, unknown>, intake: IntakeForm): Omit<TrialData, 'id' | 'createdAt' | 'isSample'> {
