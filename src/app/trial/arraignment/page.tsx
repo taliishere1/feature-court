@@ -21,6 +21,7 @@ function ArraignmentContent() {
   const router = useRouter();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [dialogueIndex, setDialogueIndex] = useState(0);
@@ -39,7 +40,10 @@ function ArraignmentContent() {
     let cancelled = false;
 
     async function pollTrial(trialId: string) {
-      while (!cancelled) {
+      let retries = 0;
+      const MAX_RETRIES = 30; // 30 × 2s = 60s cap
+
+      while (!cancelled && retries < MAX_RETRIES) {
         try {
           const res = await fetch(`/api/trial?id=${trialId}`);
           const data: TrialData = await res.json();
@@ -50,17 +54,31 @@ function ArraignmentContent() {
           setGenerationStep(step);
           setTrial(data);
 
-          // Trial is ready when generationStep >= 5 or we have real charge data
-          if (step >= 5 || (data.charge && data.charge.length > 0)) {
+          // Trial is ready when generationStep >= 5
+          // For old trials without generationStep, check all key fields populated
+          const isReady = step >= 5 || (
+            data.charge && data.charge.length > 0 &&
+            data.case_title && data.case_title.length > 0 &&
+            data.prosecution?.opening && data.prosecution.opening.length > 0 &&
+            data.defense?.opening && data.defense.opening.length > 0
+          );
+
+          if (isReady) {
             setLoading(false);
             return;
           }
         } catch {
-          // Retry on error
+          // Retry on transient errors
         }
 
-        // Wait before next poll
+        retries++;
         await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      // Exceeded retries — show error state
+      if (!cancelled) {
+        setError(true);
+        setLoading(false);
       }
     }
 
@@ -136,6 +154,24 @@ function ArraignmentContent() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [showContinue, advanceDialogue]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
+        <p className="text-court-400 font-serif">The court was unable to assemble this case.</p>
+        <p className="text-court-600 text-sm font-legal">Generation timed out. Please try again.</p>
+        <Link
+          href="/file"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
+        >
+          File a new case
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </Link>
+      </div>
+    );
+  }
 
   if (loading) {
     const step = Math.min(generationStep, 5);
