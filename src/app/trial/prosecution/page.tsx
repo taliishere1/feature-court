@@ -10,6 +10,7 @@ function ProsecutionContent() {
   const searchParams = useSearchParams();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [objectionActive, setObjectionActive] = useState(false);
   const [showNext, setShowNext] = useState(false);
@@ -21,9 +22,11 @@ function ProsecutionContent() {
     if (!id) return;
 
     let cancelled = false;
+    let retries = 0;
+    const MAX_RETRIES = 150; // 150 × 2s = 5 min
 
     (async function poll() {
-      while (!cancelled) {
+      while (!cancelled && retries < MAX_RETRIES) {
         try {
           const res = await fetch(`/api/trial?id=${id}`);
           const data: TrialData = await res.json();
@@ -41,7 +44,12 @@ function ProsecutionContent() {
         } catch {
           // retry on transient errors
         }
+        retries++;
         await new Promise((r) => setTimeout(r, 2000));
+      }
+      if (!cancelled && mounted.current) {
+        setError(true);
+        setLoading(false);
       }
     })();
 
@@ -59,6 +67,7 @@ function ProsecutionContent() {
     }, 1500);
   }, [objectionActive, trial]);
 
+  if (error) return <TimeoutState />;
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
@@ -152,6 +161,16 @@ function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
       <div className="text-court-400 font-serif">Calling the first witness...</div>
+    </div>
+  );
+}
+
+function TimeoutState() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
+      <p className="text-court-400 font-serif">The prosecution is taking too long to assemble.</p>
+      <p className="text-court-600 text-sm font-legal">Generation exceeded the time limit. Please try again from the beginning.</p>
+      <Link href="/file" className="text-gold-500 hover:text-gold-400 underline">Return to the court</Link>
     </div>
   );
 }
