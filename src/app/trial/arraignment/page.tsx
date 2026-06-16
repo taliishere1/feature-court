@@ -27,6 +27,13 @@ function ArraignmentContent() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showCharge, setShowCharge] = useState(false);
   const [showContinue, setShowContinue] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+
+  const handleRetry = useCallback(() => {
+    setError(false);
+    setLoading(true);
+    setRetryKey((k) => k + 1);
+  }, []);
 
   const bailiffDialogues = [
     "All rise for the Honorable Judge Ship Itwell...",
@@ -41,7 +48,7 @@ function ArraignmentContent() {
 
     async function pollTrial(trialId: string) {
       let retries = 0;
-      const MAX_RETRIES = 150; // 150 × 2s = 5 min — 5 sequential API calls can take a while
+      const MAX_RETRIES = 30; // 30 × 2s = 60s — fail fast, offer retry
 
       while (!cancelled && retries < MAX_RETRIES) {
         try {
@@ -118,7 +125,7 @@ function ArraignmentContent() {
 
     init();
     return () => { cancelled = true; };
-  }, [searchParams, router]);
+  }, [searchParams, router, retryKey]);
 
   // Reveal on load
   useEffect(() => {
@@ -159,16 +166,28 @@ function ArraignmentContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
         <p className="text-court-400 font-serif">The court was unable to assemble this case.</p>
-        <p className="text-court-600 text-sm font-legal">Generation exceeded the time limit. Please try again.</p>
-        <Link
-          href="/file"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
-        >
-          File a new case
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
-        </Link>
+        <p className="text-court-600 text-sm font-legal">Generation exceeded the time limit. You can retry or start a new case.</p>
+        <div className="flex gap-3">
+          <button
+            onClick={handleRetry}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 4v6h6M23 20v-6h-6" />
+              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+            </svg>
+            Retry
+          </button>
+          <Link
+            href="/file"
+            className="inline-flex items-center gap-2 px-6 py-3 border border-gold-500/40 hover:border-gold-500 text-gold-400 hover:text-gold-300 font-semibold rounded-sm transition-all duration-200 text-sm"
+          >
+            File a new case
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
       </div>
     );
   }
