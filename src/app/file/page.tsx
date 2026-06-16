@@ -60,18 +60,9 @@ export default function FileCasePage() {
       </header>
 
       <main className="flex-1 px-6 py-8 relative z-10">
-        <div className="max-w-xl mx-auto animate-page-enter">
-          {/* Letterhead with ceremonial border */}
-          <div className="text-center border-b border-court-700 pb-4 mb-6">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div>
-                <h2 className="font-display text-lg text-gold-500 tracking-tight">FEATURE COURT</h2>
-                <p className="text-xs text-court-600 font-mono uppercase tracking-[0.2em]">District of Product Decisions</p>
-              </div>
-            </div>
-            <div className="ceremonial-border inline-block px-6 py-1">
-              <p className="font-mono text-xs text-gold-500 uppercase tracking-[0.25em]">Case Intake Form</p>
-            </div>
+        <div className="max-w-2xl mx-auto animate-page-enter">
+          <div className="text-center mb-6">
+            <p className="font-mono text-sm text-gold-500 uppercase tracking-[0.25em]">Case Intake Form</p>
             <p className="text-xs text-court-500 font-mono mt-1">Submit for Trial · All fields required</p>
           </div>
 
