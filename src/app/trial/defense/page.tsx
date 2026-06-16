@@ -80,7 +80,7 @@ function DefenseContent() {
                 <DefensePortrait size="thumb" />
                 <div className="text-left">
                   <h2 className="font-serif text-sm text-court-100">Defense Attorney Edward &ldquo;Edge&rdquo; Case</h2>
-                  <p className="text-court-600 text-[9px] font-mono uppercase tracking-[0.15em]">Principal PM · Edge case specialist</p>
+                  <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em]">Principal PM · Edge case specialist</p>
                 </div>
               </div>
             </div>
@@ -89,8 +89,8 @@ function DefenseContent() {
           {/* Opening statement */}
           {revealed && (
             <div className="parchment-ruled p-4 mb-4 animate-fade-in-up max-w-lg mx-auto">
-              <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500 block mb-1 relative z-10">Opening Statement</span>
-              <p className="text-court-200 text-sm leading-relaxed font-legal italic relative z-10">
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 block mb-1 relative z-10">Opening Statement</span>
+              <p className="text-court-200 text-base leading-relaxed font-legal italic relative z-10">
                 &ldquo;{trial.defense.opening}&rdquo;
               </p>
             </div>
@@ -99,7 +99,7 @@ function DefenseContent() {
           {/* Evidence cards */}
           {revealed && (
             <div className="space-y-2 max-w-2xl mx-auto">
-              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500 text-center mb-3">Click each exhibit to examine</p>
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 text-center mb-3">Click each exhibit to examine</p>
               {trial.defense.arguments.map((arg, i) => (
                 <EvidenceCard
                   key={i}

@@ -56,23 +56,23 @@ export default function FileCasePage() {
             <div className="flex items-center justify-center gap-2 mb-2">
               <div>
                 <h2 className="font-display text-lg text-gold-500 tracking-tight">FEATURE COURT</h2>
-                <p className="text-[9px] text-court-600 font-mono uppercase tracking-[0.2em]">District of Product Decisions</p>
+                <p className="text-xs text-court-600 font-mono uppercase tracking-[0.2em]">District of Product Decisions</p>
               </div>
             </div>
             <div className="ceremonial-border inline-block px-6 py-1">
-              <p className="font-mono text-[10px] text-gold-500 uppercase tracking-[0.25em]">Case Intake Form</p>
+              <p className="font-mono text-xs text-gold-500 uppercase tracking-[0.25em]">Case Intake Form</p>
             </div>
-            <p className="text-[9px] text-court-500 font-mono mt-1">Submit for Trial · All fields required</p>
+            <p className="text-xs text-court-500 font-mono mt-1">Submit for Trial · All fields required</p>
           </div>
 
           <div className="parchment-ruled p-6 md:p-8">
             <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
               <div className="animate-fade-in-up stagger-1">
                 <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
-                  <span className="text-gold-500 font-mono text-[10px]">§1</span>
+                  <span className="text-gold-500 font-mono text-xs">§1</span>
                   The proposal
                 </label>
-                <p className="text-court-500 text-[10px] mb-2 font-mono uppercase tracking-[0.15em]">What are you proposing to do?</p>
+                <p className="text-court-500 text-xs mb-2 font-mono uppercase tracking-[0.15em]">What are you proposing to do?</p>
                 <input
                   type="text"
                   required
@@ -85,10 +85,10 @@ export default function FileCasePage() {
 
               <div className="animate-fade-in-up stagger-2">
                 <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
-                  <span className="text-gold-500 font-mono text-[10px]">§2</span>
+                  <span className="text-gold-500 font-mono text-xs">§2</span>
                   Who it serves
                 </label>
-                <p className="text-court-500 text-[10px] mb-2 font-mono uppercase tracking-[0.15em]">Who does this serve?</p>
+                <p className="text-court-500 text-xs mb-2 font-mono uppercase tracking-[0.15em]">Who does this serve?</p>
                 <input
                   type="text"
                   required
@@ -101,10 +101,10 @@ export default function FileCasePage() {
 
               <div className="animate-fade-in-up stagger-3">
                 <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
-                  <span className="text-gold-500 font-mono text-[10px]">§3</span>
+                  <span className="text-gold-500 font-mono text-xs">§3</span>
                   Why now
                 </label>
-                <p className="text-court-500 text-[10px] mb-2 font-mono uppercase tracking-[0.15em]">Why is this the right time?</p>
+                <p className="text-court-500 text-xs mb-2 font-mono uppercase tracking-[0.15em]">Why is this the right time?</p>
                 <input
                   type="text"
                   required
@@ -117,10 +117,10 @@ export default function FileCasePage() {
 
               <div className="animate-fade-in-up stagger-4">
                 <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
-                  <span className="text-gold-500 font-mono text-[10px]">§4</span>
+                  <span className="text-gold-500 font-mono text-xs">§4</span>
                   What you&apos;d give up
                 </label>
-                <p className="text-court-500 text-[10px] mb-2 font-mono uppercase tracking-[0.15em]">What&apos;s the cost or tradeoff?</p>
+                <p className="text-court-500 text-xs mb-2 font-mono uppercase tracking-[0.15em]">What&apos;s the cost or tradeoff?</p>
                 <input
                   type="text"
                   required
@@ -135,7 +135,7 @@ export default function FileCasePage() {
                 <label className="flex items-center gap-2 text-court-200 font-serif text-base font-semibold mb-1.5">
                   <span className="text-gold-500 font-mono text-[10px]">§5</span>
                   Your gut call
-                  <span className="text-court-500 font-sans text-[10px] font-normal">(sealed from the court)</span>
+                  <span className="text-court-500 font-sans text-xs font-normal">(sealed from the court)</span>
                 </label>
                 <div className="flex gap-2">
                   {(["ship", "kill", "unsure"] as const).map((option) => (
@@ -143,7 +143,7 @@ export default function FileCasePage() {
                       type="button"
                       key={option}
                       onClick={() => setForm({ ...form, gutCall: option })}
-                      className={`flex-1 px-3 py-2.5 rounded-sm border text-xs font-medium transition-all duration-200 ${
+                      className={`flex-1 px-4 py-3 rounded-sm border text-sm font-medium transition-all duration-200 ${
                         form.gutCall === option
                           ? "bg-gold-500/15 border-gold-500/60 text-gold-300"
                           : "bg-transparent border-court-700 text-court-400 hover:border-court-500 hover:text-court-200"
@@ -185,7 +185,7 @@ export default function FileCasePage() {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-court-600 text-[10px] font-mono mt-6 uppercase tracking-wider">
+          <p className="text-center text-court-600 text-xs font-mono mt-6 uppercase tracking-wider">
             By submitting, you consent to judgment by a jury of your peers.
           </p>
         </div>
