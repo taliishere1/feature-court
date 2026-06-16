@@ -1,4 +1,4 @@
-import { TrialData } from "./types";
+import { TrialData, Ruling } from "./types";
 import { supabase, isSupabaseConfigured } from "./supabase";
 
 function rowToTrialData(row: Record<string, unknown>): TrialData {
@@ -13,6 +13,7 @@ function rowToTrialData(row: Record<string, unknown>): TrialData {
     verdicts: row.verdicts as TrialData["verdicts"],
     createdAt: new Date(row.created_at as string).getTime(),
     isSample: (row.is_sample as boolean) || undefined,
+    ruling: row.ruling as TrialData["ruling"] | undefined,
   };
 }
 
@@ -28,6 +29,7 @@ function trialDataToRow(data: TrialData): Record<string, unknown> {
     verdicts: data.verdicts,
     created_at: new Date(data.createdAt).toISOString(),
     is_sample: data.isSample || false,
+    ruling: data.ruling || null,
   };
 }
 
@@ -98,4 +100,17 @@ export async function getPublicTrials(): Promise<TrialData[]> {
   return (data || []).map((row) =>
     rowToTrialData(row as Record<string, unknown>)
   );
+}
+
+export async function recordRuling(id: string, ruling: Ruling): Promise<void> {
+  requireSupabase();
+
+  const { error } = await supabase!
+    .from("trials")
+    .update({ ruling })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Supabase update error:", error);
+  }
 }

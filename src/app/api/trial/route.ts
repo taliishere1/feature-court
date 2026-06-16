@@ -182,6 +182,22 @@ async function generateWithEdgeFunction(intake: IntakeForm): Promise<Omit<TrialD
   };
 }
 
+export async function PATCH(request: NextRequest) {
+  const { id, ruling } = await request.json();
+
+  if (!id || !ruling) {
+    return NextResponse.json({ error: 'Missing id or ruling' }, { status: 400 });
+  }
+
+  if (!['ship', 'kill', 'revise', 'mistrial'].includes(ruling)) {
+    return NextResponse.json({ error: 'Invalid ruling' }, { status: 400 });
+  }
+
+  const { recordRuling } = await import('@/lib/store');
+  await recordRuling(id, ruling);
+  return NextResponse.json({ success: true });
+}
+
 function validateTrialJSON(json: Record<string, unknown>, intake: IntakeForm): Omit<TrialData, 'id' | 'createdAt' | 'isSample'> {
   const j = json as unknown as Omit<TrialData, 'id' | 'createdAt' | 'isSample' | 'intake'>;
   const required = ['charge', 'case_title', 'prosecution', 'defense', 'cross_examination', 'verdicts'];

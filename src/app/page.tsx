@@ -3,41 +3,57 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CourtroomBackground, CourtSeal, InteractiveGavel } from "@/components/court-components";
-import { Ruling } from "@/lib/types";
+import { TrialData, Ruling } from "@/lib/types";
 
 export default function LandingPage() {
-  const [casesTried] = useState(() => {
-    if (typeof window === "undefined") return 0;
-    return parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
-  });
-  const [streak] = useState(() => {
-    if (typeof window === "undefined") return 0;
-    return parseInt(localStorage.getItem("fc-streak") || "0", 10);
-  });
-  const [lastRuling] = useState<Ruling | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("fc-last-ruling") as Ruling | null;
-  });
-  const [isReturning] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return parseInt(localStorage.getItem("fc-cases-tried") || "0", 10) > 0;
-  });
+  const [casesTried, setCasesTried] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [lastRuling, setLastRuling] = useState<Ruling | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  const isReturning = loaded && casesTried > 0;
+
+  // Fetch stats from Supabase via API
+  useEffect(() => {
+    fetch("/api/trial?all=true")
+      .then((r) => r.json())
+      .then((data: TrialData[]) => {
+        const ruled = data.filter((t) => !t.isSample && t.ruling);
+        setCasesTried(ruled.length);
+        if (ruled.length > 0) {
+          ruled.sort((a, b) => a.createdAt - b.createdAt);
+          const last = ruled[ruled.length - 1].ruling!;
+          setLastRuling(last);
+          let s = 0;
+          for (let i = ruled.length - 1; i >= 0; i--) {
+            if (ruled[i].ruling === last) s++;
+            else break;
+          }
+          setStreak(s);
+        }
+      })
+      .finally(() => setLoaded(true));
+  }, []);
 
   const [intro, setIntro] = useState({
-    dark: !isReturning,
-    title: isReturning,
-    tagline: isReturning,
-    cta: isReturning,
+    dark: true,
+    title: false,
+    tagline: false,
+    cta: false,
   });
 
   useEffect(() => {
-    if (isReturning) return;
+    if (!loaded) return;
+    if (isReturning) {
+      setIntro({ dark: false, title: true, tagline: true, cta: true });
+      return;
+    }
     const t0 = setTimeout(() => setIntro(s => ({ ...s, dark: false })), 100);
     const t1 = setTimeout(() => setIntro(s => ({ ...s, title: true })), 200);
     const t2 = setTimeout(() => setIntro(s => ({ ...s, tagline: true })), 500);
     const t3 = setTimeout(() => setIntro(s => ({ ...s, cta: true })), 900);
     return () => [t0, t1, t2, t3].forEach(clearTimeout);
-  }, [isReturning]);
+  }, [loaded, isReturning]);
 
   return (
     <div className="min-h-screen flex flex-col wood-panel relative overflow-hidden">
