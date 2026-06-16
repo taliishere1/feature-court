@@ -45,7 +45,7 @@ export default function GalleryPage() {
     fetch("/api/trial?all=true")
       .then((r) => r.json())
       .then((data) => {
-        setTrials(data);
+        setTrials(data.filter((t: TrialData) => !t.isSample));
       })
       .finally(() => setLoading(false));
     // Load stored rulings from localStorage
@@ -92,7 +92,7 @@ export default function GalleryPage() {
       </header>
 
       <main className="flex-1 px-6 py-8 relative z-10">
-        <div className="max-w-6xl mx-auto animate-page-enter">
+        <div className="w-full max-w-[1600px] mx-auto animate-page-enter">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-3">
@@ -107,7 +107,7 @@ export default function GalleryPage() {
 
           {/* Stats bar */}
           {casesTried > 0 && (
-            <div className="max-w-2xl mx-auto mb-8">
+            <div className="max-w-5xl mx-auto mb-8">
               <div className="parchment p-4 animate-fade-in-up">
                 <div className="flex items-center justify-between mb-3 relative z-10">
                   <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500">Your Record</span>
@@ -115,9 +115,9 @@ export default function GalleryPage() {
                     <span className="text-gold-500">{casesTried}</span> case{casesTried !== 1 ? "s" : ""} tried
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-2 relative z-10">
+                <div className="grid grid-cols-4 gap-4 relative z-10">
                   {stats.map((s) => (
-                    <div key={s.key} className={`text-center p-2 rounded-sm border ${RULING_BG[s.key]}`}>
+                    <div key={s.key} className={`text-center p-4 rounded-sm border ${RULING_BG[s.key]}`}>
                       <p className={`font-mono text-[10px] font-bold ${RULING_COLORS[s.key]}`}>{s.count}</p>
                       <p className="text-court-500 text-[8px] font-mono uppercase tracking-[0.1em] mt-0.5">{RULING_LABELS[s.key]}</p>
                       {totalVerdicts > 0 && (
@@ -144,7 +144,7 @@ export default function GalleryPage() {
             </div>
           )}
 
-          <div className="border-t border-court-700 mb-8 max-w-xs mx-auto"></div>
+          <div className="border-t border-court-700 mb-8 max-w-5xl mx-auto"></div>
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -153,7 +153,7 @@ export default function GalleryPage() {
               </div>
             </div>
           ) : trials.length === 0 ? (
-            <div className="text-center py-20 border border-dashed border-court-700 rounded-sm max-w-lg mx-auto parchment-ruled">
+            <div className="text-center py-20 border border-dashed border-court-700 rounded-sm max-w-4xl mx-auto parchment-ruled">
               <div className="mb-4 relative z-10 flex justify-center">
                 <JudgePortrait />
               </div>
@@ -170,7 +170,7 @@ export default function GalleryPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {trials.map((trial, i) => (
                 <Link
                   key={trial.id}
