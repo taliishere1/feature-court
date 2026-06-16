@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { TrialData, IntakeForm } from '@/lib/types';
 import { setTrial, getTrial } from '@/lib/store';
 import { v4 as uuidv4 } from 'uuid';
+import OpenAI from 'openai';
 
 // Simple in-memory rate limiting (IP-based)
 const ipCounts = new Map<string, { count: number; resetAt: number }>();
@@ -158,21 +159,11 @@ export async function POST(request: NextRequest) {
 }
 
 async function generateWithOpenAI(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
+  const openai = new OpenAI();
+
   const systemPrompt = `You are the engine behind FEATURE COURT, where product decisions go on trial. You write three distinct voices: the BAILIFF "Bailiff Sprint" (dry, theatrical, always rushing the docket), the PROSECUTION "Prosecutor Mary T. Bug" (sharp, relentless, exposes every flaw with surgical precision), and the DEFENSE "Defense Attorney Edward 'Edge' Case" (optimistic, principled, steel-mans the upside with conviction). Be specific to THIS decision. Every argument must reference the actual proposal, user, timing, or tradeoff given. Be witty but substantive. Do not invent facts about real companies or real events. Return ONLY valid JSON matching the schema.`;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY!}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-5.4',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: `Generate a Feature Court trial for this product decision:
+  const userInput = `Generate a Feature Court trial for this product decision:
 Proposal: ${intake.proposal}
 Who it serves: ${intake.audience}
 Why now: ${intake.whyNow}
@@ -191,20 +182,18 @@ Return the JSON in this exact format:
     "revise": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },
     "mistrial": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." }
   }
-}`,
-        },
-      ],
-      max_tokens: 4096,
-    }),
+}`;
+
+  const response = await openai.responses.create({
+    model: 'gpt-5.4',
+    instructions: systemPrompt,
+    input: userInput,
+    max_output_tokens: 8192,
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
-  }
+  const content = response.output_text;
+  if (!content) throw new Error('No content in OpenAI response');
 
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content || '';
   const jsonMatch = content.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON found in OpenAI response');
 
