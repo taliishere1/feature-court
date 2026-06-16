@@ -43,15 +43,17 @@ export default function GuidePage() {
             </p>
           </div>
 
-          {/* Step 1 */}
+          {/* Pre-Trial */}
           <ScrollworkBorder>
             <div className="p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0">
-                  <span className="font-serif text-sm font-bold text-gold-500">1</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gold-500">
+                    <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </div>
                 <div>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Step One</span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Pre-Trial</span>
                   <h2 className="font-serif text-lg font-bold text-court-100">File a Case</h2>
                 </div>
               </div>
@@ -90,15 +92,15 @@ export default function GuidePage() {
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-court-700 to-transparent" />
           </div>
 
-          {/* Step 2 */}
+          {/* Stage 1 of 5 */}
           <ScrollworkBorder>
             <div className="p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0">
-                  <span className="font-serif text-sm font-bold text-gold-500">2</span>
+                  <span className="font-serif text-sm font-bold text-gold-500">1</span>
                 </div>
                 <div>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Step Two</span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Stage 1 of 5</span>
                   <h2 className="font-serif text-lg font-bold text-court-100">The Arraignment</h2>
                 </div>
               </div>
@@ -121,15 +123,15 @@ export default function GuidePage() {
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-court-700 to-transparent" />
           </div>
 
-          {/* Step 3 */}
+          {/* Stage 2 of 5 */}
           <ScrollworkBorder>
             <div className="p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0">
-                  <span className="font-serif text-sm font-bold text-gold-500">3</span>
+                  <span className="font-serif text-sm font-bold text-gold-500">2</span>
                 </div>
                 <div>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Step Three</span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Stage 2 of 5</span>
                   <h2 className="font-serif text-lg font-bold text-court-100">The Prosecution</h2>
                 </div>
               </div>
@@ -153,15 +155,15 @@ export default function GuidePage() {
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-court-700 to-transparent" />
           </div>
 
-          {/* Step 4 */}
+          {/* Stage 3 of 5 */}
           <ScrollworkBorder>
             <div className="p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0">
-                  <span className="font-serif text-sm font-bold text-gold-500">4</span>
+                  <span className="font-serif text-sm font-bold text-gold-500">3</span>
                 </div>
                 <div>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Step Four</span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Stage 3 of 5</span>
                   <h2 className="font-serif text-lg font-bold text-court-100">The Defense</h2>
                 </div>
               </div>
@@ -184,15 +186,15 @@ export default function GuidePage() {
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-court-700 to-transparent" />
           </div>
 
-          {/* Step 5 */}
+          {/* Stage 4 of 5 */}
           <ScrollworkBorder>
             <div className="p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0">
-                  <span className="font-serif text-sm font-bold text-gold-500">5</span>
+                  <span className="font-serif text-sm font-bold text-gold-500">4</span>
                 </div>
                 <div>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Step Five</span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Stage 4 of 5</span>
                   <h2 className="font-serif text-lg font-bold text-court-100">Cross-Examination</h2>
                 </div>
               </div>
@@ -215,15 +217,15 @@ export default function GuidePage() {
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-court-700 to-transparent" />
           </div>
 
-          {/* Step 6 */}
+          {/* Stage 5 of 5 */}
           <ScrollworkBorder>
             <div className="p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0">
-                  <span className="font-serif text-sm font-bold text-gold-500">6</span>
+                  <span className="font-serif text-sm font-bold text-gold-500">5</span>
                 </div>
                 <div>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Step Six</span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Stage 5 of 5</span>
                   <h2 className="font-serif text-lg font-bold text-court-100">The Verdict</h2>
                 </div>
               </div>
