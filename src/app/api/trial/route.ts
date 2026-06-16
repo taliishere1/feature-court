@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TrialData, IntakeForm } from '@/lib/types';
-import { setTrial, getTrial } from '@/lib/store';
+import { setTrial, getTrial, updateTrial } from '@/lib/store';
 import { v4 as uuidv4 } from 'uuid';
 
 // Simple in-memory rate limiting (IP-based)
@@ -137,68 +137,58 @@ export async function POST(request: NextRequest) {
 
   const id = uuidv4();
 
-  try {
-    let trialData: Omit<TrialData, 'id' | 'createdAt' | 'isSample'>;
+  // Create empty trial record immediately so the client can poll and show progress
+  const emptyVerdicts = {
+    ship: { sentence: '', real_risk: '', strongest_ignored_argument: '', test_first: '' },
+    kill: { sentence: '', real_risk: '', strongest_ignored_argument: '', test_first: '' },
+    revise: { sentence: '', real_risk: '', strongest_ignored_argument: '', test_first: '' },
+    mistrial: { sentence: '', real_risk: '', strongest_ignored_argument: '', test_first: '' },
+  };
 
-    // Call OpenAI directly (fastest), fall back to Edge Function, fall back to mock
-    if (process.env.OPENAI_API_KEY) {
-      trialData = await generateWithOpenAI(intake);
-    } else if (process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY) {
-      trialData = await generateWithEdgeFunction(intake);
-    } else {
-      trialData = generateMockTrial(intake);
-    }
+  const initialTrial: TrialData = {
+    id,
+    intake,
+    charge: '',
+    case_title: '',
+    prosecution: { opening: '', arguments: [] },
+    defense: { opening: '', arguments: [] },
+    cross_examination: [],
+    verdicts: emptyVerdicts,
+    createdAt: Date.now(),
+    isSample,
+    generationStep: 0,
+  };
 
-    const trial: TrialData = {
-      id,
-      ...trialData,
-      createdAt: Date.now(),
-      isSample,
-    };
+  await setTrial(id, initialTrial);
 
-    await setTrial(id, trial);
-    return NextResponse.json(trial);
-  } catch (error) {
-    console.error('AI generation failed:', error);
-    // Fallback to mock on error
+  // Fire background generation — client polls for incremental progress
+  generateAndUpdateInBackground(id, intake, isSample).catch((err) => {
+    console.error('Background generation failed:', err);
     const mockData = generateMockTrial(intake);
-    const trial: TrialData = {
-      id,
-      ...mockData,
-      createdAt: Date.now(),
-      isSample,
-    };
-    await setTrial(id, trial);
-    return NextResponse.json(trial);
-  }
-}
-
-async function generateWithEdgeFunction(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-
-  const response = await fetch(`${supabaseUrl}/functions/v1/generate-trial`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${supabaseKey}`,
-    },
-    body: JSON.stringify({ intake }),
+    updateTrial(id, { ...mockData, generationStep: 5 }).catch(e =>
+      console.error('Mock fallback save failed:', e)
+    );
   });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Edge function error ${response.status}: ${errText}`);
-  }
-
-  const trialData = await response.json();
-  return {
-    intake,
-    ...trialData,
-  };
+  return NextResponse.json({ id });
 }
 
-async function generateWithOpenAI(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
+async function generateAndUpdateInBackground(id: string, intake: IntakeForm, isSample: boolean) {
+  if (process.env.OPENAI_API_KEY) {
+    // 5-step with progress saved to Supabase after each step
+    await generateWithOpenAIInBackground(id, intake);
+  } else if (process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY) {
+    // Edge function — one-shot, can't do incremental
+    const trialData = await generateWithEdgeFunction(intake);
+    await updateTrial(id, { ...trialData, generationStep: 5 });
+  } else {
+    // Mock — synchronous, one-shot
+    const mockData = generateMockTrial(intake);
+    await updateTrial(id, { ...mockData, generationStep: 5 });
+  }
+}
+
+async function generateWithOpenAIInBackground(id: string, intake: IntakeForm) {
   const systemPrompt = `You are the engine behind FEATURE COURT, where product decisions go on trial. You write three distinct voices: the BAILIFF "Bailiff Sprint" (dry, theatrical, always rushing the docket), the PROSECUTION "Prosecutor Mary T. Bug" (sharp, relentless, exposes every flaw with surgical precision), and the DEFENSE "Defense Attorney Edward 'Edge' Case" (optimistic, principled, steel-mans the upside with conviction). Be specific to THIS decision. Every argument must reference the actual proposal, user, timing, or tradeoff given. Be witty but substantive. Do not invent facts about real companies or real events. Return ONLY valid JSON matching the schema.`;
 
   const intakeContext = `Product Decision:
@@ -248,13 +238,14 @@ Tradeoff: ${intake.tradeoff}`;
     return JSON.parse(match[0]);
   }
 
-  // === STEP 1: Charge and Case Title ===
+  // === STEP 1: Charge and Case Title — save to Supabase immediately ===
   const step1 = await callOpenAI({
     input: `${intakeContext}\n\nGenerate only the charge and case_title for this Feature Court trial. The charge is a single dramatic sentence describing what this proposal "stands charged" with. The case_title is a short, theatrical court case name.\n\nReturn JSON:\n{\n  "charge": "...",\n  "case_title": "..."\n}`,
   });
   const chargeData = extractJSON(step1.text);
   const charge = chargeData.charge as string;
   const case_title = chargeData.case_title as string;
+  await updateTrial(id, { intake, charge, case_title, generationStep: 1 });
 
   // === STEP 2: Prosecution Opening + Arguments ===
   const step2 = await callOpenAI({
@@ -263,6 +254,7 @@ Tradeoff: ${intake.tradeoff}`;
   });
   const prosecutionData = extractJSON(step2.text);
   const prosecution = prosecutionData.prosecution as { opening: string; arguments: string[] };
+  await updateTrial(id, { prosecution, generationStep: 2 });
 
   // === STEP 3: Defense Opening + Arguments ===
   const step3 = await callOpenAI({
@@ -271,6 +263,7 @@ Tradeoff: ${intake.tradeoff}`;
   });
   const defenseData = extractJSON(step3.text);
   const defense = defenseData.defense as { opening: string; arguments: string[] };
+  await updateTrial(id, { defense, generationStep: 3 });
 
   // === STEP 4: Cross-Examination Questions with Choices ===
   const step4 = await callOpenAI({
@@ -308,6 +301,7 @@ Return JSON:
   });
   const crossData = extractJSON(step4.text);
   const cross_examination = crossData.cross_examination as TrialData["cross_examination"];
+  await updateTrial(id, { cross_examination, generationStep: 4 });
 
   // === STEP 5: All Verdicts ===
   const step5 = await callOpenAI({
@@ -316,18 +310,32 @@ Return JSON:
   });
   const verdictsData = extractJSON(step5.text);
   const verdicts = verdictsData.verdicts as TrialData["verdicts"];
+  await updateTrial(id, { verdicts, generationStep: 5 });
+}
 
-  const assembled = {
+async function generateWithEdgeFunction(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/generate-trial`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseKey}`,
+    },
+    body: JSON.stringify({ intake }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Edge function error ${response.status}: ${errText}`);
+  }
+
+  const trialData = await response.json();
+  return {
     intake,
-    charge,
-    case_title,
-    prosecution,
-    defense,
-    cross_examination,
-    verdicts,
+    ...trialData,
   };
-
-  return validateTrialJSON(assembled as unknown as Record<string, unknown>, intake);
 }
 
 export async function PATCH(request: NextRequest) {
@@ -344,66 +352,4 @@ export async function PATCH(request: NextRequest) {
   const { recordRuling } = await import('@/lib/store');
   await recordRuling(id, ruling);
   return NextResponse.json({ success: true });
-}
-
-function validateTrialJSON(json: Record<string, unknown>, intake: IntakeForm): Omit<TrialData, 'id' | 'createdAt' | 'isSample'> {
-  const j = json as unknown as Omit<TrialData, 'id' | 'createdAt' | 'isSample' | 'intake'>;
-  const required = ['charge', 'case_title', 'prosecution', 'defense', 'cross_examination', 'verdicts'];
-  for (const key of required) {
-    if (!json[key]) throw new Error(`Missing required field: ${key}`);
-  }
-
-  // Ensure prosecution has opening and arguments
-  if (!j.prosecution.opening || !Array.isArray(j.prosecution.arguments)) {
-    throw new Error('Invalid prosecution format');
-  }
-
-  // Ensure defense has opening and arguments
-  if (!j.defense.opening || !Array.isArray(j.defense.arguments)) {
-    throw new Error('Invalid defense format');
-  }
-
-  // Ensure cross_examination is an array
-  if (!Array.isArray(j.cross_examination)) {
-    throw new Error('Invalid cross_examination format');
-  }
-  // Validate each cross-examination question has question + choices
-  for (const q of j.cross_examination) {
-    if (!q.question || !Array.isArray(q.choices) || q.choices.length < 2) {
-      throw new Error('Invalid cross_examination question format');
-    }
-    for (const c of q.choices) {
-      if (!c.label || !c.text || !c.bailiff_reaction) {
-        throw new Error('Invalid cross_examination choice format');
-      }
-    }
-  }
-
-  // Ensure all verdicts exist
-  for (const v of ['ship', 'kill', 'revise', 'mistrial'] as const) {
-    if (!j.verdicts[v]?.sentence) {
-      throw new Error(`Missing sentence for verdict: ${v}`);
-    }
-  }
-
-  return {
-    intake,
-    charge: j.charge,
-    case_title: j.case_title,
-    prosecution: {
-      opening: j.prosecution.opening,
-      arguments: j.prosecution.arguments,
-    },
-    defense: {
-      opening: j.defense.opening,
-      arguments: j.defense.arguments,
-    },
-    cross_examination: j.cross_examination,
-    verdicts: {
-      ship: j.verdicts.ship,
-      kill: j.verdicts.kill,
-      revise: j.verdicts.revise,
-      mistrial: j.verdicts.mistrial,
-    },
-  };
 }
