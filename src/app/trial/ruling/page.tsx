@@ -106,7 +106,7 @@ function RulingContent() {
                 How do you rule, Your Honor?
               </h1>
             </div>
-            <p className="text-court-400 text-sm font-legal animate-fade-in-up stagger-1">
+            <p className="text-court-400 text-base font-legal animate-fade-in-up stagger-1">
               Case: <span className="text-court-200">{trial.case_title}</span>
             </p>
           </div>
@@ -118,7 +118,7 @@ function RulingContent() {
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">The Bench</span>
                 </div>
-                <p className="text-court-300 font-legal italic text-base leading-relaxed mb-6">
+                <p className="text-court-300 font-legal italic text-lg leading-relaxed mb-6">
                   &ldquo;You have heard both sides. The evidence has been presented.
                   The arguments have been made. Now you must decide.&rdquo;
                 </p>

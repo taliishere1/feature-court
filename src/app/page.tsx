@@ -71,7 +71,7 @@ export default function LandingPage() {
           {/* Title */}
           <div className={`mb-4 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0"}`}>
             {intro.title && (
-              <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-black leading-[1.04] gold-foil tracking-normal">
+              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black leading-[1.04] gold-foil tracking-normal">
                 FEATURE COURT
               </h1>
             )}
@@ -79,14 +79,14 @@ export default function LandingPage() {
 
           {/* Subtitle */}
           <div className={`mb-3 transition-all duration-700 ${intro.tagline ? "opacity-100" : "opacity-0"}`}>
-            <p className="text-sm text-court-500 font-mono uppercase tracking-[0.25em]">
+            <p className="text-base text-court-500 font-mono uppercase tracking-[0.25em]">
               In the Court of Product Decisions
             </p>
           </div>
 
           {/* Tagline */}
           <div className={`transition-all duration-700 ${intro.tagline ? "opacity-100" : "opacity-0"}`}>
-            <p className="text-court-400 text-base max-w-md mx-auto mb-10 leading-relaxed font-legal italic">
+            <p className="text-court-300 text-lg max-w-md mx-auto mb-10 leading-relaxed font-legal italic">
               Every feature stands trial. The prosecution charges. The defense argues. You deliver the verdict.
             </p>
           </div>
@@ -120,8 +120,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {steps.map((step, i) => (
               <div key={step.title} className="text-center">
-                <h3 className="font-serif text-base font-medium text-gold-400 mb-2">{step.title}</h3>
-                <p className="text-court-500 text-sm leading-relaxed">{step.description}</p>
+                <h3 className="font-serif text-lg font-medium text-gold-400 mb-2">{step.title}</h3>
+                <p className="text-court-400 text-base leading-relaxed">{step.description}</p>
               </div>
             ))}
           </div>
