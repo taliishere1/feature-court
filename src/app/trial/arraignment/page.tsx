@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
-import { StageProgress, TypewriterText, CourtroomBackground, BailiffPortrait, DialogueBox } from "@/components/court-components";
+import { StageProgress, TypewriterText, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
 
 function ArraignmentContent() {
   const searchParams = useSearchParams();
@@ -114,7 +114,8 @@ function ArraignmentContent() {
 
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="font-display text-base text-gold-500">
+          <Link href="/" className="flex items-center gap-2 font-display text-base text-gold-500">
+            <CourtSeal className="w-5 h-5 text-gold-500" />
             FEATURE COURT
           </Link>
           <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em]">

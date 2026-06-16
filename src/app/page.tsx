@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { CourtroomBackground } from "@/components/court-components";
+import { CourtroomBackground, CourtSeal } from "@/components/court-components";
 import { Ruling } from "@/lib/types";
 
 export default function LandingPage() {
@@ -23,11 +23,15 @@ export default function LandingPage() {
   useEffect(() => {
     if (hasPlayedRef.current) return;
     hasPlayedRef.current = true;
-    const speed = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10) > 0 ? 0.5 : 1;
-    const t0 = setTimeout(() => setIntro(s => ({ ...s, dark: false })), 200 * speed);
-    const t1 = setTimeout(() => setIntro(s => ({ ...s, title: true })), 600 * speed);
-    const t2 = setTimeout(() => setIntro(s => ({ ...s, tagline: true })), 1600 * speed);
-    const t3 = setTimeout(() => setIntro(s => ({ ...s, cta: true })), 2800 * speed);
+    const isReturning = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10) > 0;
+    if (isReturning) {
+      setIntro({ dark: false, title: true, tagline: true, cta: true });
+      return;
+    }
+    const t0 = setTimeout(() => setIntro(s => ({ ...s, dark: false })), 100);
+    const t1 = setTimeout(() => setIntro(s => ({ ...s, title: true })), 200);
+    const t2 = setTimeout(() => setIntro(s => ({ ...s, tagline: true })), 500);
+    const t3 = setTimeout(() => setIntro(s => ({ ...s, cta: true })), 900);
     return () => [t0, t1, t2, t3].forEach(clearTimeout);
   }, []);
 
@@ -40,9 +44,12 @@ export default function LandingPage() {
       {/* Clean header */}
       <header className={`relative z-10 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0 -translate-y-4"}`}>
         <div className="max-w-6xl mx-auto px-8 py-4 flex items-center justify-between">
-          <span className="font-display text-lg text-gold-500 tracking-tight">
-            FEATURE COURT
-          </span>
+          <div className="flex items-center gap-2">
+            <CourtSeal className="w-5 h-5 text-gold-500" />
+            <span className="font-display text-lg text-gold-500 tracking-tight">
+              FEATURE COURT
+            </span>
+          </div>
           <div className="flex items-center gap-6">
             {casesTried > 0 && (
               <span className="text-xs text-court-500">
