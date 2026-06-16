@@ -42,17 +42,20 @@ export default function LandingPage() {
     cta: false,
   });
 
+  // Start intro animation immediately — no network wait
   useEffect(() => {
-    if (!loaded) return;
-    if (isReturning) {
-      setIntro({ dark: false, title: true, tagline: true, cta: true });
-      return;
-    }
     const t0 = setTimeout(() => setIntro(s => ({ ...s, dark: false })), 100);
     const t1 = setTimeout(() => setIntro(s => ({ ...s, title: true })), 200);
     const t2 = setTimeout(() => setIntro(s => ({ ...s, tagline: true })), 500);
     const t3 = setTimeout(() => setIntro(s => ({ ...s, cta: true })), 900);
     return () => [t0, t1, t2, t3].forEach(clearTimeout);
+  }, []);
+
+  // When data loads, skip to end for returning users
+  useEffect(() => {
+    if (loaded && isReturning) {
+      setIntro({ dark: false, title: true, tagline: true, cta: true });
+    }
   }, [loaded, isReturning]);
 
   return (
