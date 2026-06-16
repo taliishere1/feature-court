@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { CourtSeal, OrnateDivider, CourtroomBackground, JudgePortrait, useSoundEffects } from "@/components/court-components";
+import { CourtroomBackground, JudgePortrait, useSoundEffects } from "@/components/court-components";
 
 interface RulingRecord {
   id: string;
@@ -99,15 +99,13 @@ export default function GalleryPage() {
         <div className="max-w-6xl mx-auto animate-page-enter">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <CourtSeal className="w-8 h-8 text-gold-500" />
+            <div className="flex items-center justify-center gap-3 mb-3">
               <div>
                 <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-gold-500">The Docket</span>
                 <h1 className="font-display text-3xl sm:text-4xl font-bold text-gold-500 mt-1">
                   Hall of Verdicts
                 </h1>
               </div>
-              <CourtSeal className="w-8 h-8 text-gold-500" />
             </div>
           </div>
 
@@ -150,12 +148,11 @@ export default function GalleryPage() {
             </div>
           )}
 
-          <OrnateDivider className="mb-8 max-w-xs mx-auto" />
+          <div className="border-t border-court-700 mb-8 max-w-xs mx-auto"></div>
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="flex flex-col items-center gap-4">
-                <CourtSeal className="w-8 h-8 text-gold-500" animated />
                 <div className="text-court-400 font-serif">Loading the docket...</div>
               </div>
             </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CourtSeal, OrnateDivider, useSoundEffects } from "@/components/court-components";
+import { useSoundEffects } from "@/components/court-components";
 
 export default function FileCasePage() {
   const router = useRouter();
@@ -54,19 +54,17 @@ export default function FileCasePage() {
       <main className="flex-1 px-6 py-8 relative z-10">
         <div className="max-w-xl mx-auto animate-page-enter">
           {/* Letterhead with ceremonial border */}
-          <div className="text-center border-b border-court-700 pb-5 mb-8">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <CourtSeal className="w-8 h-8 text-gold-500" />
+          <div className="text-center border-b border-court-700 pb-4 mb-6">
+            <div className="flex items-center justify-center gap-2 mb-2">
               <div>
                 <h2 className="font-display text-lg text-gold-500 tracking-tight">FEATURE COURT</h2>
                 <p className="text-[9px] text-court-600 font-mono uppercase tracking-[0.2em]">District of Product Decisions</p>
               </div>
-              <CourtSeal className="w-8 h-8 text-gold-500" />
             </div>
             <div className="ceremonial-border inline-block px-6 py-1">
               <p className="font-mono text-[10px] text-gold-500 uppercase tracking-[0.25em]">Case Intake Form</p>
             </div>
-            <p className="text-[9px] text-court-500 font-mono mt-2">Submit for Trial · All fields required</p>
+            <p className="text-[9px] text-court-500 font-mono mt-1">Submit for Trial · All fields required</p>
           </div>
 
           <div className="parchment-ruled p-6 md:p-8">
@@ -159,7 +157,7 @@ export default function FileCasePage() {
                 </div>
               </div>
 
-              <OrnateDivider className="pt-4" />
+              <div className="border-t border-court-700 pt-4"></div>
 
               <div className="text-center animate-fade-in-up stagger-6">
                 <button

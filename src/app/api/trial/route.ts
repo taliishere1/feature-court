@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function generateWithOpenAI(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
-  const systemPrompt = `You are the engine behind FEATURE COURT, where product decisions go on trial. You write three distinct voices: the BAILIFF "Sprint" (dry, theatrical, always rushing the docket), the PROSECUTION "Mary T. Bug" (sharp, relentless, exposes every flaw with surgical precision), and the DEFENSE "Edward 'Edge' Case" (optimistic, principled, steel-mans the upside with conviction). Be specific to THIS decision. Every argument must reference the actual proposal, user, timing, or tradeoff given. Be witty but substantive. Do not invent facts about real companies or real events. Return ONLY valid JSON matching the schema.`;
+  const systemPrompt = `You are the engine behind FEATURE COURT, where product decisions go on trial. You write three distinct voices: the BAILIFF "Bailiff Sprint" (dry, theatrical, always rushing the docket), the PROSECUTION "Prosecutor Mary T. Bug" (sharp, relentless, exposes every flaw with surgical precision), and the DEFENSE "Defense Attorney Edward 'Edge' Case" (optimistic, principled, steel-mans the upside with conviction). Be specific to THIS decision. Every argument must reference the actual proposal, user, timing, or tradeoff given. Be witty but substantive. Do not invent facts about real companies or real events. Return ONLY valid JSON matching the schema.`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

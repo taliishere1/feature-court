@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { GoldParticles, CourtroomBackground } from "@/components/court-components";
+import { CourtroomBackground } from "@/components/court-components";
 import { Ruling } from "@/lib/types";
 
 export default function LandingPage() {
@@ -33,7 +33,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col wood-panel relative overflow-hidden">
-      <GoldParticles count={12} />
       <CourtroomBackground opacity={0.06} />
 
       {intro.dark && <div className="fixed inset-0 bg-[#030712] z-50 animate-fade-in-down" />}

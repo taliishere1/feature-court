@@ -547,17 +547,6 @@ body {
 .animate-card-left { animation: card-slide-in-left 0.5s ease-out forwards; }
 .animate-card-right { animation: card-slide-in-right 0.5s ease-out forwards; }
 
-/* ─── Spotlight / Interrogation ─── */
-
-.spotlight-overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background: radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.3) 70%);
-  transition: opacity 0.5s;
-}
-
 /* ─── Letterbox Effect (Dramatic Pause) ─── */
 
 @keyframes letterbox-open {

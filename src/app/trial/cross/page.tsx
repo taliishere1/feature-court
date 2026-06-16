@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { CourtSeal, StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, useSoundEffects } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, useSoundEffects } from "@/components/court-components";
 
 const BAILIFF_REACTIONS: Record<string, Record<number, string>> = {
   confident: {
@@ -17,7 +17,7 @@ const BAILIFF_REACTIONS: Record<string, Record<number, string>> = {
   },
   contrarian: {
     0: "Bold. The prosecution will have words about this.",
-    1: "Interesting angle. Edward \"Edge\" Case would agree.",
+    1: "Interesting angle. Defense Attorney Edward \"Edge\" Case would agree.",
   },
   practical: {
     0: "A pragmatic answer. The numbers matter here.",
@@ -51,7 +51,6 @@ function CrossContent() {
   const [bailiffMessages, setBailiffMessages] = useState<(string | null)[]>([null, null]);
   const [submitting, setSubmitting] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [spotlight, setSpotlight] = useState(0);
   const [showQuestion, setShowQuestion] = useState<number>(0);
   const [bailiffText, setBailiffText] = useState("The court has heard both sides. Before you rule, you must answer.");
   const [showContinue, setShowContinue] = useState(false);
@@ -91,7 +90,6 @@ function CrossContent() {
     if (bailiffDialogueIndex === 0) {
       setBailiffDialogueIndex(1);
       setBailiffText(bailiffDialogues[1]);
-      setSpotlight(1);
       setShowQuestion(0);
     }
   }, [bailiffDialogueIndex]);
@@ -113,7 +111,6 @@ function CrossContent() {
     setTimeout(() => {
       if (questionIdx === 0) {
         setShowQuestion(1);
-        setSpotlight(2);
         setBailiffDialogueIndex(2);
         setBailiffText(bailiffDialogues[2]);
       }
@@ -151,9 +148,6 @@ function CrossContent() {
   return (
     <div className="min-h-screen flex flex-col wood-panel relative">
       <CourtroomBackground opacity={0.1} />
-
-      {/* Spotlight effect */}
-      <div className={`spotlight-overlay ${spotlight > 0 ? "spotlight-intense" : ""} transition-all duration-700`} />
 
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -263,7 +257,7 @@ function CrossContent() {
         <>
           <DialogueBox
             portrait={<BailiffPortrait size="thumb" />}
-            name="Sprint"
+            name="Bailiff Sprint"
             text={bailiffText}
             color="#a67c00"
             typingSpeed={25}
@@ -282,10 +276,7 @@ function CrossContent() {
 function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
-      <div className="flex flex-col items-center gap-4">
-        <CourtSeal className="w-8 h-8 text-gold-500" animated />
-        <div className="text-court-400 font-serif">Preparing the questions...</div>
-      </div>
+      <div className="text-court-400 font-serif">Preparing the questions...</div>
     </div>
   );
 }

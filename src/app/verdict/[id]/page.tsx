@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { CourtSeal, WaxSeal, ScrollworkBorder, OrnateDivider, GoldParticles, TypewriterText, ConfettiEffect, SignatureBlock, LegalRibbon, ToastNotification, useSoundEffects } from "@/components/court-components";
+import { TypewriterText, SignatureBlock, ToastNotification, useSoundEffects } from "@/components/court-components";
 
 const RULING_LABELS: Record<Ruling, string> = {
   ship: "SHIP IT",
@@ -67,8 +67,10 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
       setGutCall(urlParams.get("gut"));
 
       const res = await fetch(`/api/trial?id=${id}`);
-      const data = await res.json();
-      setTrial(data);
+      if (res.ok) {
+        const data = await res.json();
+        setTrial(data);
+      }
       setLoading(false);
     }
     load();
@@ -137,8 +139,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
 
   return (
     <div className="min-h-screen flex flex-col wood-panel relative" style={{ "--verdict-accent": accentColor } as React.CSSProperties & Record<string, string>}>
-      <GoldParticles count={12} />
-      <ConfettiEffect active={showConfetti} duration={4000} />
+      {showConfetti && <div className="fixed inset-0 pointer-events-none z-50 bg-gradient-to-t from-transparent via-gold-500/5 to-transparent" />}
       {screenDim && (
         <div className="fixed inset-0 bg-black/60 z-50 animate-fade-in" />
       )}
@@ -166,16 +167,10 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
         </div>
       </header>
 
-      <main className="flex-1 px-6 py-16 flex items-center justify-center relative z-10">
+      <main className="flex-1 px-6 py-10 flex items-center justify-center relative z-10">
         <div className="max-w-xl w-full">
-          {/* Red ribbon banner */}
-          <div className={`transition-all duration-700 ${ceremony.gavel ? "opacity-100" : "opacity-0"}`}>
-            <LegalRibbon text="Verdict Delivered" />
-          </div>
-
           {/* Official Verdict Certificate */}
-          <ScrollworkBorder>
-            <div className={`verdict-certificate verdict-certificate-${ruling} p-6 md:p-8 overflow-hidden ${ceremony.gavel ? "" : "opacity-0"} transition-opacity duration-1000`}>
+            <div className={`verdict-certificate verdict-certificate-${ruling} p-4 md:p-6 overflow-hidden ${ceremony.gavel ? "" : "opacity-0"} transition-opacity duration-1000`}>
               {/* Background accent glow for ruling */}
               <div
                 className="absolute inset-0 opacity-30 pointer-events-none"
@@ -215,14 +210,12 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
               )}
 
               {/* Letterhead */}
-              <div className={`text-center border-b border-court-700 pb-5 mb-6 transition-all duration-1000 relative z-10 ${ceremony.gavel ? "opacity-100" : "opacity-0"}`}>
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <CourtSeal className="w-7 h-7 text-gold-500" />
+              <div className={`text-center border-b border-court-700 pb-4 mb-4 transition-all duration-1000 relative z-10 ${ceremony.gavel ? "opacity-100" : "opacity-0"}`}>
+                <div className="flex items-center justify-center gap-2 mb-2">
                   <div>
                     <p className="font-display text-base text-gold-500 tracking-tight">FEATURE COURT</p>
                     <p className="text-[8px] text-court-600 font-mono uppercase tracking-[0.25em]">District of Product Decisions</p>
                   </div>
-                  <CourtSeal className="w-7 h-7 text-gold-500" />
                 </div>
                 <p className="text-[8px] text-court-600 font-mono uppercase tracking-[0.3em]">In the Court of Product Decisions · Established 2026</p>
                 <p className="text-[8px] text-court-500 font-mono mt-1 tracking-wider">
@@ -257,14 +250,9 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
                 />
               </div>
 
-              {/* Wax seal */}
-              <div className={`flex justify-center mt-2 relative z-10 ${ceremony.seal ? "opacity-100" : "opacity-0"}`}>
-                <WaxSeal ruling={ruling} animated={ceremony.seal} size={80} />
-              </div>
-
               {/* Sentence typewriter */}
-              <div className={`text-center mb-5 transition-all duration-700 relative z-10 ${ceremony.sentence ? "opacity-100" : "opacity-0"}`}>
-                <OrnateDivider className="mb-4" />
+              <div className={`text-center mb-4 transition-all duration-700 relative z-10 ${ceremony.sentence ? "opacity-100" : "opacity-0"}`}>
+                <div className="border-t border-gold-500/20 mb-3"></div>
                 <p className="text-court-200 text-base italic font-certificate leading-relaxed max-w-md mx-auto">
                   <TypewriterText text={verdict.sentence} speed={25} tag="span" />
                 </p>
@@ -302,7 +290,6 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
                 <span className="font-mono text-[9px] text-court-600">featurecourt.app</span>
               </div>
             </div>
-          </ScrollworkBorder>
 
           {/* Actions */}
           <div className={`flex flex-wrap gap-3 mt-8 justify-center transition-all duration-700 delay-200 ${ceremony.actions ? "opacity-100" : "opacity-0"}`}>
@@ -370,7 +357,7 @@ function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
       <div className="flex flex-col items-center gap-4">
-        <CourtSeal className="w-8 h-8 text-gold-500" animated />
+        <div className="w-6 h-6 rounded-full border border-gold-500/30 animate-pulse" />
         <div className="text-court-400 font-serif">Preparing the verdict...</div>
       </div>
     </div>
