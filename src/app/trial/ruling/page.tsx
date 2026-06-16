@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { StageProgress, ScrollworkBorder, CourtroomBackground, DramaticPause } from "@/components/court-components";
+import { StageProgress, ScrollworkBorder, CourtroomBackground } from "@/components/court-components";
 
 const RULING_OPTIONS: { key: Ruling; label: string; description: string; sentence: string; color: string; bgClass: string }[] = [
   { key: "ship", label: "Ship It", description: "Full speed ahead.", sentence: "The evidence is sufficient. Proceed with confidence.", color: "var(--color-stamp-ship)", bgClass: "hover:bg-stamp-ship/5" },
@@ -21,8 +21,6 @@ function RulingContent() {
   const [selected, setSelected] = useState<Ruling | null>(null);
   const [showOptions, setShowOptions] = useState(false);
   const [readyClicked, setReadyClicked] = useState(false);
-  const [letterbox, setLetterbox] = useState(false);
-  const [dramaticPause, setDramaticPause] = useState(false);
   const mounted = useRef(false);
 
   useEffect(() => {
@@ -40,14 +38,7 @@ function RulingContent() {
 
   const handleReadyToRule = () => {
     setReadyClicked(true);
-    setLetterbox(true);
-    // Dramatic pause with letterbox
-    setTimeout(() => { setDramaticPause(true); }, 300);
-    setTimeout(() => {
-      setDramaticPause(false);
-      setLetterbox(false);
-      setShowOptions(true);
-    }, 1500);
+    setTimeout(() => setShowOptions(true), 800);
   };
 
   function handleSubmit() {
@@ -92,13 +83,8 @@ function RulingContent() {
   if (!trial) return <NotFoundState />;
 
   return (
-    <div className={`min-h-screen flex flex-col wood-panel relative ${letterbox ? "letterbox-active" : ""}`}>
+    <div className="min-h-screen flex flex-col wood-panel relative">
       <CourtroomBackground opacity={0.1} />
-      <DramaticPause active={dramaticPause} />
-
-      {/* Letterbox bars */}
-      <div className="letterbox-top" />
-      <div className="letterbox-bottom" />
 
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
