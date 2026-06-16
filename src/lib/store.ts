@@ -1,5 +1,20 @@
-import { TrialData, Ruling } from "./types";
+import { TrialData, Ruling, CrossExaminationQuestion } from "./types";
 import { supabase, isSupabaseConfigured } from "./supabase";
+
+function migrateCrossExamination(data: unknown): CrossExaminationQuestion[] {
+  // Handle old format (string[]) — convert to new format with default choices
+  if (Array.isArray(data) && data.length > 0 && typeof data[0] === "string") {
+    return (data as string[]).map((q) => ({
+      question: q,
+      choices: [
+        { label: "Yes", text: "Yes. The evidence supports moving forward.", bailiff_reaction: "Decisive. The court respects conviction." },
+        { label: "No", text: "No. There are too many open questions.", bailiff_reaction: "Caution has its place in these chambers." },
+        { label: "I need more data", text: "I need more data before I can answer that.", bailiff_reaction: "Prudence over haste. Noted." },
+      ],
+    }));
+  }
+  return (data || []) as CrossExaminationQuestion[];
+}
 
 function rowToTrialData(row: Record<string, unknown>): TrialData {
   return {
@@ -9,11 +24,12 @@ function rowToTrialData(row: Record<string, unknown>): TrialData {
     case_title: row.case_title as string,
     prosecution: row.prosecution as TrialData["prosecution"],
     defense: row.defense as TrialData["defense"],
-    cross_examination: row.cross_examination as string[],
+    cross_examination: migrateCrossExamination(row.cross_examination as unknown),
     verdicts: row.verdicts as TrialData["verdicts"],
     createdAt: new Date(row.created_at as string).getTime(),
     isSample: (row.is_sample as boolean) || undefined,
     ruling: row.ruling as TrialData["ruling"] | undefined,
+    generationStep: row.generation_step as number | undefined,
   };
 }
 
@@ -30,6 +46,7 @@ function trialDataToRow(data: TrialData): Record<string, unknown> {
     created_at: new Date(data.createdAt).toISOString(),
     is_sample: data.isSample || false,
     ruling: data.ruling || null,
+    generation_step: data.generationStep ?? null,
   };
 }
 
@@ -63,6 +80,12 @@ export async function setTrial(id: string, data: TrialData): Promise<void> {
   if (error) {
     console.error("Supabase insert error:", error);
   }
+}
+
+export async function updateTrial(id: string, partial: Partial<TrialData>): Promise<void> {
+  const existing = await getTrial(id);
+  if (!existing) return;
+  await setTrial(id, { ...existing, ...partial });
 }
 
 export async function getAllTrials(): Promise<TrialData[]> {

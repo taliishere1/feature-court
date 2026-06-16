@@ -1,20 +1,39 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
 import { StageProgress, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
 
+const PROGRESS_STEPS = [
+  { message: "The court is assembling...", sub: "Preparing the docket" },
+  { message: "Reading the charge...", sub: "Bailiff Sprint is reviewing the filing" },
+  { message: "Briefing the prosecution...", sub: "Prosecutor Mary T. Bug is preparing her case" },
+  { message: "Preparing the defense...", sub: "Defense Attorney Edward \"Edge\" Case is building a response" },
+  { message: "Drafting cross-examination...", sub: "Preparing questions for the witness" },
+  { message: "Weighing the verdicts...", sub: "The bench is considering possible outcomes" },
+];
+
 function ArraignmentContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [generationStep, setGenerationStep] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showCharge, setShowCharge] = useState(false);
   const [showContinue, setShowContinue] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+
+  const handleRetry = useCallback(() => {
+    setError(false);
+    setLoading(true);
+    setRetryKey((k) => k + 1);
+  }, []);
 
   const bailiffDialogues = [
     "All rise for the Honorable Judge Ship Itwell...",
@@ -25,35 +44,88 @@ function ArraignmentContent() {
     const id = searchParams.get("id");
     const sampleIdx = searchParams.get("sample");
 
-    async function load() {
+    let cancelled = false;
+
+    async function pollTrial(trialId: string) {
+      let retries = 0;
+      const MAX_RETRIES = 30; // 30 × 2s = 60s — fail fast, offer retry
+
+      while (!cancelled && retries < MAX_RETRIES) {
+        try {
+          const res = await fetch(`/api/trial?id=${trialId}`);
+          const data: TrialData = await res.json();
+
+          if (cancelled) return;
+
+          const step = data.generationStep ?? 0;
+          setGenerationStep(step);
+          setTrial(data);
+
+          // Trial is ready when generationStep >= 5
+          // For old trials without generationStep, check all key fields populated
+          const isReady = step >= 5 || (
+            data.charge && data.charge.length > 0 &&
+            data.case_title && data.case_title.length > 0 &&
+            data.prosecution?.opening && data.prosecution.opening.length > 0 &&
+            data.defense?.opening && data.defense.opening.length > 0
+          );
+
+          if (isReady) {
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // Retry on transient errors
+        }
+
+        retries++;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+
+      // Exceeded retries — show error state
+      if (!cancelled) {
+        setError(true);
+        setLoading(false);
+      }
+    }
+
+    async function init() {
       if (sampleIdx !== null) {
         const idx = parseInt(sampleIdx);
         const intake = SAMPLE_CASES[idx] || SAMPLE_CASES[0];
-        const res = await fetch("/api/trial", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...intake, isSample: true }),
-        });
-        const data = await res.json();
-        setTrial(data);
-
-        if (typeof window !== "undefined" && window.pendo) {
-          window.pendo.track("sample_case_started", {
-            sample_index: idx,
-            sample_proposal: intake.proposal,
-            trial_id: data.id,
+        try {
+          const res = await fetch("/api/trial", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...intake, isSample: true }),
           });
+          const { id: newId } = await res.json();
+
+          if (typeof window !== "undefined" && window.pendo) {
+            window.pendo.track("sample_case_started", {
+              sample_index: idx,
+              sample_proposal: intake.proposal,
+              trial_id: newId,
+            });
+          }
+
+          // Update URL with the new trial ID without navigation
+          router.replace(`/trial/arraignment?id=${newId}`, { scroll: false });
+          await pollTrial(newId);
+        } catch {
+          // Fallback — load directly
+          setLoading(false);
         }
       } else if (id) {
-        const res = await fetch(`/api/trial?id=${id}`);
-        const data = await res.json();
-        setTrial(data);
+        await pollTrial(id);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
-    load();
-  }, [searchParams]);
+    init();
+    return () => { cancelled = true; };
+  }, [searchParams, router, retryKey]);
 
   // Reveal on load
   useEffect(() => {
@@ -90,11 +162,59 @@ function ArraignmentContent() {
     return () => window.removeEventListener("keydown", handler);
   }, [showContinue, advanceDialogue]);
 
-  if (loading) {
+  if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
-        <div className="font-serif text-court-400 text-lg animate-pulse">The court is assembling...</div>
-        <div className="font-legal text-court-400 text-base italic animate-fade-in-up">All riiise...</div>
+        <p className="text-court-400 font-serif">The court was unable to assemble this case.</p>
+        <p className="text-court-600 text-sm font-legal">Generation exceeded the time limit. You can retry or start a new case.</p>
+        <div className="flex gap-3">
+          <button
+            onClick={handleRetry}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 4v6h6M23 20v-6h-6" />
+              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+            </svg>
+            Retry
+          </button>
+          <Link
+            href="/file"
+            className="inline-flex items-center gap-2 px-6 py-3 border border-gold-500/40 hover:border-gold-500 text-gold-400 hover:text-gold-300 font-semibold rounded-sm transition-all duration-200 text-sm"
+          >
+            File a new case
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    const step = Math.min(generationStep, 5);
+    const progress = PROGRESS_STEPS[step] || PROGRESS_STEPS[0];
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 wood-panel">
+        <div className="font-serif text-court-400 text-lg animate-pulse">{progress.message}</div>
+        <div className="font-legal text-court-500 text-sm italic animate-fade-in-up">{progress.sub}</div>
+        {/* Mini step indicator */}
+        <div className="flex gap-1.5 mt-2">
+          {[0, 1, 2, 3, 4, 5].map((s) => (
+            <div
+              key={s}
+              className={`w-2 h-2 rounded-full transition-all duration-500 ${
+                s <= step
+                  ? "bg-gold-500 shadow-[0_0_6px_rgba(212,175,55,0.5)]"
+                  : "bg-court-700"
+              }`}
+            />
+          ))}
+        </div>
+        <div className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">
+          Step {step} of 5
+        </div>
       </div>
     );
   }

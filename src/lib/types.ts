@@ -15,6 +15,17 @@ export interface VerdictContent {
   test_first: string;
 }
 
+export interface CrossExaminationChoice {
+  label: string;
+  text: string;
+  bailiff_reaction: string;
+}
+
+export interface CrossExaminationQuestion {
+  question: string;
+  choices: CrossExaminationChoice[];
+}
+
 export interface TrialData {
   id: string;
   intake: IntakeForm;
@@ -28,7 +39,7 @@ export interface TrialData {
     opening: string;
     arguments: string[];
   };
-  cross_examination: string[];
+  cross_examination: CrossExaminationQuestion[];
   verdicts: {
     ship: VerdictContent;
     kill: VerdictContent;
@@ -38,6 +49,7 @@ export interface TrialData {
   createdAt: number;
   isSample?: boolean;
   ruling?: Ruling;
+  generationStep?: number;
 }
 
 export type Ruling = 'ship' | 'kill' | 'revise' | 'mistrial';
