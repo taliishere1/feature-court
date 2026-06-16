@@ -5,13 +5,23 @@ import { useEffect, useState, useRef } from "react";
 import { CourtroomBackground, CourtSeal, InteractiveGavel } from "@/components/court-components";
 import { Ruling } from "@/lib/types";
 
+function getIsReturning() {
+  if (typeof window === "undefined") return false;
+  return parseInt(localStorage.getItem("fc-cases-tried") || "0", 10) > 0;
+}
+
 export default function LandingPage() {
   const [casesTried, setCasesTried] = useState(0);
   const [streak, setStreak] = useState(0);
   const [lastRuling, setLastRuling] = useState<Ruling | null>(null);
+  const isReturning = useRef(getIsReturning()).current;
 
-  const [intro, setIntro] = useState({ dark: true, title: false, tagline: false, cta: false });
-  const hasPlayedRef = useRef(false);
+  const [intro, setIntro] = useState({
+    dark: !isReturning,
+    title: isReturning,
+    tagline: isReturning,
+    cta: isReturning,
+  });
 
   useEffect(() => {
     const count = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
@@ -21,19 +31,13 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    if (hasPlayedRef.current) return;
-    hasPlayedRef.current = true;
-    const isReturning = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10) > 0;
-    if (isReturning) {
-      setIntro({ dark: false, title: true, tagline: true, cta: true });
-      return;
-    }
+    if (isReturning) return;
     const t0 = setTimeout(() => setIntro(s => ({ ...s, dark: false })), 100);
     const t1 = setTimeout(() => setIntro(s => ({ ...s, title: true })), 200);
     const t2 = setTimeout(() => setIntro(s => ({ ...s, tagline: true })), 500);
     const t3 = setTimeout(() => setIntro(s => ({ ...s, cta: true })), 900);
     return () => [t0, t1, t2, t3].forEach(clearTimeout);
-  }, []);
+  }, [isReturning]);
 
   return (
     <div className="min-h-screen flex flex-col wood-panel relative overflow-hidden">
@@ -72,7 +76,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <main className="flex-1 flex flex-col items-center px-8 pt-2 pb-12 relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-center px-8 pt-0 pb-4 relative z-10">
         <div className="max-w-2xl mx-auto text-center">
 
           {/* Title */}
