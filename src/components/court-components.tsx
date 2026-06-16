@@ -1095,8 +1095,10 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
           <span className="dialogue-box-name" style={{ color }}>{name}</span>
         </div>
         <div className="dialogue-box-body">
-          {typing && (
+          {typing ? (
             <TypewriterText text={text} speed={typingSpeed} tag="span" onComplete={handleTypeComplete} />
+          ) : (
+            <span>{text}</span>
           )}
         </div>
         {showContinue && typingDone && (
