@@ -45,7 +45,7 @@ function ProsecutionContent() {
     }, 1500);
   }, [objectionActive, trial]);
 
-  const LoadingState />;
+  if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
   return (
@@ -120,7 +120,6 @@ function ProsecutionContent() {
               <Link
                 href={`/trial/defense?id=${trial.id}`}
                 className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
-                onClick={() => playPaperRustle()}
               >
                 Hear the defense
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">

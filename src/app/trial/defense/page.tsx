@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay, useSoundEffects } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay } from "@/components/court-components";
 
 function DefenseContent() {
   const searchParams = useSearchParams();
@@ -14,7 +14,6 @@ function DefenseContent() {
   const [objectionActive, setObjectionActive] = useState(false);
   const [objectionArg, setObjectionArg] = useState<number | null>(null);
   const [showNext, setShowNext] = useState(false);
-  const { playGavelKnock, playPaperRustle } = useSoundEffects();
   const mounted = useRef(false);
 
   useEffect(() => {
@@ -27,12 +26,11 @@ function DefenseContent() {
         if (mounted.current) {
           setTrial(data);
           setRevealed(true);
-          playGavelKnock();
         }
       })
       .finally(() => setLoading(false));
     return () => { mounted.current = false; };
-  }, [searchParams, playGavelKnock]);
+  }, [searchParams]);
 
   const handleEvidenceClick = useCallback((idx: number) => {
     if (objectionActive) return;
@@ -46,10 +44,6 @@ function DefenseContent() {
       }
     }, 1500);
   }, [objectionActive, trial]);
-
-  useEffect(() => {
-    if (revealed) playPaperRustle();
-  }, [revealed, playPaperRustle]);
 
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
@@ -126,7 +120,6 @@ function DefenseContent() {
               <Link
                 href={`/trial/cross?id=${trial.id}`}
                 className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
-                onClick={() => playPaperRustle()}
               >
                 Cross-examination
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">

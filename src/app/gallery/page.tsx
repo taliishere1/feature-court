@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { CourtroomBackground, JudgePortrait, useSoundEffects } from "@/components/court-components";
+import { CourtroomBackground, JudgePortrait } from "@/components/court-components";
 
 interface RulingRecord {
   id: string;
@@ -40,14 +40,12 @@ export default function GalleryPage() {
   const [streak, setStreak] = useState(0);
   const [lastRuling, setLastRuling] = useState<Ruling | null>(null);
   const [casesTried, setCasesTried] = useState(0);
-  const { playGavelKnock } = useSoundEffects();
 
   useEffect(() => {
     fetch("/api/trial?all=true")
       .then((r) => r.json())
       .then((data) => {
         setTrials(data);
-        if (data.length > 0) playGavelKnock();
       })
       .finally(() => setLoading(false));
     // Load stored rulings from localStorage
@@ -56,7 +54,7 @@ export default function GalleryPage() {
     setStreak(parseInt(localStorage.getItem("fc-streak") || "0", 10));
     setLastRuling(localStorage.getItem("fc-last-ruling") as Ruling | null);
     setCasesTried(parseInt(localStorage.getItem("fc-cases-tried") || "0", 10));
-  }, [playGavelKnock]);
+  }, []);
 
   const totalVerdicts = rulings.length;
 

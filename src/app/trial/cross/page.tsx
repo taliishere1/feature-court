@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, useSoundEffects } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox } from "@/components/court-components";
 
 const BAILIFF_REACTIONS: Record<string, Record<number, string>> = {
   confident: {
@@ -55,7 +55,6 @@ function CrossContent() {
   const [bailiffText, setBailiffText] = useState("The court has heard both sides. Before you rule, you must answer.");
   const [showContinue, setShowContinue] = useState(false);
   const [bailiffDialogueIndex, setBailiffDialogueIndex] = useState(0);
-  const { playPaperRustle, playGavelKnock } = useSoundEffects();
   const mounted = useRef(false);
 
   const bailiffDialogues = [
@@ -74,12 +73,11 @@ function CrossContent() {
         if (mounted.current) {
           setTrial(data);
           setRevealed(true);
-          playPaperRustle();
         }
       })
       .finally(() => setLoading(false));
     return () => { mounted.current = false; };
-  }, [searchParams, playPaperRustle]);
+  }, [searchParams]);
 
   const handleDialogueComplete = useCallback(() => {
     setShowContinue(true);
@@ -106,7 +104,6 @@ function CrossContent() {
       next[questionIdx] = msg;
       return next;
     });
-    playPaperRustle();
     // Auto-advance to next question
     setTimeout(() => {
       if (questionIdx === 0) {
@@ -115,7 +112,7 @@ function CrossContent() {
         setBailiffText(bailiffDialogues[2]);
       }
     }, 1200);
-  }, [playPaperRustle]);
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -123,7 +120,6 @@ function CrossContent() {
     const allAnswered = Array.from({ length: numQuestions }).every((_, i) => selectedChoices[i] !== undefined);
     if (!allAnswered) return;
     setSubmitting(true);
-    playGavelKnock();
     const id = searchParams.get("id");
     router.push(`/trial/ruling?id=${id}`);
   }
