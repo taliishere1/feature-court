@@ -1,9 +1,6 @@
 import { TrialData } from "./types";
 import { supabase, isSupabaseConfigured } from "./supabase";
 
-// In-memory fallback when Supabase is not configured
-const fallbackStore = new Map<string, TrialData>();
-
 function rowToTrialData(row: Record<string, unknown>): TrialData {
   return {
     id: row.id as string,
@@ -34,74 +31,71 @@ function trialDataToRow(data: TrialData): Record<string, unknown> {
   };
 }
 
-export async function getTrial(id: string): Promise<TrialData | undefined> {
-  if (isSupabaseConfigured()) {
-    const { data, error } = await supabase!
-      .from("trials")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error || !data) return undefined;
-    return rowToTrialData(data as Record<string, unknown>);
+function requireSupabase() {
+  if (!isSupabaseConfigured()) {
+    throw new Error("Supabase is not configured. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.");
   }
+}
 
-  return fallbackStore.get(id);
+export async function getTrial(id: string): Promise<TrialData | undefined> {
+  requireSupabase();
+
+  const { data, error } = await supabase!
+    .from("trials")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return undefined;
+  return rowToTrialData(data as Record<string, unknown>);
 }
 
 export async function setTrial(id: string, data: TrialData): Promise<void> {
-  if (isSupabaseConfigured()) {
-    const row = trialDataToRow(data);
-    const { error } = await supabase!.from("trials").upsert(row, {
-      onConflict: "id",
-    });
+  requireSupabase();
 
-    if (error) {
-      console.error("Supabase insert error:", error);
-    }
-    return;
+  const row = trialDataToRow(data);
+  const { error } = await supabase!.from("trials").upsert(row, {
+    onConflict: "id",
+  });
+
+  if (error) {
+    console.error("Supabase insert error:", error);
   }
-
-  fallbackStore.set(id, data);
 }
 
 export async function getAllTrials(): Promise<TrialData[]> {
-  if (isSupabaseConfigured()) {
-    const { data, error } = await supabase!
-      .from("trials")
-      .select("*")
-      .eq("is_sample", false)
-      .order("created_at", { ascending: false });
+  requireSupabase();
 
-    if (error) {
-      console.error("Supabase query error:", error);
-      return [];
-    }
+  const { data, error } = await supabase!
+    .from("trials")
+    .select("*")
+    .eq("is_sample", false)
+    .order("created_at", { ascending: false });
 
-    return (data || []).map((row) =>
-      rowToTrialData(row as Record<string, unknown>)
-    );
+  if (error) {
+    console.error("Supabase query error:", error);
+    return [];
   }
 
-  return Array.from(fallbackStore.values()).filter((t) => !t.isSample);
+  return (data || []).map((row) =>
+    rowToTrialData(row as Record<string, unknown>)
+  );
 }
 
 export async function getPublicTrials(): Promise<TrialData[]> {
-  if (isSupabaseConfigured()) {
-    const { data, error } = await supabase!
-      .from("trials")
-      .select("*")
-      .order("created_at", { ascending: false });
+  requireSupabase();
 
-    if (error) {
-      console.error("Supabase query error:", error);
-      return [];
-    }
+  const { data, error } = await supabase!
+    .from("trials")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-    return (data || []).map((row) =>
-      rowToTrialData(row as Record<string, unknown>)
-    );
+  if (error) {
+    console.error("Supabase query error:", error);
+    return [];
   }
 
-  return Array.from(fallbackStore.values());
+  return (data || []).map((row) =>
+    rowToTrialData(row as Record<string, unknown>)
+  );
 }
