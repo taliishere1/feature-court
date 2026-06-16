@@ -79,6 +79,9 @@ export default function LandingPage() {
                 {casesTried} case{casesTried !== 1 ? "s" : ""}
               </span>
             )}
+            <Link href="/guide" className="text-sm text-court-400 hover:text-court-200 transition-colors">
+              Guide
+            </Link>
             <Link href="/gallery" className="text-sm text-court-400 hover:text-court-200 transition-colors">
               Record
             </Link>
