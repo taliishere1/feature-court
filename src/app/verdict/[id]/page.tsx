@@ -290,6 +290,15 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
               onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
                 triggerToast("Verdict link copied");
+
+                if (typeof window !== "undefined" && window.pendo) {
+                  window.pendo.track("verdict_link_copied", {
+                    trial_id: trial?.id ?? "",
+                    ruling: ruling ?? "",
+                    case_title: trial?.case_title ?? "",
+                    is_sample: trial?.isSample ?? false,
+                  });
+                }
               }}
               className="group inline-flex items-center gap-2 px-5 py-3 border border-court-600 hover:border-court-400 text-court-300 hover:text-court-100 rounded-sm transition-all duration-200 text-sm font-medium animate-button-press"
             >
@@ -304,6 +313,15 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
                 const text = `FEATURE COURT\n\n${trial.case_title}\nRuling: ${RULING_LABELS[ruling]}\n\n"${verdict.sentence}"\n\nfeaturecourt.app`;
                 navigator.clipboard.writeText(text);
                 triggerToast("Verdict text copied");
+
+                if (typeof window !== "undefined" && window.pendo) {
+                  window.pendo.track("verdict_shared", {
+                    trial_id: trial.id,
+                    ruling: ruling,
+                    case_title: trial.case_title,
+                    is_sample: trial.isSample ?? false,
+                  });
+                }
               }}
               className="group inline-flex items-center gap-2 px-5 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
             >

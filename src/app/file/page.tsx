@@ -27,6 +27,18 @@ export default function FileCasePage() {
       });
       if (!res.ok) throw new Error("Failed to create trial");
       const data = await res.json();
+
+      if (typeof window !== "undefined" && window.pendo) {
+        window.pendo.track("case_filed", {
+          trial_id: data.id,
+          gut_call: form.gutCall,
+          proposal_length: form.proposal.length,
+          audience_length: form.audience.length,
+          why_now_length: form.whyNow.length,
+          tradeoff_length: form.tradeoff.length,
+        });
+      }
+
       router.push(`/trial/arraignment?id=${data.id}`);
     } catch {
       alert("Something went wrong. Please try again.");

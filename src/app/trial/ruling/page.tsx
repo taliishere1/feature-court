@@ -52,6 +52,18 @@ function RulingContent() {
 
   function handleSubmit() {
     if (!selected || !trial) return;
+
+    if (typeof window !== "undefined" && window.pendo) {
+      window.pendo.track("verdict_delivered", {
+        trial_id: trial.id,
+        ruling: selected,
+        gut_call: trial.intake.gutCall ?? "none",
+        gut_mismatch: trial.intake.gutCall ? selected !== trial.intake.gutCall : false,
+        case_title: trial.case_title,
+        is_sample: trial.isSample ?? false,
+      });
+    }
+
     const count = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
     localStorage.setItem("fc-cases-tried", String(count + 1));
     const rulings = JSON.parse(localStorage.getItem("fc-rulings") || "[]");

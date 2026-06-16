@@ -121,6 +121,16 @@ function CrossContent() {
     if (!allAnswered) return;
     setSubmitting(true);
     const id = searchParams.get("id");
+
+    if (typeof window !== "undefined" && window.pendo) {
+      window.pendo.track("cross_examination_submitted", {
+        trial_id: id,
+        question_count: trial?.cross_examination.length ?? 0,
+        total_answer_length: Object.keys(selectedChoices).length,
+        case_title: trial?.case_title ?? "",
+      });
+    }
+
     router.push(`/trial/ruling?id=${id}`);
   }
 

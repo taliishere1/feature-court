@@ -36,6 +36,14 @@ function ArraignmentContent() {
         });
         const data = await res.json();
         setTrial(data);
+
+        if (typeof window !== "undefined" && window.pendo) {
+          window.pendo.track("sample_case_started", {
+            sample_index: idx,
+            sample_proposal: intake.proposal,
+            trial_id: data.id,
+          });
+        }
       } else if (id) {
         const res = await fetch(`/api/trial?id=${id}`);
         const data = await res.json();
