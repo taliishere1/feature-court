@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { TypewriterText, SignatureBlock, ToastNotification, CourtroomBackground } from "@/components/court-components";
+import { TypewriterText, SignatureBlock, ToastNotification, CourtroomBackground, CourtSeal } from "@/components/court-components";
 
 const RULING_LABELS: Record<Ruling, string> = {
   ship: "SHIP IT",
@@ -150,10 +150,8 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
 
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
+          <Link href="/" className="flex items-center gap-2 group">
+            <CourtSeal className="w-5 h-5 text-gold-500" />
             <span className="font-display text-base text-gold-500">FEATURE COURT</span>
           </Link>
           <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">Final Verdict</span>
