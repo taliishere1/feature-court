@@ -39,7 +39,7 @@ export default function LandingPage() {
     <div className="min-h-screen flex flex-col wood-panel relative overflow-hidden">
       <CourtroomBackground opacity={0.06} />
 
-      {intro.dark && <div className="fixed inset-0 bg-[#030712] z-50 animate-fade-in-down" />}
+      <div className={`fixed inset-0 bg-[#030712] z-50 transition-opacity duration-500 ${intro.dark ? "opacity-100" : "opacity-0 pointer-events-none"}`} />
 
       {/* Clean header */}
       <header className={`relative z-10 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0 -translate-y-4"}`}>
@@ -77,16 +77,12 @@ export default function LandingPage() {
 
           {/* Title */}
           <div className={`mb-4 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0"}`}>
-            {intro.title && (
-              <>
-                <div className="flex justify-center mb-6">
-                  <InteractiveGavel className="w-20 h-20 text-gold-500" />
-                </div>
-                <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black leading-[1.04] gold-foil tracking-normal">
-                  FEATURE COURT
-                </h1>
-              </>
-            )}
+            <div className="flex justify-center mb-6">
+              <InteractiveGavel className="w-20 h-20 text-gold-500" />
+            </div>
+            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black leading-[1.04] gold-foil tracking-normal">
+              FEATURE COURT
+            </h1>
           </div>
 
           {/* Subtitle */}
@@ -119,12 +115,14 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          {casesTried > 0 && intro.cta && (
-            <p className="text-court-600 text-xs mt-6 font-mono">
-              {casesTried} case{casesTried !== 1 ? "s" : ""} tried
-              {streak >= 2 && lastRuling && <> &middot; {streak}-case streak</>}
-            </p>
-          )}
+          <div className={`transition-all duration-700 ${intro.cta ? "opacity-100" : "opacity-0"}`}>
+            {casesTried > 0 && (
+              <p className="text-court-600 text-xs mt-6 font-mono">
+                {casesTried} case{casesTried !== 1 ? "s" : ""} tried
+                {streak >= 2 && lastRuling && <> &middot; {streak}-case streak</>}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* How it works */}
