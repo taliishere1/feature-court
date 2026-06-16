@@ -49,6 +49,7 @@ export interface TrialData {
   createdAt: number;
   isSample?: boolean;
   ruling?: Ruling;
+  generationStep?: number;
 }
 
 export type Ruling = 'ship' | 'kill' | 'revise' | 'mistrial';

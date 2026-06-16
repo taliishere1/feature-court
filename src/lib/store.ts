@@ -29,6 +29,7 @@ function rowToTrialData(row: Record<string, unknown>): TrialData {
     createdAt: new Date(row.created_at as string).getTime(),
     isSample: (row.is_sample as boolean) || undefined,
     ruling: row.ruling as TrialData["ruling"] | undefined,
+    generationStep: row.generation_step as number | undefined,
   };
 }
 
@@ -45,6 +46,7 @@ function trialDataToRow(data: TrialData): Record<string, unknown> {
     created_at: new Date(data.createdAt).toISOString(),
     is_sample: data.isSample || false,
     ruling: data.ruling || null,
+    generation_step: data.generationStep ?? null,
   };
 }
 
@@ -78,6 +80,12 @@ export async function setTrial(id: string, data: TrialData): Promise<void> {
   if (error) {
     console.error("Supabase insert error:", error);
   }
+}
+
+export async function updateTrial(id: string, partial: Partial<TrialData>): Promise<void> {
+  const existing = await getTrial(id);
+  if (!existing) return;
+  await setTrial(id, { ...existing, ...partial });
 }
 
 export async function getAllTrials(): Promise<TrialData[]> {

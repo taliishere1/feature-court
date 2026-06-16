@@ -1,0 +1,1 @@
+ALTER TABLE trials ADD COLUMN IF NOT EXISTS generation_step integer DEFAULT 0;

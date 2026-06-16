@@ -1,16 +1,27 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
 import { StageProgress, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
 
+const PROGRESS_STEPS = [
+  { message: "The court is assembling...", sub: "Preparing the docket" },
+  { message: "Reading the charge...", sub: "Bailiff Sprint is reviewing the filing" },
+  { message: "Briefing the prosecution...", sub: "Prosecutor Mary T. Bug is preparing her case" },
+  { message: "Preparing the defense...", sub: "Defense Attorney Edward \"Edge\" Case is building a response" },
+  { message: "Drafting cross-examination...", sub: "Preparing questions for the witness" },
+  { message: "Weighing the verdicts...", sub: "The bench is considering possible outcomes" },
+];
+
 function ArraignmentContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generationStep, setGenerationStep] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showCharge, setShowCharge] = useState(false);
@@ -25,35 +36,71 @@ function ArraignmentContent() {
     const id = searchParams.get("id");
     const sampleIdx = searchParams.get("sample");
 
-    async function load() {
+    let cancelled = false;
+
+    async function pollTrial(trialId: string) {
+      while (!cancelled) {
+        try {
+          const res = await fetch(`/api/trial?id=${trialId}`);
+          const data: TrialData = await res.json();
+
+          if (cancelled) return;
+
+          const step = data.generationStep ?? 0;
+          setGenerationStep(step);
+          setTrial(data);
+
+          // Trial is ready when generationStep >= 5 or we have real charge data
+          if (step >= 5 || (data.charge && data.charge.length > 0)) {
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // Retry on error
+        }
+
+        // Wait before next poll
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
+
+    async function init() {
       if (sampleIdx !== null) {
         const idx = parseInt(sampleIdx);
         const intake = SAMPLE_CASES[idx] || SAMPLE_CASES[0];
-        const res = await fetch("/api/trial", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...intake, isSample: true }),
-        });
-        const data = await res.json();
-        setTrial(data);
-
-        if (typeof window !== "undefined" && window.pendo) {
-          window.pendo.track("sample_case_started", {
-            sample_index: idx,
-            sample_proposal: intake.proposal,
-            trial_id: data.id,
+        try {
+          const res = await fetch("/api/trial", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...intake, isSample: true }),
           });
+          const { id: newId } = await res.json();
+
+          if (typeof window !== "undefined" && window.pendo) {
+            window.pendo.track("sample_case_started", {
+              sample_index: idx,
+              sample_proposal: intake.proposal,
+              trial_id: newId,
+            });
+          }
+
+          // Update URL with the new trial ID without navigation
+          router.replace(`/trial/arraignment?id=${newId}`, { scroll: false });
+          await pollTrial(newId);
+        } catch {
+          // Fallback — load directly
+          setLoading(false);
         }
       } else if (id) {
-        const res = await fetch(`/api/trial?id=${id}`);
-        const data = await res.json();
-        setTrial(data);
+        await pollTrial(id);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
-    load();
-  }, [searchParams]);
+    init();
+    return () => { cancelled = true; };
+  }, [searchParams, router]);
 
   // Reveal on load
   useEffect(() => {
@@ -91,10 +138,28 @@ function ArraignmentContent() {
   }, [showContinue, advanceDialogue]);
 
   if (loading) {
+    const step = Math.min(generationStep, 5);
+    const progress = PROGRESS_STEPS[step] || PROGRESS_STEPS[0];
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
-        <div className="font-serif text-court-400 text-lg animate-pulse">The court is assembling...</div>
-        <div className="font-legal text-court-400 text-base italic animate-fade-in-up">All riiise...</div>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 wood-panel">
+        <div className="font-serif text-court-400 text-lg animate-pulse">{progress.message}</div>
+        <div className="font-legal text-court-500 text-sm italic animate-fade-in-up">{progress.sub}</div>
+        {/* Mini step indicator */}
+        <div className="flex gap-1.5 mt-2">
+          {[0, 1, 2, 3, 4, 5].map((s) => (
+            <div
+              key={s}
+              className={`w-2 h-2 rounded-full transition-all duration-500 ${
+                s <= step
+                  ? "bg-gold-500 shadow-[0_0_6px_rgba(212,175,55,0.5)]"
+                  : "bg-court-700"
+              }`}
+            />
+          ))}
+        </div>
+        <div className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">
+          Step {step} of 5
+        </div>
       </div>
     );
   }
