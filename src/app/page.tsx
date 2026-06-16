@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { CourtroomBackground, CourtSeal } from "@/components/court-components";
+import { CourtroomBackground, CourtSeal, InteractiveGavel } from "@/components/court-components";
 import { Ruling } from "@/lib/types";
 
 export default function LandingPage() {
@@ -78,9 +78,14 @@ export default function LandingPage() {
           {/* Title */}
           <div className={`mb-4 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0"}`}>
             {intro.title && (
-              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black leading-[1.04] gold-foil tracking-normal">
-                FEATURE COURT
-              </h1>
+              <>
+                <div className="flex justify-center mb-6">
+                  <InteractiveGavel className="w-20 h-20 text-gold-500" />
+                </div>
+                <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black leading-[1.04] gold-foil tracking-normal">
+                  FEATURE COURT
+                </h1>
+              </>
             )}
           </div>
 
