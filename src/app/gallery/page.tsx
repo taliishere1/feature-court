@@ -103,7 +103,7 @@ export default function GalleryPage() {
             <div className="max-w-5xl mx-auto mb-8">
               <div className="parchment p-4 animate-fade-in-up">
                 <div className="flex items-center justify-between mb-3 relative z-10">
-                  <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500">Your Record</span>
+                  <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500">Court Record</span>
                   <span className="font-mono text-[9px] text-court-500">
                     <span className="text-gold-500">{totalVerdicts}</span> case{totalVerdicts !== 1 ? "s" : ""} tried
                   </span>
