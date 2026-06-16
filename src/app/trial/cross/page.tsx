@@ -6,47 +6,11 @@ import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox } from "@/components/court-components";
 
-const BAILIFF_REACTIONS: Record<string, Record<number, string>> = {
-  confident: {
-    0: "Confidence — a dangerous currency in this court.",
-    1: "You speak with conviction. The jury will note it.",
-  },
-  cautious: {
-    0: "Wisdom in uncertainty. The bench appreciates humility.",
-    1: "A measured response. Prudence has its place.",
-  },
-  contrarian: {
-    0: "Bold. The prosecution will have words about this.",
-    1: "Interesting angle. Defense Attorney Edward \"Edge\" Case would agree.",
-  },
-  practical: {
-    0: "A pragmatic answer. The numbers matter here.",
-    1: "Practicality — the unsung virtue of good judgment.",
-  },
-  honest: {
-    0: "Honesty. Rare in these chambers.",
-    1: "Truth-telling. The court values candor.",
-  },
-};
-
 const BAILIFF_DIALOGUES: string[] = [
   "The court has heard both sides. Before you rule, you must answer.",
   "Let us begin with the first question.",
   "Well reasoned. One more question to answer.",
 ];
-
-const CHOICES: Record<number, { label: string; reaction: keyof typeof BAILIFF_REACTIONS; text: string }[]> = {
-  0: [
-    { label: "The metric goes flat", reaction: "honest", text: "I'll watch it closely and kill this if it dips." },
-    { label: "It'll go up — I believe in this", reaction: "confident", text: "Growth. If I didn't believe in this, I wouldn't be here." },
-    { label: "I'd set a clear guardrail", reaction: "practical", text: "I'll define the metric upfront and set a decision gate." },
-  ],
-  1: [
-    { label: "It's real signal", reaction: "confident", text: "I've done the research. This isn't FOMO." },
-    { label: "Honestly? Maybe FOMO", reaction: "cautious", text: "It could be. Sometimes FOMO is just early market awareness." },
-    { label: "Both — signal AND urgency", reaction: "contrarian", text: "Signal says go, urgency says now. Both." },
-  ],
-};
 
 function CrossContent() {
   const searchParams = useSearchParams();
@@ -57,7 +21,7 @@ function CrossContent() {
   const [bailiffMessages, setBailiffMessages] = useState<(string | null)[]>([null, null]);
   const [submitting, setSubmitting] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [showQuestion, setShowQuestion] = useState<number>(0);
+  const [showQuestion, setShowQuestion] = useState<number>(-1);
   const [bailiffText, setBailiffText] = useState("The court has heard both sides. Before you rule, you must answer.");
   const [showContinue, setShowContinue] = useState(false);
   const [bailiffDialogueIndex, setBailiffDialogueIndex] = useState(0);
@@ -94,14 +58,13 @@ function CrossContent() {
 
   const handleChoice = useCallback((questionIdx: number, choiceIdx: number) => {
     setSelectedChoices((prev) => ({ ...prev, [questionIdx]: choiceIdx }));
-    const choices = CHOICES[questionIdx];
-    if (!choices) return;
-    const choice = choices[choiceIdx];
-    const reactions = BAILIFF_REACTIONS[choice.reaction];
-    const msg = reactions[questionIdx] || reactions[0];
+    const questions = trial?.cross_examination;
+    if (!questions || !questions[questionIdx]) return;
+    const choice = questions[questionIdx].choices[choiceIdx];
+    if (!choice) return;
     setBailiffMessages((prev) => {
       const next = [...prev];
-      next[questionIdx] = msg;
+      next[questionIdx] = choice.bailiff_reaction;
       return next;
     });
     // Auto-advance to next question
@@ -112,7 +75,7 @@ function CrossContent() {
         setBailiffText(BAILIFF_DIALOGUES[2]);
       }
     }, 1200);
-  }, []);
+  }, [trial]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -177,8 +140,8 @@ function CrossContent() {
 
           {/* Questions */}
           <form onSubmit={handleSubmit} className="space-y-8 mt-8">
-            {trial.cross_examination.slice(0, 2).map((question, i) => {
-              const choices = CHOICES[i];
+            {trial.cross_examination.slice(0, 2).map((cq, i) => {
+              const choices = cq.choices;
               const selected = selectedChoices[i];
               const isVisible = showQuestion === i;
               return (
@@ -190,7 +153,7 @@ function CrossContent() {
                     <div className="animate-dramatic-zoom text-center">
                       <div className="parchment p-6 max-w-xl mx-auto">
                         <span className="font-mono text-[9px] text-gold-500 uppercase tracking-[0.25em] block mb-3">Question {i + 1}</span>
-                        <p className="text-court-200 font-serif text-lg mb-5 leading-relaxed">{question}</p>
+                        <p className="text-court-200 font-serif text-lg mb-5 leading-relaxed">{cq.question}</p>
                         {choices && (
                           <div className="space-y-2">
                             {choices.map((choice, ci) => (
