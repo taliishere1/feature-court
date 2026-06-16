@@ -195,7 +195,7 @@ export function StageProgress({ current }: { current: number }) {
 
 // ─── Interactive Gavel ───
 
-export function InteractiveGavel({ onStrike, className = "" }: { onStrike?: () => void; className?: string }) {
+export function InteractiveGavel({ onStrike, className = "", width = 72, height = 72 }: { onStrike?: () => void; className?: string; width?: number; height?: number }) {
   const [striking, setStriking] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -216,8 +216,8 @@ export function InteractiveGavel({ onStrike, className = "" }: { onStrike?: () =
           <Image
             src="/images/gavel.png"
             alt="Gavel"
-            width={72}
-            height={72}
+            width={width}
+            height={height}
             className="shrink-0 object-contain"
             unoptimized
             onError={() => setImgError(true)}

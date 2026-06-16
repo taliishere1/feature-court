@@ -37,7 +37,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col wood-panel relative overflow-hidden">
-      <CourtroomBackground opacity={0.06} />
+      <CourtroomBackground opacity={0.1} />
 
       <div className={`fixed inset-0 bg-[#030712] z-50 transition-opacity duration-500 ${intro.dark ? "opacity-100" : "opacity-0 pointer-events-none"}`} />
 
@@ -72,13 +72,13 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center px-8 py-8 relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-center px-8 py-4 relative z-10">
         <div className="max-w-2xl mx-auto text-center">
 
           {/* Title */}
-          <div className={`mb-4 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0"}`}>
-            <div className="flex justify-center mb-6">
-              <InteractiveGavel className="w-28 h-28 text-gold-500" />
+          <div className={`mb-2 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0"}`}>
+            <div className="flex justify-center mb-1">
+              <InteractiveGavel width={200} height={200} className="text-gold-500" />
             </div>
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black leading-[1.04] gold-foil tracking-normal">
               FEATURE COURT
