@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { CourtSeal, StageProgress, OrnateDivider, ScrollworkBorder, CourtroomBackground, JudgePortrait, useSoundEffects, DramaticPause } from "@/components/court-components";
+import { StageProgress, ScrollworkBorder, CourtroomBackground, JudgePortrait, useSoundEffects, DramaticPause } from "@/components/court-components";
 
 const RULING_OPTIONS: { key: Ruling; label: string; description: string; sentence: string; color: string; bgClass: string }[] = [
   { key: "ship", label: "Ship It", description: "Full speed ahead.", sentence: "The evidence is sufficient. Proceed with confidence.", color: "var(--color-stamp-ship)", bgClass: "hover:bg-stamp-ship/5" },
@@ -106,12 +106,10 @@ function RulingContent() {
           <StageProgress current={5} />
 
           <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-3 mb-2 animate-fade-in-up">
-              <CourtSeal className="w-7 h-7 text-gold-500" />
+            <div className="inline-flex items-center gap-2 mb-2 animate-fade-in-up">
               <h1 className="font-display text-2xl sm:text-3xl font-bold text-gold-500">
                 How do you rule, Your Honor?
               </h1>
-              <CourtSeal className="w-7 h-7 text-gold-500" />
             </div>
             <p className="text-court-400 text-sm font-legal animate-fade-in-up stagger-1">
               Case: <span className="text-court-200">{trial.case_title}</span>
@@ -121,11 +119,9 @@ function RulingContent() {
           {/* Dramatic pause - click to reveal options */}
           {!showOptions ? (
             <div className="text-center animate-fade-in-up stagger-2">
-              <div className="parchment p-8 mb-8 max-w-md mx-auto">
-                <div className="flex items-center justify-center gap-3 mb-4">
-                  <CourtSeal className="w-6 h-6 text-gold-500" animated />
+              <div className="parchment p-6 mb-8 max-w-md mx-auto">
+                <div className="flex items-center justify-center gap-2 mb-3">
                   <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">The Bench</span>
-                  <CourtSeal className="w-6 h-6 text-gold-500" animated />
                 </div>
                 <p className="text-court-300 font-legal italic text-base leading-relaxed mb-6">
                   &ldquo;You have heard both sides. The evidence has been presented.
@@ -226,7 +222,6 @@ function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
       <div className="flex flex-col items-center gap-4">
-        <CourtSeal className="w-8 h-8 text-gold-500" animated />
         <div className="text-court-400 font-serif">Preparing the bench...</div>
       </div>
     </div>

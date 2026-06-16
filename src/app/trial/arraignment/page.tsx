@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
-import { CourtSeal, StageProgress, TypewriterText, OrnateDivider, CourtroomBackground, BailiffPortrait, DialogueBox, useSoundEffects } from "@/components/court-components";
+import { StageProgress, TypewriterText, CourtroomBackground, BailiffPortrait, DialogueBox } from "@/components/court-components";
 
 function ArraignmentContent() {
   const searchParams = useSearchParams();
@@ -16,11 +16,10 @@ function ArraignmentContent() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showCharge, setShowCharge] = useState(false);
   const [showContinue, setShowContinue] = useState(false);
-  const { playGavelKnock, playPaperRustle, playSwoosh } = useSoundEffects();
 
   const bailiffDialogues = [
-    "All rise for the Honorable Ship Itwell...",
-    "The court is now in session. The Honorable Ship Itwell presiding.",
+    "All rise for the Honorable Judge Ship Itwell...",
+    "The court is now in session. The Honorable Judge Ship Itwell presiding.",
   ];
 
   useEffect(() => {
@@ -52,20 +51,13 @@ function ArraignmentContent() {
   // Gavel sequence on load
   useEffect(() => {
     if (!loading && trial) {
-      const t1 = setTimeout(() => { setBailiffStage(1); playGavelKnock(); }, 300);
-      const t2 = setTimeout(() => { setBailiffStage(2); playGavelKnock(); }, 700);
-      const t3 = setTimeout(() => {
-        setBailiffStage(3);
-        playGavelKnock();
-      }, 1100);
-      const t4 = setTimeout(() => {
-        setRevealed(true);
-        playPaperRustle();
-        playSwoosh();
-      }, 1500);
+      const t1 = setTimeout(() => setBailiffStage(1), 300);
+      const t2 = setTimeout(() => setBailiffStage(2), 700);
+      const t3 = setTimeout(() => setBailiffStage(3), 1100);
+      const t4 = setTimeout(() => setRevealed(true), 1500);
       return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
     }
-  }, [loading, trial, playGavelKnock, playPaperRustle, playSwoosh]);
+  }, [loading, trial]);
 
   const handleDialogueComplete = useCallback(() => {
     if (dialogueIndex < bailiffDialogues.length - 1) {
@@ -97,12 +89,6 @@ function ArraignmentContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
-        <CourtSeal className="w-12 h-12 text-gold-500" animated />
-        <div className="flex gap-2">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="w-2 h-8 rounded-full bg-gold-500/60 animate-pulse" style={{ animationDelay: `${i * 0.15}s` }} />
-          ))}
-        </div>
         <div className="font-serif text-court-400 text-lg animate-pulse">The court is assembling...</div>
         <div className="font-legal text-court-500 text-sm italic animate-fade-in-up">All riiise...</div>
       </div>
@@ -133,17 +119,14 @@ function ArraignmentContent() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 pt-8 pb-48 relative z-10">
+      <main className="flex-1 px-6 pt-4 pb-48 relative z-10">
         <div className="max-w-3xl mx-auto animate-page-enter">
-          <div className="text-center mb-6">
+          <div className="text-center mb-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 1 of 5</span>
           </div>
 
           <StageProgress current={1} />
-
-          {/* Dramatic gavel sequence */}
-          <div className="text-center mb-8">
-            <div className={`inline-flex items-center gap-2 transition-all duration-300 ${bailiffStage >= 1 ? "opacity-100" : "opacity-0"}`}>
+          <div className={`inline-flex items-center gap-2 transition-all duration-300 ${bailiffStage >= 1 ? "opacity-100" : "opacity-0"}`}>
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
@@ -154,21 +137,18 @@ function ArraignmentContent() {
                 />
               ))}
             </div>
-          </div>
 
           {/* Charge reveal */}
-          <div className={`text-center mb-10 transition-all duration-700 ${showCharge ? "opacity-100" : "opacity-0"}`}>
+          <div className={`text-center mb-6 transition-all duration-700 ${showCharge ? "opacity-100" : "opacity-0"}`}>
             <div className="animate-dramatic-zoom">
-              <div className="parchment p-8 max-w-2xl mx-auto">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <CourtSeal className="w-6 h-6 text-gold-500" />
+              <div className="parchment p-6 max-w-2xl mx-auto">
+                <div className="flex items-center justify-center gap-2 mb-3">
                   <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-gold-500">The Charge</span>
-                  <CourtSeal className="w-6 h-6 text-gold-500" />
                 </div>
                 <h1 className="font-serif text-2xl sm:text-3xl font-bold text-court-100 leading-tight mb-4">
                   {trial.case_title}
                 </h1>
-                <OrnateDivider className="mb-4" />
+                <div className="border-t border-gold-500/20 mb-3"></div>
                 <p className="text-court-300 text-base leading-relaxed font-legal tracking-wide italic drop-cap">
                   &ldquo;{trial.charge}&rdquo;
                 </p>
@@ -177,12 +157,12 @@ function ArraignmentContent() {
               {/* Case summary */}
               <div className="parchment-ruled p-6 mt-6 text-left max-w-lg mx-auto">
                 <div className="flex items-center gap-2 mb-4 relative z-10">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gold-500">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-gold-500">
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                   <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">Filing Summary</span>
                 </div>
-                <div className="space-y-3 relative z-10">
+                <div className="space-y-1.5 relative z-10">
                   <SummaryRow label="Proposal" value={trial.intake.proposal} />
                   <SummaryRow label="Serves" value={trial.intake.audience} />
                   <SummaryRow label="Timing" value={trial.intake.whyNow} />
@@ -211,7 +191,7 @@ function ArraignmentContent() {
       {revealed && !showCharge && (
         <DialogueBox
           portrait={<BailiffPortrait size="thumb" reaction="neutral" />}
-          name="Sprint"
+          name="Bailiff Sprint"
           text={bailiffDialogues[dialogueIndex]}
           color="#a67c00"
           typingSpeed={25}

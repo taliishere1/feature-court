@@ -3,172 +3,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 
-// ─── Sound Effects (Web Audio API) ───
-
-export function useSoundEffects() {
-  const audioCtxRef = useRef<AudioContext | null>(null);
-
-  const getContext = useCallback(() => {
-    if (!audioCtxRef.current) {
-      const Ctx = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (Ctx) audioCtxRef.current = new Ctx();
-    }
-    return audioCtxRef.current as AudioContext;
-  }, []);
-
-  const playGavelKnock = useCallback(() => {
-    try {
-      const ctx = getContext();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "triangle";
-      o.frequency.setValueAtTime(120, ctx.currentTime);
-      o.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.08);
-      g.gain.setValueAtTime(0.4, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-      o.connect(g);
-      g.connect(ctx.destination);
-      o.start(ctx.currentTime);
-      o.stop(ctx.currentTime + 0.15);
-      // Add second knock for resonance
-      const o2 = ctx.createOscillator();
-      const g2 = ctx.createGain();
-      o2.type = "sine";
-      o2.frequency.setValueAtTime(80, ctx.currentTime);
-      g2.gain.setValueAtTime(0.15, ctx.currentTime);
-      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-      o2.connect(g2);
-      g2.connect(ctx.destination);
-      o2.start(ctx.currentTime);
-      o2.stop(ctx.currentTime + 0.25);
-    } catch {}
-  }, [getContext]);
-
-  const playStampSlam = useCallback(() => {
-    try {
-      const ctx = getContext();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sawtooth";
-      o.frequency.setValueAtTime(200, ctx.currentTime);
-      o.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.12);
-      g.gain.setValueAtTime(0.5, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-      o.connect(g);
-      g.connect(ctx.destination);
-      o.start(ctx.currentTime);
-      o.stop(ctx.currentTime + 0.2);
-      // Noise burst
-      const bufferSize = ctx.sampleRate * 0.08;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
-      }
-      const noise = ctx.createBufferSource();
-      const ng = ctx.createGain();
-      noise.buffer = buffer;
-      ng.gain.setValueAtTime(0.3, ctx.currentTime);
-      ng.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-      noise.connect(ng);
-      ng.connect(ctx.destination);
-      noise.start(ctx.currentTime);
-    } catch {}
-  }, [getContext]);
-
-  const playPaperRustle = useCallback(() => {
-    try {
-      const ctx = getContext();
-      const bufferSize = ctx.sampleRate * 0.15;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 1.5);
-      }
-      const noise = ctx.createBufferSource();
-      const g = ctx.createGain();
-      noise.buffer = buffer;
-      g.gain.setValueAtTime(0.08, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-      // Bandpass filter for paper-like sound
-      const filter = ctx.createBiquadFilter();
-      filter.type = "bandpass";
-      filter.frequency.setValueAtTime(2000, ctx.currentTime);
-      filter.Q.setValueAtTime(0.5, ctx.currentTime);
-      noise.connect(filter);
-      filter.connect(g);
-      g.connect(ctx.destination);
-      noise.start(ctx.currentTime);
-    } catch {}
-  }, [getContext]);
-
-  const playSwoosh = useCallback(() => {
-    try {
-      const ctx = getContext();
-      const bufferSize = ctx.sampleRate * 0.2;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
-      }
-      const noise = ctx.createBufferSource();
-      const g = ctx.createGain();
-      noise.buffer = buffer;
-      g.gain.setValueAtTime(0.06, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-      // Sweep filter
-      const filter = ctx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.setValueAtTime(300, ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(3000, ctx.currentTime + 0.15);
-      filter.Q.setValueAtTime(1, ctx.currentTime);
-      noise.connect(filter);
-      filter.connect(g);
-      g.connect(ctx.destination);
-      noise.start(ctx.currentTime);
-    } catch {}
-  }, [getContext]);
-
-  const playConfetti = useCallback(() => {
-    try {
-      const ctx = getContext();
-      for (let i = 0; i < 8; i++) {
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.type = "sine";
-        const freq = 600 + Math.random() * 800;
-        o.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.05);
-        o.frequency.exponentialRampToValueAtTime(freq * 3, ctx.currentTime + i * 0.05 + 0.15);
-        g.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.05);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.05 + 0.15);
-        o.connect(g);
-        g.connect(ctx.destination);
-        o.start(ctx.currentTime + i * 0.05);
-        o.stop(ctx.currentTime + i * 0.05 + 0.15);
-      }
-    } catch {}
-  }, [getContext]);
-
-  const playAmbientHum = useCallback(() => {
-    try {
-      const ctx = getContext();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.setValueAtTime(55, ctx.currentTime);
-      o.frequency.linearRampToValueAtTime(58, ctx.currentTime + 2);
-      g.gain.setValueAtTime(0.03, ctx.currentTime);
-      g.gain.linearRampToValueAtTime(0.02, ctx.currentTime + 3);
-      o.connect(g);
-      g.connect(ctx.destination);
-      o.start(ctx.currentTime);
-      o.stop(ctx.currentTime + 3);
-    } catch {}
-  }, [getContext]);
-
-  return { playGavelKnock, playStampSlam, playPaperRustle, playSwoosh, playConfetti, playAmbientHum };
-}
-
 // ─── Ornate Court Seal ───
 
 export function CourtSeal({ className = "w-12 h-12", animated = false }: { className?: string; animated?: boolean }) {
@@ -777,20 +611,6 @@ export function DustMotes({ count = 8 }: { count?: number }) {
   return <div ref={containerRef} />;
 }
 
-// ─── Ambient Court Hum ───
-
-export function AmbientCourtHum() {
-  const { playAmbientHum } = useSoundEffects();
-  useEffect(() => {
-    playAmbientHum();
-    const interval = setInterval(() => {
-      playAmbientHum();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [playAmbientHum]);
-  return null;
-}
-
 // ─── Rubber Stamp ───
 
 export function RubberStamp({
@@ -952,7 +772,7 @@ export function LoadingCeremony({ message = "The court is assembling..." }: { me
         {/* Bailiff quote cycling */}
         <div className="font-legal text-court-500 text-sm italic max-w-md text-center animate-fade-in-up">
           {gavelCount === 0 && "All riiise..."}
-          {gavelCount === 1 && "The Honorable Ship Itwell is now in session..."}
+          {gavelCount === 1 && "The Honorable Judge Ship Itwell is now in session..."}
           {gavelCount === 2 && "May the evidence be presented fairly..."}
           {gavelCount >= 3 && "Proceed, counselor..."}
         </div>
