@@ -8,11 +8,31 @@ export const metadata: Metadata = {
   description:
     "Your product decision goes on trial. The prosecution tears it apart, the defense fights for it, and you deliver the verdict.",
   icons: {
-    icon: "/images/seal.png",
+    icon: "/favicon.ico",
   },
   openGraph: {
-    title: "Feature Court",
-    description: "Put your product decision on trial.",
+    title: "Feature Court — Put your product decision on trial",
+    description:
+      "Your product decision goes on trial. The prosecution tears it apart, the defense fights for it, and you deliver the verdict.",
+    url: "https://feature-court.vercel.app",
+    siteName: "Feature Court",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Feature Court — Put your product decision on trial",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Feature Court — Put your product decision on trial",
+    description:
+      "Your product decision goes on trial. The prosecution tears it apart, the defense fights for it, and you deliver the verdict.",
+    images: ["/og-image.png"],
   },
 };
 
