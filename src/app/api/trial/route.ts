@@ -46,8 +46,22 @@ function generateMockTrial(intake: IntakeForm): Omit<TrialData, 'id' | 'createdA
       ],
     },
     cross_examination: [
-      `If you ${intake.tradeoff.toLowerCase().includes('delay') || intake.tradeoff.toLowerCase().includes('month') ? 'commit to this' : 'pursue this'}, what concrete metric are you willing to see go flat or down as a result?`,
-      `Be honest: is "${intake.whyNow}" a real market signal, or is it FOMO dressed up as strategy?`,
+      {
+        question: `If you ${intake.tradeoff.toLowerCase().includes('delay') || intake.tradeoff.toLowerCase().includes('month') ? 'commit to this' : 'pursue this'}, what concrete metric are you willing to see go flat or down as a result?`,
+        choices: [
+          { label: "Revenue", text: "I'll watch revenue growth — if it dips, I'll course-correct immediately.", bailiff_reaction: "A sharp eye on the bottom line. Prudent." },
+          { label: "Engineering velocity", text: "Ship velocity will tell the real story. If we slow down, this wasn't worth it.", bailiff_reaction: "Velocity over vanity. The court approves." },
+          { label: "User engagement", text: "If engagement drops in the core experience, the tradeoff isn't worth it.", bailiff_reaction: "The user's voice — always the truest measure." },
+        ],
+      },
+      {
+        question: `Be honest: is "${intake.whyNow}" a real market signal, or is it FOMO dressed up as strategy?`,
+        choices: [
+          { label: "Real signal", text: "I've got the data to back this up. This is real demand.", bailiff_reaction: "Data speaks louder than doubt." },
+          { label: "Could be FOMO", text: "Honestly? Maybe both. But sometimes you need to move before the data is perfect.", bailiff_reaction: "Rare honesty in this court. The jury will note it." },
+          { label: "Either way, now is right", text: "Signal or FOMO — the window is now either way.", bailiff_reaction: "Decisiveness has its own virtue." },
+        ],
+      },
     ],
     verdicts: {
       ship: {
@@ -126,8 +140,10 @@ export async function POST(request: NextRequest) {
   try {
     let trialData: Omit<TrialData, 'id' | 'createdAt' | 'isSample'>;
 
-    // Use Supabase Edge Function for OpenAI generation, fall back to mock
-    if (process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY) {
+    // Call OpenAI directly (fastest), fall back to Edge Function, fall back to mock
+    if (process.env.OPENAI_API_KEY) {
+      trialData = await generateWithOpenAI(intake);
+    } else if (process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY) {
       trialData = await generateWithEdgeFunction(intake);
     } else {
       trialData = generateMockTrial(intake);
@@ -182,6 +198,138 @@ async function generateWithEdgeFunction(intake: IntakeForm): Promise<Omit<TrialD
   };
 }
 
+async function generateWithOpenAI(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
+  const systemPrompt = `You are the engine behind FEATURE COURT, where product decisions go on trial. You write three distinct voices: the BAILIFF "Bailiff Sprint" (dry, theatrical, always rushing the docket), the PROSECUTION "Prosecutor Mary T. Bug" (sharp, relentless, exposes every flaw with surgical precision), and the DEFENSE "Defense Attorney Edward 'Edge' Case" (optimistic, principled, steel-mans the upside with conviction). Be specific to THIS decision. Every argument must reference the actual proposal, user, timing, or tradeoff given. Be witty but substantive. Do not invent facts about real companies or real events. Return ONLY valid JSON matching the schema.`;
+
+  const intakeContext = `Product Decision:
+Proposal: ${intake.proposal}
+Who it serves: ${intake.audience}
+Why now: ${intake.whyNow}
+Tradeoff: ${intake.tradeoff}`;
+
+  async function callOpenAI(params: {
+    input: string;
+    instructions?: string;
+    previous_response_id?: string;
+  }): Promise<{ id: string; text: string }> {
+    const body: Record<string, unknown> = {
+      model: "gpt-4o-mini",
+      instructions: params.instructions || systemPrompt,
+      input: params.input,
+      max_output_tokens: 4096,
+    };
+    if (params.previous_response_id) {
+      body.previous_response_id = params.previous_response_id;
+    }
+
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`OpenAI API error ${response.status}: ${errBody}`);
+    }
+
+    const data = await response.json();
+    const content = data.output_text || data.output?.[0]?.content?.[0]?.text;
+    if (!content) throw new Error("No content in OpenAI response");
+    return { id: data.id, text: content };
+  }
+
+  function extractJSON(text: string): Record<string, unknown> {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("No JSON found in OpenAI response");
+    return JSON.parse(match[0]);
+  }
+
+  // === STEP 1: Charge and Case Title ===
+  const step1 = await callOpenAI({
+    input: `${intakeContext}\n\nGenerate only the charge and case_title for this Feature Court trial. The charge is a single dramatic sentence describing what this proposal "stands charged" with. The case_title is a short, theatrical court case name.\n\nReturn JSON:\n{\n  "charge": "...",\n  "case_title": "..."\n}`,
+  });
+  const chargeData = extractJSON(step1.text);
+  const charge = chargeData.charge as string;
+  const case_title = chargeData.case_title as string;
+
+  // === STEP 2: Prosecution Opening + Arguments ===
+  const step2 = await callOpenAI({
+    previous_response_id: step1.id,
+    input: `The charge has been read: "${charge}"\n\nNow generate the PROSECUTION's opening statement and 3 arguments. Prosecutor Mary T. Bug is sharp, relentless, exposes every flaw with surgical precision. Each argument must reference the actual proposal, audience, timing, or tradeoff.\n\nReturn JSON:\n{\n  "prosecution": { "opening": "...", "arguments": ["...", "...", "..."] }\n}`,
+  });
+  const prosecutionData = extractJSON(step2.text);
+  const prosecution = prosecutionData.prosecution as { opening: string; arguments: string[] };
+
+  // === STEP 3: Defense Opening + Arguments ===
+  const step3 = await callOpenAI({
+    previous_response_id: step2.id,
+    input: `The prosecution has made their case. Now generate the DEFENSE's opening statement and 3 arguments. Defense Attorney Edward "Edge" Case is optimistic, principled, steel-mans the upside with conviction. Each argument must directly respond to or reframe the prosecution's points and reference the actual proposal, audience, timing, or tradeoff.\n\nReturn JSON:\n{\n  "defense": { "opening": "...", "arguments": ["...", "...", "..."] }\n}`,
+  });
+  const defenseData = extractJSON(step3.text);
+  const defense = defenseData.defense as { opening: string; arguments: string[] };
+
+  // === STEP 4: Cross-Examination Questions with Choices ===
+  const step4 = await callOpenAI({
+    previous_response_id: step3.id,
+    input: `Both sides have argued. Now generate 2 cross-examination questions that the BAILIFF will ask the user (the judge) before they deliver their ruling. These should probe the user's conviction, honesty, and readiness — forcing them to reconcile the tension between the prosecution and defense arguments they just heard.
+
+Each question must have 3 answer choices. Each choice has:
+- label: a short label describing the type of answer (e.g. "Confident", "Cautious", "Pragmatic")
+- text: what the user says when they pick this choice
+- bailiff_reaction: Bailiff Sprint's dramatic reaction to this choice
+
+Make the questions and choices SPECIFIC to this trial's proposal, audience, timing, and tradeoff. NOT generic.
+
+Return JSON:
+{
+  "cross_examination": [
+    {
+      "question": "...",
+      "choices": [
+        { "label": "...", "text": "...", "bailiff_reaction": "..." },
+        { "label": "...", "text": "...", "bailiff_reaction": "..." },
+        { "label": "...", "text": "...", "bailiff_reaction": "..." }
+      ]
+    },
+    {
+      "question": "...",
+      "choices": [
+        { "label": "...", "text": "...", "bailiff_reaction": "..." },
+        { "label": "...", "text": "...", "bailiff_reaction": "..." },
+        { "label": "...", "text": "...", "bailiff_reaction": "..." }
+      ]
+    }
+  ]
+}`,
+  });
+  const crossData = extractJSON(step4.text);
+  const cross_examination = crossData.cross_examination as TrialData["cross_examination"];
+
+  // === STEP 5: All Verdicts ===
+  const step5 = await callOpenAI({
+    previous_response_id: step4.id,
+    input: `Now generate all 4 possible verdicts for this trial. Each verdict must have a sentence, real_risk, strongest_ignored_argument, and test_first. Reflect the specific arguments made by both sides in this case.\n\nReturn JSON:\n{\n  "verdicts": {\n    "ship": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },\n    "kill": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },\n    "revise": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },\n    "mistrial": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." }\n  }\n}`,
+  });
+  const verdictsData = extractJSON(step5.text);
+  const verdicts = verdictsData.verdicts as TrialData["verdicts"];
+
+  const assembled = {
+    intake,
+    charge,
+    case_title,
+    prosecution,
+    defense,
+    cross_examination,
+    verdicts,
+  };
+
+  return validateTrialJSON(assembled as unknown as Record<string, unknown>, intake);
+}
+
 export async function PATCH(request: NextRequest) {
   const { id, ruling } = await request.json();
 
@@ -218,6 +366,17 @@ function validateTrialJSON(json: Record<string, unknown>, intake: IntakeForm): O
   // Ensure cross_examination is an array
   if (!Array.isArray(j.cross_examination)) {
     throw new Error('Invalid cross_examination format');
+  }
+  // Validate each cross-examination question has question + choices
+  for (const q of j.cross_examination) {
+    if (!q.question || !Array.isArray(q.choices) || q.choices.length < 2) {
+      throw new Error('Invalid cross_examination question format');
+    }
+    for (const c of q.choices) {
+      if (!c.label || !c.text || !c.bailiff_reaction) {
+        throw new Error('Invalid cross_examination choice format');
+      }
+    }
   }
 
   // Ensure all verdicts exist
