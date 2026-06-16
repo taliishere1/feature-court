@@ -12,7 +12,6 @@ function ArraignmentContent() {
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
-  const [bailiffStage, setBailiffStage] = useState(0);
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showCharge, setShowCharge] = useState(false);
   const [showContinue, setShowContinue] = useState(false);
@@ -48,14 +47,11 @@ function ArraignmentContent() {
     load();
   }, [searchParams]);
 
-  // Gavel sequence on load
+  // Reveal on load
   useEffect(() => {
     if (!loading && trial) {
-      const t1 = setTimeout(() => setBailiffStage(1), 300);
-      const t2 = setTimeout(() => setBailiffStage(2), 700);
-      const t3 = setTimeout(() => setBailiffStage(3), 1100);
-      const t4 = setTimeout(() => setRevealed(true), 1500);
-      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+      const t = setTimeout(() => setRevealed(true), 500);
+      return () => clearTimeout(t);
     }
   }, [loading, trial]);
 
@@ -126,17 +122,6 @@ function ArraignmentContent() {
           </div>
 
           <StageProgress current={1} />
-          <div className={`inline-flex items-center gap-2 transition-all duration-300 ${bailiffStage >= 1 ? "opacity-100" : "opacity-0"}`}>
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className={`w-1.5 rounded-full transition-all duration-500 ${
-                    bailiffStage > i ? "bg-gold-500/80 scale-y-100" : "bg-court-700 scale-y-50"
-                  }`}
-                  style={{ height: bailiffStage > i ? `${24 - i * 4}px` : "6px" }}
-                />
-              ))}
-            </div>
 
           {/* Charge reveal */}
           <div className={`text-center mb-6 transition-all duration-700 ${showCharge ? "opacity-100" : "opacity-0"}`}>

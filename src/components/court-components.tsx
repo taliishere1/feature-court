@@ -743,39 +743,11 @@ export function PageTransition({ children, direction = "in" }: { children: React
 // ─── Loading Ceremony ───
 
 export function LoadingCeremony({ message = "The court is assembling..." }: { message?: string }) {
-  const [gavelCount, setGavelCount] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGavelCount((c) => (c < 3 ? c + 1 : c));
-    }, 400);
-    setTimeout(() => clearInterval(interval), 1200);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center wood-panel">
       <div className="flex flex-col items-center gap-6 animate-page-enter">
         <CourtSeal className="w-12 h-12 text-gold-500" animated />
-        <div className="flex gap-2">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className={`w-2 h-8 rounded-full bg-gold-500/60 transition-all duration-300 ${
-                gavelCount > i ? "opacity-100 scale-y-100" : "opacity-30 scale-y-50"
-              }`}
-              style={{ transitionDelay: `${i * 0.1}s` }}
-            />
-          ))}
-        </div>
         <div className="font-serif text-court-400 text-lg animate-pulse">{message}</div>
-        {/* Bailiff quote cycling */}
-        <div className="font-legal text-court-500 text-sm italic max-w-md text-center animate-fade-in-up">
-          {gavelCount === 0 && "All riiise..."}
-          {gavelCount === 1 && "The Honorable Judge Ship Itwell is now in session..."}
-          {gavelCount === 2 && "May the evidence be presented fairly..."}
-          {gavelCount >= 3 && "Proceed, counselor..."}
-        </div>
       </div>
     </div>
   );
