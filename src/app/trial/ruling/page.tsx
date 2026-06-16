@@ -64,6 +64,14 @@ function RulingContent() {
       });
     }
 
+    // Save ruling to Supabase
+    fetch("/api/trial", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: trial.id, ruling: selected }),
+    }).catch((e) => console.error("Failed to save ruling:", e));
+
+    // Local storage for instant landing page stats (legacy — will replace)
     const count = parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
     localStorage.setItem("fc-cases-tried", String(count + 1));
     const rulings = JSON.parse(localStorage.getItem("fc-rulings") || "[]");

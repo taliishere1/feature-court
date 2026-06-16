@@ -5,13 +5,6 @@ import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
 import { CourtroomBackground, CourtSeal, JudgePortrait } from "@/components/court-components";
 
-interface RulingRecord {
-  id: string;
-  ruling: Ruling;
-  caseTitle: string;
-  timestamp: number;
-}
-
 const RULING_LABELS: Record<Ruling, string> = {
   ship: "Ship It",
   kill: "Kill It",
@@ -36,22 +29,6 @@ const RULING_BG: Record<Ruling, string> = {
 export default function GalleryPage() {
   const [trials, setTrials] = useState<TrialData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [rulings] = useState<RulingRecord[]>(() => {
-    if (typeof window === "undefined") return [];
-    return JSON.parse(localStorage.getItem("fc-rulings") || "[]");
-  });
-  const [streak] = useState(() => {
-    if (typeof window === "undefined") return 0;
-    return parseInt(localStorage.getItem("fc-streak") || "0", 10);
-  });
-  const [lastRuling] = useState<Ruling | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("fc-last-ruling") as Ruling | null;
-  });
-  const [casesTried] = useState(() => {
-    if (typeof window === "undefined") return 0;
-    return parseInt(localStorage.getItem("fc-cases-tried") || "0", 10);
-  });
 
   useEffect(() => {
     fetch("/api/trial?all=true")
@@ -62,12 +39,22 @@ export default function GalleryPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const totalVerdicts = rulings.length;
+  const ruledTrials = trials.filter((t) => t.ruling);
+  const totalVerdicts = ruledTrials.length;
 
   const stats: { key: Ruling; count: number; pct: number }[] = (["ship", "kill", "revise", "mistrial"] as Ruling[]).map((key) => {
-    const count = rulings.filter((r) => r.ruling === key).length;
+    const count = ruledTrials.filter((t) => t.ruling === key).length;
     return { key, count, pct: totalVerdicts > 0 ? Math.round((count / totalVerdicts) * 100) : 0 };
   });
+
+  // Compute streak from Supabase data
+  const sortedByTime = [...ruledTrials].sort((a, b) => a.createdAt - b.createdAt);
+  const lastRuling = sortedByTime.length > 0 ? sortedByTime[sortedByTime.length - 1].ruling : null;
+  let streak = 0;
+  for (let i = sortedByTime.length - 1; i >= 0; i--) {
+    if (sortedByTime[i].ruling === lastRuling) streak++;
+    else break;
+  }
 
   return (
     <div className="min-h-screen flex flex-col wood-panel relative">
@@ -112,13 +99,13 @@ export default function GalleryPage() {
           </div>
 
           {/* Stats bar */}
-          {casesTried > 0 && (
+          {totalVerdicts > 0 && (
             <div className="max-w-5xl mx-auto mb-8">
               <div className="parchment p-4 animate-fade-in-up">
                 <div className="flex items-center justify-between mb-3 relative z-10">
-                  <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500">Your Record</span>
+                  <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500">Court Record</span>
                   <span className="font-mono text-[9px] text-court-500">
-                    <span className="text-gold-500">{casesTried}</span> case{casesTried !== 1 ? "s" : ""} tried
+                    <span className="text-gold-500">{totalVerdicts}</span> case{totalVerdicts !== 1 ? "s" : ""} tried
                   </span>
                 </div>
                 <div className="grid grid-cols-4 gap-4 relative z-10">
