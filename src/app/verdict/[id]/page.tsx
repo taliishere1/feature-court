@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { TypewriterText, SignatureBlock, ToastNotification, useSoundEffects } from "@/components/court-components";
+import { TypewriterText, SignatureBlock, ToastNotification } from "@/components/court-components";
 
 const RULING_LABELS: Record<Ruling, string> = {
   ship: "SHIP IT",
@@ -56,8 +56,6 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
   const [screenDim, setScreenDim] = useState(false);
   const [showKillOverlay, setShowKillOverlay] = useState(false);
 
-  const { playGavelKnock, playStampSlam, playPaperRustle, playConfetti, playSwoosh } = useSoundEffects();
-
   useEffect(() => {
     async function load() {
       const { id } = await params;
@@ -80,15 +78,13 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     if (!loading && trial && ruling) {
       setScreenDim(true);
-      const t1 = setTimeout(() => { playGavelKnock(); }, 400);
-      const t2 = setTimeout(() => { playGavelKnock(); }, 800);
+      const t1 = setTimeout(() => {}, 400);
+      const t2 = setTimeout(() => {}, 800);
       const t3 = setTimeout(() => {
-        playGavelKnock();
         setCeremony((c) => ({ ...c, gavel: true }));
         setScreenDim(false);
       }, 1200);
       const t4 = setTimeout(() => {
-        playStampSlam();
         setCeremony((c) => ({ ...c, stamp: true }));
         if (ruling === "kill") {
           setShowKillOverlay(true);
@@ -96,20 +92,16 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
         }
       }, 1800);
       const t5 = setTimeout(() => {
-        playPaperRustle();
         setCeremony((c) => ({ ...c, seal: true }));
       }, 2400);
       const t6 = setTimeout(() => {
         setCeremony((c) => ({ ...c, sentence: true }));
-        playSwoosh();
         if (ruling === "ship") {
           setShowConfetti(true);
-          playConfetti();
         }
       }, 3200);
       const t7 = setTimeout(() => {
         setCeremony((c) => ({ ...c, details: true }));
-        playPaperRustle();
       }, 4200);
       const t8 = setTimeout(() => {
         setCeremony((c) => ({ ...c, signature: true }));
@@ -122,7 +114,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
         [t1, t2, t3, t4, t5, t6, t7, t8, t9].forEach(clearTimeout);
       };
     }
-  }, [loading, trial, ruling, playGavelKnock, playStampSlam, playPaperRustle, playConfetti, playSwoosh]);
+  }, [loading, trial, ruling]);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);

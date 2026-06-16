@@ -3,11 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useSoundEffects } from "@/components/court-components";
-
 export default function FileCasePage() {
   const router = useRouter();
-  const { playGavelKnock, playPaperRustle } = useSoundEffects();
   const [form, setForm] = useState({
     proposal: "",
     audience: "",
@@ -20,7 +17,6 @@ export default function FileCasePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    playGavelKnock();
 
     try {
       const res = await fetch("/api/trial", {
@@ -79,7 +75,7 @@ export default function FileCasePage() {
                   type="text"
                   required
                   value={form.proposal}
-                  onChange={(e) => { setForm({ ...form, proposal: e.target.value }); playPaperRustle(); }}
+                  onChange={(e) => { setForm({ ...form, proposal: e.target.value }); }}
                   placeholder='e.g. "Build a mobile app", "Cut the comments feature"'
                   className="w-full bg-transparent border border-court-700 rounded-sm px-4 py-3 text-court-100 placeholder:text-court-600/40 focus:outline-none focus:border-gold-500/60 transition-colors text-sm font-legal tracking-wide"
                 />
