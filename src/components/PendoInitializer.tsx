@@ -11,9 +11,19 @@ export default function PendoInitializer() {
       localStorage.setItem("fc-visitor-id", visitorId);
     }
 
+    // Generate a stable anonymous account ID for the single-player app
+    let accountId = localStorage.getItem("fc-account-id");
+    if (!accountId) {
+      accountId = "feature-court-" + crypto.randomUUID().slice(0, 8);
+      localStorage.setItem("fc-account-id", accountId);
+    }
+
     pendo.initialize({
       visitor: {
         id: visitorId,
+      },
+      account: {
+        id: accountId,
       },
     });
   }, []);
