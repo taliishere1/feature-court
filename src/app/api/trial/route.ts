@@ -201,54 +201,53 @@ Return the JSON in this exact format:
   return validateTrialJSON(parsed, intake);
 }
 
-function validateTrialJSON(json: any, intake: IntakeForm): Omit<TrialData, 'id' | 'createdAt' | 'isSample'> {
-  // json is typed as any intentionally — this is a runtime validation function
-  // that validates arbitrary JSON from external APIs. Every field is checked at runtime.
+function validateTrialJSON(json: Record<string, unknown>, intake: IntakeForm): Omit<TrialData, 'id' | 'createdAt' | 'isSample'> {
+  const j = json as unknown as Omit<TrialData, 'id' | 'createdAt' | 'isSample' | 'intake'>;
   const required = ['charge', 'case_title', 'prosecution', 'defense', 'cross_examination', 'verdicts'];
   for (const key of required) {
     if (!json[key]) throw new Error(`Missing required field: ${key}`);
   }
 
   // Ensure prosecution has opening and arguments
-  if (!json.prosecution.opening || !Array.isArray(json.prosecution.arguments)) {
+  if (!j.prosecution.opening || !Array.isArray(j.prosecution.arguments)) {
     throw new Error('Invalid prosecution format');
   }
 
   // Ensure defense has opening and arguments
-  if (!json.defense.opening || !Array.isArray(json.defense.arguments)) {
+  if (!j.defense.opening || !Array.isArray(j.defense.arguments)) {
     throw new Error('Invalid defense format');
   }
 
   // Ensure cross_examination is an array
-  if (!Array.isArray(json.cross_examination)) {
+  if (!Array.isArray(j.cross_examination)) {
     throw new Error('Invalid cross_examination format');
   }
 
   // Ensure all verdicts exist
-  for (const v of ['ship', 'kill', 'revise', 'mistrial']) {
-    if (!json.verdicts[v]?.sentence) {
+  for (const v of ['ship', 'kill', 'revise', 'mistrial'] as const) {
+    if (!j.verdicts[v]?.sentence) {
       throw new Error(`Missing sentence for verdict: ${v}`);
     }
   }
 
   return {
     intake,
-    charge: json.charge,
-    case_title: json.case_title,
+    charge: j.charge,
+    case_title: j.case_title,
     prosecution: {
-      opening: json.prosecution.opening,
-      arguments: json.prosecution.arguments,
+      opening: j.prosecution.opening,
+      arguments: j.prosecution.arguments,
     },
     defense: {
-      opening: json.defense.opening,
-      arguments: json.defense.arguments,
+      opening: j.defense.opening,
+      arguments: j.defense.arguments,
     },
-    cross_examination: json.cross_examination,
+    cross_examination: j.cross_examination,
     verdicts: {
-      ship: json.verdicts.ship,
-      kill: json.verdicts.kill,
-      revise: json.verdicts.revise,
-      mistrial: json.verdicts.mistrial,
+      ship: j.verdicts.ship,
+      kill: j.verdicts.kill,
+      revise: j.verdicts.revise,
+      mistrial: j.verdicts.mistrial,
     },
   };
 }

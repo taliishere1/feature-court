@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useReducer } from "react";
 import Image from "next/image";
 
 // ─── Ornate Court Seal ───
@@ -403,15 +403,24 @@ export function TypewriterText({
   tag?: "p" | "h1" | "h2" | "h3" | "span" | "div";
   onComplete?: () => void;
 }) {
-  const [displayed, setDisplayed] = useState("");
-  const [started, setStarted] = useState(false);
+  type TWState = { displayed: string; started: boolean };
+type TWAction = { type: 'RESET' } | { type: 'START' } | { type: 'ADD_CHAR'; text: string; i: number };
+
+function twReducer(state: TWState, action: TWAction): TWState {
+  switch (action.type) {
+    case 'RESET': return { displayed: '', started: false };
+    case 'START': return { ...state, started: true };
+    case 'ADD_CHAR': return { ...state, displayed: action.text.slice(0, action.i) };
+    default: return state;
+  }
+}
+
+  const [{ displayed, started }, dispatch] = useReducer(twReducer, { displayed: '', started: false });
   const completedRef = useRef(false);
 
   useEffect(() => {
-    setDisplayed("");
-    setStarted(false);
-    completedRef.current = false;
-    const timer = setTimeout(() => setStarted(true), delay);
+    dispatch({ type: 'RESET' });
+    const timer = setTimeout(() => dispatch({ type: 'START' }), delay);
     return () => clearTimeout(timer);
   }, [delay, text]);
 
@@ -420,7 +429,7 @@ export function TypewriterText({
     let i = 0;
     const interval = setInterval(() => {
       i++;
-      setDisplayed(text.slice(0, i));
+      dispatch({ type: 'ADD_CHAR', text, i });
       if (i >= text.length) {
         clearInterval(interval);
         if (!completedRef.current) {
@@ -622,7 +631,9 @@ export function RubberStamp({
   color?: string;
   offset?: boolean;
 }) {
-  const rotation = offset ? (Math.random() - 0.5) * 6 : 0;
+  const rotation = offset ? 2 : 0;
+  const inkDx = 1;
+  const inkDy = 1;
 
   return (
     <div
@@ -651,7 +662,7 @@ export function RubberStamp({
         style={{
           border: `2px solid ${color}`,
           borderRadius: "4px",
-          transform: `translate(${(Math.random() - 0.5) * 2}px, ${(Math.random() - 0.5) * 2}px)`,
+          transform: `translate(${inkDx}px, ${inkDy}px)`,
         }}
       />
     </div>
@@ -755,14 +766,24 @@ export function LoadingCeremony({ message = "The court is assembling..." }: { me
 
 // ─── Objection Stamp ───
 
+type StampAction = { type: 'SHOW' } | { type: 'HIDE' };
+
+function stampReducer(state: boolean, action: StampAction): boolean {
+  switch (action.type) {
+    case 'SHOW': return true;
+    case 'HIDE': return false;
+    default: return state;
+  }
+}
+
 export function ObjectionStamp({ active, onComplete }: { active: boolean; onComplete?: () => void }) {
-  const [showing, setShowing] = useState(false);
+  const [showing, dispatch] = useReducer(stampReducer, false);
 
   useEffect(() => {
     if (active) {
-      setShowing(true);
+      dispatch({ type: 'SHOW' });
       const timer = setTimeout(() => {
-        setShowing(false);
+        dispatch({ type: 'HIDE' });
         onComplete?.();
       }, 800);
       return () => clearTimeout(timer);
@@ -1039,18 +1060,26 @@ export function DialogueBox({
   onComplete,
   showContinue = true,
 }: DialogueBoxProps) {
-  const [typing, setTyping] = useState(false);
-  const [typingDone, setTypingDone] = useState(false);
+  type TBAction = { type: 'START_TYPING' } | { type: 'FINISH_TYPING' };
+
+function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAction): typeof state {
+  switch (action.type) {
+    case 'START_TYPING': return { typing: true, typingDone: false };
+    case 'FINISH_TYPING': return { typing: false, typingDone: true };
+    default: return state;
+  }
+}
+
+  const [{ typing, typingDone }, tbDispatch] = useReducer(tbReducer, { typing: false, typingDone: false });
 
   useEffect(() => {
-    setTypingDone(false);
     if (text) {
-      setTyping(true);
+      tbDispatch({ type: 'START_TYPING' });
     }
   }, [text]);
 
   const handleTypeComplete = useCallback(() => {
-    setTypingDone(true);
+    tbDispatch({ type: 'FINISH_TYPING' });
     onComplete?.();
   }, [onComplete]);
 
@@ -1088,13 +1117,13 @@ export function ObjectionOverlay({
   side?: "prosecution" | "defense";
   onComplete?: () => void;
 }) {
-  const [showing, setShowing] = useState(false);
+  const [showing, dispatchOverlay] = useReducer(stampReducer, false);
 
   useEffect(() => {
     if (active) {
-      setShowing(true);
+      dispatchOverlay({ type: 'SHOW' });
       const timer = setTimeout(() => {
-        setShowing(false);
+        dispatchOverlay({ type: 'HIDE' });
         onComplete?.();
       }, 1500);
       return () => clearTimeout(timer);
@@ -1181,25 +1210,36 @@ export function DramaticPause({
   active: boolean;
   onComplete?: () => void;
 }) {
-  const [dots, setDots] = useState(0);
+  type DotsAction = { type: 'RESET' } | { type: 'TICK' } | { type: 'DONE' };
+
+function dotsReducer(state: number, action: DotsAction): number {
+  switch (action.type) {
+    case 'RESET': return 0;
+    case 'TICK': return state + 1;
+    case 'DONE': return 3;
+    default: return state;
+  }
+}
+
+  const [dots, dotsDispatch] = useReducer(dotsReducer, 0);
 
   useEffect(() => {
     if (!active) {
-      setDots(0);
+      dotsDispatch({ type: 'RESET' });
       return;
     }
     const interval = setInterval(() => {
-      setDots((d) => {
-        if (d >= 3) {
-          clearInterval(interval);
-          onComplete?.();
-          return 3;
-        }
-        return d + 1;
-      });
+      dotsDispatch({ type: 'TICK' });
     }, 400);
     return () => clearInterval(interval);
   }, [active, onComplete]);
+
+  // Watch for dots reaching 3 via a separate effect since dispatch doesn't have access to new value
+  useEffect(() => {
+    if (dots >= 3) {
+      onComplete?.();
+    }
+  }, [dots, onComplete]);
 
   if (!active) return null;
 
