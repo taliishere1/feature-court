@@ -10,6 +10,7 @@ function ProsecutionContent() {
   const searchParams = useSearchParams();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [objectionActive, setObjectionActive] = useState(false);
   const [showNext, setShowNext] = useState(false);
@@ -19,16 +20,40 @@ function ProsecutionContent() {
     mounted.current = true;
     const id = searchParams.get("id");
     if (!id) return;
-    fetch(`/api/trial?id=${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (mounted.current) {
-          setTrial(data);
-          setRevealed(true);
+
+    let cancelled = false;
+    let retries = 0;
+    const MAX_RETRIES = 30;
+
+    (async function poll() {
+      while (!cancelled && retries < MAX_RETRIES) {
+        try {
+          const res = await fetch(`/api/trial?id=${id}`);
+          const data: TrialData = await res.json();
+          if (cancelled) return;
+
+          const isReady = data.prosecution?.opening && data.prosecution.opening.length > 0;
+          if (isReady) {
+            if (mounted.current) {
+              setTrial(data);
+              setRevealed(true);
+              setLoading(false);
+            }
+            return;
+          }
+        } catch {
+          // retry on transient errors
         }
-      })
-      .finally(() => setLoading(false));
-    return () => { mounted.current = false; };
+        retries++;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      if (!cancelled && mounted.current) {
+        setError(true);
+        setLoading(false);
+      }
+    })();
+
+    return () => { mounted.current = false; cancelled = true; };
   }, [searchParams]);
 
   const handleEvidenceClick = useCallback((idx: number) => {
@@ -42,6 +67,7 @@ function ProsecutionContent() {
     }, 1500);
   }, [objectionActive, trial]);
 
+  if (error) return <TimeoutState />;
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
@@ -135,6 +161,16 @@ function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
       <div className="text-court-400 font-serif">Calling the first witness...</div>
+    </div>
+  );
+}
+
+function TimeoutState() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
+      <p className="text-court-400 font-serif">The prosecution is taking too long to assemble.</p>
+      <p className="text-court-600 text-sm font-legal">Generation timed out. Please try again from the beginning.</p>
+      <Link href="/" className="text-gold-500 hover:text-gold-400 underline">Return to the court</Link>
     </div>
   );
 }
