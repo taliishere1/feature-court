@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     siteName: "Feature Court",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og",
         width: 1200,
         height: 630,
         alt: "Feature Court — Put your product decision on trial",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     title: "Feature Court — Put your product decision on trial",
     description:
       "Your product decision goes on trial. The prosecution tears it apart, the defense fights for it, and you deliver the verdict.",
-    images: ["/og-image.png"],
+    images: ["/og"],
   },
 };
 
