@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { TypewriterText, SignatureBlock, ToastNotification } from "@/components/court-components";
+import { TypewriterText, SignatureBlock, ToastNotification, CourtroomBackground } from "@/components/court-components";
 
 const RULING_LABELS: Record<Ruling, string> = {
   ship: "SHIP IT",
@@ -131,6 +131,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
 
   return (
     <div className="min-h-screen flex flex-col wood-panel relative" style={{ "--verdict-accent": accentColor } as React.CSSProperties & Record<string, string>}>
+      <CourtroomBackground opacity={0.08} />
       {showConfetti && <div className="fixed inset-0 pointer-events-none z-50 bg-gradient-to-t from-transparent via-gold-500/5 to-transparent" />}
       {screenDim && (
         <div className="fixed inset-0 bg-black/60 z-50 animate-fade-in" />

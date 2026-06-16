@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { CourtroomBackground } from "@/components/court-components";
 export default function FileCasePage() {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -34,7 +35,8 @@ export default function FileCasePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col wood-panel">
+    <div className="min-h-screen flex flex-col wood-panel relative">
+      <CourtroomBackground opacity={0.08} />
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">

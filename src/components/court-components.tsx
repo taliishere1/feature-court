@@ -927,8 +927,8 @@ function PortraitHead({ expression = "neutral", color }: { expression: PortraitR
 }
 
 export function ProsecutorPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: "full" | "thumb" }) {
-  const w = size === "full" ? 180 : 48;
-  const h = size === "full" ? 200 : 52;
+  const w = size === "full" ? 180 : 72;
+  const h = size === "full" ? 200 : 76;
   const color = "#b91c1c";
   return (
     <CharacterImage src="/images/prosecutor.png" alt="Prosecutor" width={w} height={h}>
@@ -951,8 +951,8 @@ export function ProsecutorPortrait({ reaction = "neutral", size = "full" }: { re
 }
 
 export function DefensePortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: "full" | "thumb" }) {
-  const w = size === "full" ? 180 : 48;
-  const h = size === "full" ? 200 : 52;
+  const w = size === "full" ? 180 : 72;
+  const h = size === "full" ? 200 : 76;
   const color = "#2563eb";
   return (
     <CharacterImage src="/images/defense.png" alt="Defense" width={w} height={h}>
@@ -977,8 +977,8 @@ export function DefensePortrait({ reaction = "neutral", size = "full" }: { react
 }
 
 export function BailiffPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: "full" | "thumb" }) {
-  const w = size === "full" ? 180 : 48;
-  const h = size === "full" ? 200 : 52;
+  const w = size === "full" ? 180 : 72;
+  const h = size === "full" ? 200 : 76;
   const color = "#a67c00";
   return (
     <CharacterImage src="/images/bailiff.png" alt="Bailiff" width={w} height={h}>
@@ -1058,7 +1058,7 @@ export function DialogueBox({
     <div className="dialogue-box">
       <div className="dialogue-box-inner">
         <div className="dialogue-box-top">
-          <div className="w-8 h-8 rounded-full border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
+          <div className="w-14 h-14 rounded-full border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
             style={{ borderColor: `${color}40` }}>
             {portrait}
           </div>
