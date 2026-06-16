@@ -86,14 +86,14 @@ export async function GET(request: NextRequest) {
 
   if (all) {
     const { getPublicTrials } = await import('@/lib/store');
-    return NextResponse.json(getPublicTrials());
+    return NextResponse.json(await getPublicTrials());
   }
 
   if (!id) {
     return NextResponse.json({ error: 'Missing id' }, { status: 400 });
   }
 
-  const trial = getTrial(id);
+  const trial = await getTrial(id);
   if (!trial) {
     return NextResponse.json({ error: 'Trial not found' }, { status: 404 });
   }
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
       isSample,
     };
 
-    setTrial(id, trial);
+    await setTrial(id, trial);
     return NextResponse.json(trial);
   } catch (error) {
     console.error('AI generation failed:', error);
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
       createdAt: Date.now(),
       isSample,
     };
-    setTrial(id, trial);
+    await setTrial(id, trial);
     return NextResponse.json(trial);
   }
 }
