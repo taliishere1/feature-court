@@ -12,7 +12,6 @@ function ProsecutionContent() {
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
   const [objectionActive, setObjectionActive] = useState(false);
-  const [objectionArg, setObjectionArg] = useState<number | null>(null);
   const [showNext, setShowNext] = useState(false);
   const mounted = useRef(false);
 
@@ -35,10 +34,8 @@ function ProsecutionContent() {
   const handleEvidenceClick = useCallback((idx: number) => {
     if (objectionActive) return;
     setObjectionActive(true);
-    setObjectionArg(idx);
     setTimeout(() => {
       setObjectionActive(false);
-      setObjectionArg(null);
       if (idx === (trial?.prosecution.arguments.length || 0) - 1) {
         setShowNext(true);
       }
