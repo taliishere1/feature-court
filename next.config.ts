@@ -25,6 +25,20 @@ const securityHeaders = [
     key: "Referrer-Policy",
     value: "strict-origin-when-cross-origin",
   },
+  // Pendo session replay requires blob: workers and data.pendo.io connectivity.
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://cdn.pendo.io",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      "img-src 'self' data: blob: https://cdn.pendo.io https://*.pendo.io",
+      "connect-src 'self' https://*.supabase.co https://data.pendo.io https://cdn.pendo.io https://*.pendo.io wss://*.supabase.co",
+      "worker-src 'self' blob:",
+      "frame-ancestors 'none'",
+    ].join("; "),
+  },
 ];
 
 const nextConfig: NextConfig = {

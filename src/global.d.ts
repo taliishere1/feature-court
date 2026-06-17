@@ -1,5 +1,9 @@
 interface PendoSDK {
-  initialize: (config: { visitor: { id: string }; account?: { id: string } }) => void;
+  initialize: (config: {
+    visitor: { id: string };
+    account?: { id: string };
+    recording?: { enabled: boolean; autoStart: boolean };
+  }) => void;
   track: (event: string, metadata?: Record<string, unknown>) => void;
   identify: (config: { visitor: { id: string } }) => void;
   pageLoad: () => void;

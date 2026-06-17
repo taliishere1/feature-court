@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import Script from "next/script";
-import PendoInitializer from "@/components/PendoInitializer";
+import PendoPageTracker from "@/components/PendoPageTracker";
+import { PENDO_INSTALL_SNIPPET } from "@/lib/pendo";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://feature-court.vercel.app"),
@@ -47,18 +49,12 @@ export default function RootLayout({
       <body className="min-h-full antialiased">
         <Script
           id="pendo"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `(function(apiKey){
-    (function(p,e,n,d,o){var v,w,x,y,z;o=p[d]=p[d]||{};o._q=o._q||[];
-    v=['initialize','identify','updateOptions','pageLoad','track','trackAgent'];for(w=0,x=v.length;w<x;++w)(function(m){
-    o[m]=o[m]||function(){o._q[m===v[0]?'unshift':'push']([m].concat([].slice.call(arguments,0)));};})(v[w]);
-    y=e.createElement(n);y.async=!0;y.src='https://cdn.pendo.io/agent/static/'+apiKey+'/pendo.js';
-    z=e.getElementsByTagName(n)[0];z.parentNode.insertBefore(y,z);})(window,document,'script','pendo');
-})('65d162d9-3564-4163-afea-335d005e12ed');`,
-          }}
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: PENDO_INSTALL_SNIPPET }}
         />
-        <PendoInitializer />
+        <Suspense fallback={null}>
+          <PendoPageTracker />
+        </Suspense>
         {children}
       </body>
     </html>
