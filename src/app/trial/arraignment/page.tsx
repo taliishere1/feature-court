@@ -8,6 +8,8 @@ import { SAMPLE_CASES } from "@/lib/types";
 import { StageProgress, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
+import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
+import { StageGenerationError } from "@/components/stage-generation-error";
 
 const PROGRESS_STEPS = [
   { message: "The court is assembling...", sub: "Preparing the docket" },
@@ -23,7 +25,7 @@ function ArraignmentContent() {
   const router = useRouter();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [generationStep, setGenerationStep] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [dialogueIndex, setDialogueIndex] = useState(0);
@@ -32,7 +34,7 @@ function ArraignmentContent() {
   const [retryKey, setRetryKey] = useState(0);
 
   const handleRetry = useCallback(() => {
-    setError(false);
+    setLoadError(null);
     setLoading(true);
     setRetryKey((k) => k + 1);
   }, []);
@@ -84,8 +86,10 @@ function ArraignmentContent() {
         await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
       }
       if (!cancelled) {
-        // Timed out (or the row never became ready) — give the user a way out.
-        setError(true);
+        setLoadError({
+          message: "Generation exceeded the time limit.",
+          isRateLimited: false,
+        });
         setLoading(false);
       }
     }
@@ -93,7 +97,10 @@ function ArraignmentContent() {
     async function init() {
       if (!supabase) {
         if (!cancelled) {
-          setError(true);
+          setLoadError({
+            message: "Something went wrong. Please try again.",
+            isRateLimited: false,
+          });
           setLoading(false);
         }
         return;
@@ -105,11 +112,20 @@ function ArraignmentContent() {
         try {
           // Create the trial via the charge-section edge function (it generates
           // the charge + opening scene and inserts the row).
-          const { data, error: fnError } = await supabase.functions.invoke("charge-section", {
+          const { data, error: fnError, response: fnResponse } = await supabase.functions.invoke("charge-section", {
             body: { intake, isSample: true },
           });
           if (cancelled) return;
-          if (fnError || !data?.trial_id) throw new Error("Failed to open the sample case");
+          if (fnError || !data?.trial_id) {
+            const info = fnError
+              ? await parseEdgeFunctionError(fnError, fnResponse)
+              : { message: "Failed to open the sample case", isRateLimited: false };
+            if (!cancelled) {
+              setLoadError(info);
+              setLoading(false);
+            }
+            return;
+          }
 
           const newId = data.trial_id as string;
 
@@ -126,7 +142,10 @@ function ArraignmentContent() {
           await readTrial(newId);
         } catch {
           if (!cancelled) {
-            setError(true);
+            setLoadError({
+              message: "Something went wrong. Please try again.",
+              isRateLimited: false,
+            });
             setLoading(false);
           }
         }
@@ -176,33 +195,20 @@ function ArraignmentContent() {
     return () => window.removeEventListener("keydown", handler);
   }, [showContinue, advanceDialogue]);
 
-  if (error) {
+
+  if (loadError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
-        <p className="text-court-400 font-serif">The court was unable to assemble this case.</p>
-        <p className="text-court-600 text-sm font-legal">Generation exceeded the time limit. You can retry or start a new case.</p>
-        <div className="flex gap-3">
-          <button
-            onClick={handleRetry}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 4v6h6M23 20v-6h-6" />
-              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-            </svg>
-            Retry
-          </button>
-          <Link
-            href="/file"
-            className="inline-flex items-center gap-2 px-6 py-3 border border-gold-500/40 hover:border-gold-500 text-gold-400 hover:text-gold-300 font-semibold rounded-sm transition-all duration-200 text-sm"
-          >
-            File a new case
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-      </div>
+      <StageGenerationError
+        headline={
+          loadError.isRateLimited
+            ? "The court is busy right now."
+            : "The court was unable to assemble this case."
+        }
+        isRateLimited={loadError.isRateLimited}
+        message={loadError.message}
+        onRetry={handleRetry}
+        newCaseLabel="File a new case"
+      />
     );
   }
 
