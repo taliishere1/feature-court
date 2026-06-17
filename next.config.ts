@@ -30,6 +30,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
+  // The /og route reads public/images/seal.png from disk at runtime. Vercel's
+  // file tracer can miss fs-read assets, so include it explicitly to avoid ENOENT.
+  outputFileTracingIncludes: {
+    "/og": ["./public/images/seal.png"],
+  },
   async headers() {
     return [
       {

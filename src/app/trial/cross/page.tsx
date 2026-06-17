@@ -5,6 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox } from "@/components/court-components";
+import { supabase } from "@/lib/supabase";
+import { rowToTrialData } from "@/lib/store";
+import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
+import { StageGenerationError } from "@/components/stage-generation-error";
 
 const BAILIFF_DIALOGUES: string[] = [
   "The court has heard both sides. Before you rule, you must answer.",
@@ -17,7 +21,7 @@ function CrossContent() {
   const router = useRouter();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [selectedChoices, setSelectedChoices] = useState<Record<number, number | null>>({});
   const [bailiffMessages, setBailiffMessages] = useState<(string | null)[]>([null, null]);
   const [submitting, setSubmitting] = useState(false);
@@ -30,12 +34,10 @@ function CrossContent() {
   const mounted = useRef(false);
 
   const handleRetry = useCallback(() => {
-    setError(false);
+    setLoadError(null);
     setLoading(true);
     setRetryKey((k) => k + 1);
   }, []);
-
-  const trialId = searchParams.get("id");
 
   useEffect(() => {
     mounted.current = true;
@@ -43,34 +45,57 @@ function CrossContent() {
     if (!id) return;
 
     let cancelled = false;
-    let retries = 0;
-    const MAX_RETRIES = 30;
 
-    (async function poll() {
-      while (!cancelled && retries < MAX_RETRIES) {
-        try {
-          const res = await fetch(`/api/trial?id=${id}`);
-          const data: TrialData = await res.json();
+    (async function load() {
+      try {
+        // Read the trial first; only generate this stage if it doesn't exist yet,
+        // so revisiting the page doesn't regenerate (and overwrite) the content.
+        const first = await supabase!
+          .from("trials")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (cancelled) return;
+        if (first.error || !first.data) throw new Error("Trial not found");
+        let row = first.data;
+
+        const cross = row.cross_examination as unknown[] | null;
+        const hasCross = Array.isArray(cross) && cross.length > 0;
+        if (!hasCross) {
+          const { error: fnError, response: fnResponse } = await supabase!.functions.invoke("cross-section", {
+            body: { trial_id: id },
+          });
           if (cancelled) return;
-
-          const isReady = data.cross_examination?.length > 0;
-          if (isReady) {
+          if (fnError) {
+            const info = await parseEdgeFunctionError(fnError, fnResponse);
             if (mounted.current) {
-              setTrial(data);
-              setRevealed(true);
+              setLoadError(info);
               setLoading(false);
             }
             return;
           }
-        } catch {
-          // retry on transient errors
+
+          const second = await supabase!
+            .from("trials")
+            .select("*")
+            .eq("id", id)
+            .single();
+          if (cancelled) return;
+          if (second.error || !second.data) throw new Error("Trial not found");
+          row = second.data;
         }
-        retries++;
-        await new Promise((r) => setTimeout(r, 2000));
-      }
-      if (!cancelled && mounted.current) {
-        setError(true);
-        setLoading(false);
+
+        const converted = rowToTrialData(row);
+        if (mounted.current) {
+          setTrial(converted);
+          setRevealed(true);
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled && mounted.current) {
+          setLoadError({ message: "Something went wrong. Please try again.", isRateLimited: false });
+          setLoading(false);
+        }
       }
     })();
 
@@ -142,7 +167,23 @@ function CrossContent() {
     return () => window.removeEventListener("keydown", handler);
   }, [showContinue, advanceDialogue]);
 
-  if (error) return <TimeoutState onRetry={handleRetry} trialId={trialId} />;
+  if (loadError) {
+    const id = searchParams.get("id");
+    return (
+      <StageGenerationError
+        headline={
+          loadError.isRateLimited
+            ? "The court is busy right now."
+            : "The questions are taking too long to prepare."
+        }
+        isRateLimited={loadError.isRateLimited}
+        message={loadError.message}
+        onRetry={handleRetry}
+        backHref={id ? `/trial/defense?id=${id}` : undefined}
+        backLabel="Back to defense"
+      />
+    );
+  }
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
@@ -281,30 +322,6 @@ function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
       <div className="text-court-400 font-serif">Preparing the questions...</div>
-    </div>
-  );
-}
-
-function TimeoutState({ onRetry, trialId }: { onRetry: () => void; trialId: string | null }) {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
-      <p className="text-court-400 font-serif">The questions are taking too long to prepare.</p>
-      <p className="text-court-600 text-sm font-legal">Generation timed out. You can retry or start over.</p>
-      {trialId && (
-        <button
-          onClick={onRetry}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M1 4v6h6M23 20v-6h-6" />
-            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-          </svg>
-          Retry
-        </button>
-      )}
-      <Link href="/file" className="inline-block text-sm text-gold-500 hover:text-gold-400 underline mt-2">
-        File a new case
-      </Link>
     </div>
   );
 }

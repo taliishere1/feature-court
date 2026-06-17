@@ -337,6 +337,33 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Section functions are invoked from the browser with a publishable key (not a JWT),
+# so the platform's default JWT check must be disabled or those calls 401 before
+# reaching the handler. Authorization is enforced by RLS on the trials table.
+[functions.charge-section]
+verify_jwt = false
+
+[functions.prosecution-section]
+verify_jwt = false
+
+[functions.defense-section]
+verify_jwt = false
+
+[functions.cross-section]
+verify_jwt = false
+
+[functions.verdict-section]
+verify_jwt = false
+
+[functions.summary-section]
+verify_jwt = false
+
+[functions.record-ruling]
+verify_jwt = false
+
+[functions.generate-trial]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

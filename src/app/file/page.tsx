@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CourtroomBackground, CourtSeal } from "@/components/court-components";
+import { supabase } from "@/lib/supabase";
+import { parseEdgeFunctionError } from "@/lib/edge-function-errors";
 export default function FileCasePage() {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -14,23 +16,29 @@ export default function FileCasePage() {
     gutCall: "unsure" as "ship" | "kill" | "unsure",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
+    setSubmitError(null);
 
     try {
-      const res = await fetch("/api/trial", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, gutCall: form.gutCall === "unsure" ? undefined : form.gutCall }),
+      const { data, error, response } = await supabase!.functions.invoke("charge-section", {
+        body: { intake: { ...form, gutCall: form.gutCall === "unsure" ? undefined : form.gutCall } },
       });
-      if (!res.ok) throw new Error("Failed to create trial");
-      const data = await res.json();
+      if (error || !data?.trial_id) {
+        const info = error
+          ? await parseEdgeFunctionError(error, response)
+          : { message: "Failed to create trial", isRateLimited: false };
+        setSubmitError(info.message);
+        setSubmitting(false);
+        return;
+      }
 
       if (typeof window !== "undefined" && window.pendo) {
         window.pendo.track("case_filed", {
-          trial_id: data.id,
+          trial_id: data.trial_id,
           gut_call: form.gutCall,
           proposal_length: form.proposal.length,
           audience_length: form.audience.length,
@@ -39,9 +47,9 @@ export default function FileCasePage() {
         });
       }
 
-      router.push(`/trial/arraignment?id=${data.id}`);
+      router.push(`/trial/arraignment?id=${data.trial_id}`);
     } catch {
-      alert("Something went wrong. Please try again.");
+      setSubmitError("Something went wrong. Please try again.");
       setSubmitting(false);
     }
   }
@@ -157,6 +165,12 @@ export default function FileCasePage() {
               </div>
 
               <div className="border-t border-court-700 pt-4"></div>
+
+              {submitError && (
+                <p className="text-center text-sm text-red-400/90 font-legal animate-fade-in-up" role="alert">
+                  {submitError}
+                </p>
+              )}
 
               <div className="text-center animate-fade-in-up stagger-6">
                 <button

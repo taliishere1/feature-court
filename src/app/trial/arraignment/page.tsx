@@ -6,6 +6,10 @@ import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
 import { StageProgress, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
+import { supabase } from "@/lib/supabase";
+import { rowToTrialData } from "@/lib/store";
+import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
+import { StageGenerationError } from "@/components/stage-generation-error";
 
 const PROGRESS_STEPS = [
   { message: "The court is assembling...", sub: "Preparing the docket" },
@@ -21,7 +25,7 @@ function ArraignmentContent() {
   const router = useRouter();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [generationStep, setGenerationStep] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [dialogueIndex, setDialogueIndex] = useState(0);
@@ -30,7 +34,7 @@ function ArraignmentContent() {
   const [retryKey, setRetryKey] = useState(0);
 
   const handleRetry = useCallback(() => {
-    setError(false);
+    setLoadError(null);
     setLoading(true);
     setRetryKey((k) => k + 1);
   }, []);
@@ -46,60 +50,84 @@ function ArraignmentContent() {
 
     let cancelled = false;
 
-    async function pollTrial(trialId: string) {
-      let retries = 0;
-      const MAX_RETRIES = 30; // 30 × 2s = 60s — fail fast, offer retry
+    // Poll the trial row until the charge is ready, with a hard cap so a stalled
+    // generation (DB write race, edge function crash, silent OpenAI failure)
+    // surfaces an error + retry escape hatch instead of spinning forever.
+    const MAX_RETRIES = 30; // 30 * 2s = 60s timeout
+    const POLL_INTERVAL_MS = 2000;
 
+    async function readTrial(trialId: string) {
+      let retries = 0;
       while (!cancelled && retries < MAX_RETRIES) {
         try {
-          const res = await fetch(`/api/trial?id=${trialId}`);
-          const data: TrialData = await res.json();
-
+          const { data: trialData, error: readError } = await supabase!
+            .from("trials")
+            .select("*")
+            .eq("id", trialId)
+            .single();
           if (cancelled) return;
 
-          const step = data.generationStep ?? 0;
-          setGenerationStep(step);
-          setTrial(data);
+          if (readError || !trialData) throw new Error("Trial not found");
 
-          // Trial is ready when generationStep >= 5
-          // For old trials without generationStep, check all key fields populated
-          const isReady = step >= 5 || (
-            data.charge && data.charge.length > 0 &&
-            data.case_title && data.case_title.length > 0 &&
-            data.prosecution?.opening && data.prosecution.opening.length > 0 &&
-            data.defense?.opening && data.defense.opening.length > 0
-          );
+          const converted = rowToTrialData(trialData);
+          setGenerationStep(converted.generationStep ?? 0);
+          setTrial(converted);
 
+          const step = converted.generationStep ?? 0;
+          const isReady = step >= 5 || (converted.charge && converted.charge.length > 0 && converted.case_title && converted.case_title.length > 0);
           if (isReady) {
             setLoading(false);
             return;
           }
         } catch {
-          // Retry on transient errors
+          // retry on transient errors
         }
-
         retries++;
-        await new Promise((r) => setTimeout(r, 2000));
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
       }
-
-      // Exceeded retries — show error state
       if (!cancelled) {
-        setError(true);
+        setLoadError({
+          message: "Generation exceeded the time limit.",
+          isRateLimited: false,
+        });
         setLoading(false);
       }
     }
 
     async function init() {
+      if (!supabase) {
+        if (!cancelled) {
+          setLoadError({
+            message: "Something went wrong. Please try again.",
+            isRateLimited: false,
+          });
+          setLoading(false);
+        }
+        return;
+      }
+
       if (sampleIdx !== null) {
         const idx = parseInt(sampleIdx);
         const intake = SAMPLE_CASES[idx] || SAMPLE_CASES[0];
         try {
-          const res = await fetch("/api/trial", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...intake, isSample: true }),
+          // Create the trial via the charge-section edge function (it generates
+          // the charge + opening scene and inserts the row).
+          const { data, error: fnError, response: fnResponse } = await supabase.functions.invoke("charge-section", {
+            body: { intake, isSample: true },
           });
-          const { id: newId } = await res.json();
+          if (cancelled) return;
+          if (fnError || !data?.trial_id) {
+            const info = fnError
+              ? await parseEdgeFunctionError(fnError, fnResponse)
+              : { message: "Failed to open the sample case", isRateLimited: false };
+            if (!cancelled) {
+              setLoadError(info);
+              setLoading(false);
+            }
+            return;
+          }
+
+          const newId = data.trial_id as string;
 
           if (typeof window !== "undefined" && window.pendo) {
             window.pendo.track("sample_case_started", {
@@ -111,13 +139,18 @@ function ArraignmentContent() {
 
           // Update URL with the new trial ID without navigation
           router.replace(`/trial/arraignment?id=${newId}`, { scroll: false });
-          await pollTrial(newId);
+          await readTrial(newId);
         } catch {
-          // Fallback — load directly
-          setLoading(false);
+          if (!cancelled) {
+            setLoadError({
+              message: "Something went wrong. Please try again.",
+              isRateLimited: false,
+            });
+            setLoading(false);
+          }
         }
       } else if (id) {
-        await pollTrial(id);
+        await readTrial(id);
       } else {
         setLoading(false);
       }
@@ -162,33 +195,20 @@ function ArraignmentContent() {
     return () => window.removeEventListener("keydown", handler);
   }, [showContinue, advanceDialogue]);
 
-  if (error) {
+
+  if (loadError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
-        <p className="text-court-400 font-serif">The court was unable to assemble this case.</p>
-        <p className="text-court-600 text-sm font-legal">Generation exceeded the time limit. You can retry or start a new case.</p>
-        <div className="flex gap-3">
-          <button
-            onClick={handleRetry}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 4v6h6M23 20v-6h-6" />
-              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-            </svg>
-            Retry
-          </button>
-          <Link
-            href="/file"
-            className="inline-flex items-center gap-2 px-6 py-3 border border-gold-500/40 hover:border-gold-500 text-gold-400 hover:text-gold-300 font-semibold rounded-sm transition-all duration-200 text-sm"
-          >
-            File a new case
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-      </div>
+      <StageGenerationError
+        headline={
+          loadError.isRateLimited
+            ? "The court is busy right now."
+            : "The court was unable to assemble this case."
+        }
+        isRateLimited={loadError.isRateLimited}
+        message={loadError.message}
+        onRetry={handleRetry}
+        newCaseLabel="File a new case"
+      />
     );
   }
 

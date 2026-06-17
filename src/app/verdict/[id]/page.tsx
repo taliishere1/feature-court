@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
 import { TypewriterText, SignatureBlock, ToastNotification, CourtroomBackground, CourtSeal } from "@/components/court-components";
+import { supabase } from "@/lib/supabase";
+import { rowToTrialData } from "@/lib/store";
 
 const RULING_LABELS: Record<Ruling, string> = {
   ship: "SHIP IT",
@@ -61,10 +63,23 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
       setRuling(r);
       setGutCall(urlParams.get("gut"));
 
-      const res = await fetch(`/api/trial?id=${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTrial(data);
+      try {
+        const { data: trialData, error: readError } = await supabase!
+          .from("trials")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (!readError && trialData) {
+          setTrial(rowToTrialData(trialData));
+          // Generate summary for docket
+          if (r) {
+            supabase!.functions.invoke("summary-section", {
+              body: { trial_id: id, ruling: r },
+            }).catch(() => {});
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load trial:", e);
       }
       setLoading(false);
     }
@@ -121,7 +136,8 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
   if (loading) return <LoadingState />;
   if (!trial || !ruling) return <NotFoundState />;
 
-  const verdict = trial.verdicts[ruling];
+  const verdict = trial.verdicts?.[ruling];
+  if (!verdict || !verdict.sentence) return <NotFoundState />;
   const gutMismatch = gutCall && ruling !== gutCall;
   const accentColor = RULING_ACCENTS[ruling];
 
