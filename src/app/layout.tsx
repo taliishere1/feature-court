@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
-import Script from "next/script";
 import PendoPageTracker from "@/components/PendoPageTracker";
 import { PENDO_INSTALL_SNIPPET } from "@/lib/pendo";
 
@@ -46,12 +45,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full antialiased">
-        <Script
-          id="pendo"
-          strategy="beforeInteractive"
+      <head>
+        <script
+          id="pendo-install"
           dangerouslySetInnerHTML={{ __html: PENDO_INSTALL_SNIPPET }}
         />
+      </head>
+      <body className="min-h-full antialiased">
         <Suspense fallback={null}>
           <PendoPageTracker />
         </Suspense>

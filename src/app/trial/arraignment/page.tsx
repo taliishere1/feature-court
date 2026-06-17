@@ -9,6 +9,7 @@ import { StageProgress, CourtroomBackground, CourtSeal } from "@/components/cour
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
+import { pendoTrack } from "@/lib/pendo-track";
 import { StageGenerationError } from "@/components/stage-generation-error";
 
 const PROGRESS_STEPS = [
@@ -121,13 +122,11 @@ function ArraignmentContent() {
 
           const newId = data.trial_id as string;
 
-          if (typeof window !== "undefined" && window.pendo) {
-            window.pendo.track("sample_case_started", {
-              sample_index: idx,
-              sample_proposal: intake.proposal,
-              trial_id: newId,
-            });
-          }
+          pendoTrack("sample_case_started", {
+            sample_index: idx,
+            sample_proposal: intake.proposal,
+            trial_id: newId,
+          });
 
           // Update URL with the new trial ID without navigation
           router.replace(`/trial/arraignment?id=${newId}`, { scroll: false });

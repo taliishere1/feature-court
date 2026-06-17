@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CourtroomBackground, CourtSeal } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { parseEdgeFunctionError } from "@/lib/edge-function-errors";
+import { pendoTrack } from "@/lib/pendo-track";
 export default function FileCasePage() {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -36,16 +37,14 @@ export default function FileCasePage() {
         return;
       }
 
-      if (typeof window !== "undefined" && window.pendo) {
-        window.pendo.track("case_filed", {
-          trial_id: data.trial_id,
-          gut_call: form.gutCall,
-          proposal_length: form.proposal.length,
-          audience_length: form.audience.length,
-          why_now_length: form.whyNow.length,
-          tradeoff_length: form.tradeoff.length,
-        });
-      }
+      pendoTrack("case_filed", {
+        trial_id: data.trial_id,
+        gut_call: form.gutCall,
+        proposal_length: form.proposal.length,
+        audience_length: form.audience.length,
+        why_now_length: form.whyNow.length,
+        tradeoff_length: form.tradeoff.length,
+      });
 
       router.push(`/trial/arraignment?id=${data.trial_id}`);
     } catch {
