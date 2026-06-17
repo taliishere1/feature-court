@@ -6,7 +6,7 @@ import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
 import { StageProgress, ScrollworkBorder, CourtroomBackground } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
-import { rowToTrialData } from "@/lib/store";
+import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasVerdicts } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { StageGenerationError } from "@/components/stage-generation-error";
 
@@ -48,8 +48,10 @@ function RulingContent() {
           .single();
         if (!mounted.current) return;
 
-        let row = trialData;
-        const hasVerdicts = trialData?.verdicts?.ship?.sentence && trialData.verdicts.ship.sentence.length > 0;
+        if (!trialData) throw new Error("Trial not found");
+
+        let row = trialData as Record<string, unknown>;
+        const hasVerdicts = rowHasVerdicts(row);
 
         if (!hasVerdicts) {
           const { data: fnData, error: fnError, response: fnResponse } = await supabase!.functions.invoke("verdict-section", {
@@ -65,14 +67,21 @@ function RulingContent() {
             return;
           }
 
-          if (fnData?.verdicts) {
-            row = {
-              ...trialData,
-              verdicts: fnData.verdicts,
-              conversation_id: fnData.conversation_id,
-              generation_step: 5,
-            };
-          }
+          row = await resolveTrialRowAfterGeneration(
+            id,
+            row,
+            fnData,
+            (current, data) =>
+              data.verdicts
+                ? {
+                    ...current,
+                    verdicts: data.verdicts,
+                    conversation_id: data.conversation_id,
+                    generation_step: 5,
+                  }
+                : current,
+            rowHasVerdicts,
+          );
         }
 
         setTrial(rowToTrialData(row));

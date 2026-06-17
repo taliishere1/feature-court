@@ -141,8 +141,8 @@ Tradeoff: "${intake.tradeoff}"`;
 
     const body = {
       model: "gpt-5.4",
-      reasoning: { effort: "none" },
-      max_output_tokens: 6000,
+      reasoning: { effort: "low" },
+      max_output_tokens: 8000,
       instructions: `You are the Feature Court AI — a theatrical courtroom drama generator for product decisions. You write the BAILIFF "Bailiff Sprint" — dry, theatrical, always rushing the docket. Every response must reference the actual proposal, audience, timing, and tradeoff provided. Be specific, not generic.`,
       input: `${intakeContext}
 

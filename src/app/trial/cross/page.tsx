@@ -6,7 +6,7 @@ import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { StageProgress, CourtroomBackground } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
-import { rowToTrialData } from "@/lib/store";
+import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasCrossExamination } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { StageGenerationError } from "@/components/stage-generation-error";
 
@@ -45,8 +45,7 @@ function CrossContent() {
         if (first.error || !first.data) throw new Error("Trial not found");
         let row = first.data;
 
-        const cross = row.cross_examination as unknown[] | null;
-        const hasCross = Array.isArray(cross) && cross.length > 0;
+        const hasCross = rowHasCrossExamination(row);
         if (!hasCross) {
           const { data: fnData, error: fnError, response: fnResponse } = await supabase!.functions.invoke("cross-section", {
             body: { trial_id: id },
@@ -61,15 +60,23 @@ function CrossContent() {
             return;
           }
 
-          if (fnData?.cross_examination) {
-            row = {
-              ...row,
-              cross_examination: fnData.cross_examination,
-              cross_bailiff_dialogue: fnData.cross_bailiff_dialogue,
-              conversation_id: fnData.conversation_id,
-              generation_step: 4,
-            };
-          }
+          row = await resolveTrialRowAfterGeneration(
+            id,
+            row,
+            fnData,
+            (current, data) =>
+              data.cross_examination
+                ? {
+                    ...current,
+                    cross_examination: data.cross_examination,
+                    cross_bailiff_dialogue: data.cross_bailiff_dialogue,
+                    conversation_id: data.conversation_id,
+                    generation_step: 4,
+                  }
+                : current,
+            rowHasCrossExamination,
+          );
+          if (cancelled) return;
         }
 
         const converted = rowToTrialData(row);

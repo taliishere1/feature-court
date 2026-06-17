@@ -6,7 +6,7 @@ import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
-import { rowToTrialData } from "@/lib/store";
+import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasDefense } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { StageGenerationError } from "@/components/stage-generation-error";
 
@@ -44,7 +44,7 @@ function DefenseContent() {
         if (first.error || !first.data) throw new Error("Trial not found");
         let row = first.data;
 
-        const hasDefense = Boolean((row.defense as { opening?: string } | null)?.opening);
+        const hasDefense = rowHasDefense(row);
         if (!hasDefense) {
           const { data: fnData, error: fnError, response: fnResponse } = await supabase!.functions.invoke("defense-section", {
             body: { trial_id: id },
@@ -59,14 +59,22 @@ function DefenseContent() {
             return;
           }
 
-          if (fnData?.defense) {
-            row = {
-              ...row,
-              defense: fnData.defense,
-              conversation_id: fnData.conversation_id,
-              generation_step: 3,
-            };
-          }
+          row = await resolveTrialRowAfterGeneration(
+            id,
+            row,
+            fnData,
+            (current, data) =>
+              data.defense
+                ? {
+                    ...current,
+                    defense: data.defense,
+                    conversation_id: data.conversation_id,
+                    generation_step: 3,
+                  }
+                : current,
+            rowHasDefense,
+          );
+          if (cancelled) return;
         }
 
         const converted = rowToTrialData(row);
