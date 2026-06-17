@@ -420,6 +420,7 @@ function twReducer(state: TWState, action: TWAction): TWState {
 
   useEffect(() => {
     dispatch({ type: 'RESET' });
+    completedRef.current = false;
     const timer = setTimeout(() => dispatch({ type: 'START' }), delay);
     return () => clearTimeout(timer);
   }, [delay, text]);
@@ -631,7 +632,7 @@ export function RubberStamp({
   color?: string;
   offset?: boolean;
 }) {
-  const rotation = offset ? 2 : 0;
+  const [rotation] = useState(() => offset ? (Math.random() - 0.5) * 6 : 0);
   const inkDx = 1;
   const inkDy = 1;
 
@@ -1078,6 +1079,15 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
     }
   }, [text]);
 
+  // If typing is false but text exists and we're not done, mark as done
+  // (covers the static <span> branch when TypewriterText doesn't run)
+  useEffect(() => {
+    if (text && !typing && !typingDone) {
+      tbDispatch({ type: 'FINISH_TYPING' });
+      onComplete?.();
+    }
+  }, [text, typing, typingDone, onComplete]);
+
   const handleTypeComplete = useCallback(() => {
     tbDispatch({ type: 'FINISH_TYPING' });
     onComplete?.();
@@ -1094,8 +1104,10 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
           <span className="dialogue-box-name" style={{ color }}>{name}</span>
         </div>
         <div className="dialogue-box-body">
-          {typing && (
+          {typing ? (
             <TypewriterText text={text} speed={typingSpeed} tag="span" onComplete={handleTypeComplete} />
+          ) : (
+            <span>{text}</span>
           )}
         </div>
         {showContinue && typingDone && (

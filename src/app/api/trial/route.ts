@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TrialData, IntakeForm } from '@/lib/types';
-import { setTrial, getTrial } from '@/lib/store';
+import { setTrial, getTrial, updateTrial } from '@/lib/store';
 import { v4 as uuidv4 } from 'uuid';
-import OpenAI from 'openai';
 
 // Simple in-memory rate limiting (IP-based)
 const ipCounts = new Map<string, { count: number; resetAt: number }>();
@@ -47,8 +46,22 @@ function generateMockTrial(intake: IntakeForm): Omit<TrialData, 'id' | 'createdA
       ],
     },
     cross_examination: [
-      `If you ${intake.tradeoff.toLowerCase().includes('delay') || intake.tradeoff.toLowerCase().includes('month') ? 'commit to this' : 'pursue this'}, what concrete metric are you willing to see go flat or down as a result?`,
-      `Be honest: is "${intake.whyNow}" a real market signal, or is it FOMO dressed up as strategy?`,
+      {
+        question: `If you ${intake.tradeoff.toLowerCase().includes('delay') || intake.tradeoff.toLowerCase().includes('month') ? 'commit to this' : 'pursue this'}, what concrete metric are you willing to see go flat or down as a result?`,
+        choices: [
+          { label: "Revenue", text: "I'll watch revenue growth — if it dips, I'll course-correct immediately.", bailiff_reaction: "A sharp eye on the bottom line. Prudent." },
+          { label: "Engineering velocity", text: "Ship velocity will tell the real story. If we slow down, this wasn't worth it.", bailiff_reaction: "Velocity over vanity. The court approves." },
+          { label: "User engagement", text: "If engagement drops in the core experience, the tradeoff isn't worth it.", bailiff_reaction: "The user's voice — always the truest measure." },
+        ],
+      },
+      {
+        question: `Be honest: is "${intake.whyNow}" a real market signal, or is it FOMO dressed up as strategy?`,
+        choices: [
+          { label: "Real signal", text: "I've got the data to back this up. This is real demand.", bailiff_reaction: "Data speaks louder than doubt." },
+          { label: "Could be FOMO", text: "Honestly? Maybe both. But sometimes you need to move before the data is perfect.", bailiff_reaction: "Rare honesty in this court. The jury will note it." },
+          { label: "Either way, now is right", text: "Signal or FOMO — the window is now either way.", bailiff_reaction: "Decisiveness has its own virtue." },
+        ],
+      },
     ],
     verdicts: {
       ship: {
@@ -86,14 +99,14 @@ export async function GET(request: NextRequest) {
 
   if (all) {
     const { getPublicTrials } = await import('@/lib/store');
-    return NextResponse.json(getPublicTrials());
+    return NextResponse.json(await getPublicTrials());
   }
 
   if (!id) {
     return NextResponse.json({ error: 'Missing id' }, { status: 400 });
   }
 
-  const trial = getTrial(id);
+  const trial = await getTrial(id);
   if (!trial) {
     return NextResponse.json({ error: 'Trial not found' }, { status: 404 });
   }
@@ -124,130 +137,219 @@ export async function POST(request: NextRequest) {
 
   const id = uuidv4();
 
-  try {
-    let trialData: Omit<TrialData, 'id' | 'createdAt' | 'isSample'>;
+  // Create empty trial record immediately so the client can poll and show progress
+  const emptyVerdicts = {
+    ship: { sentence: '', real_risk: '', strongest_ignored_argument: '', test_first: '' },
+    kill: { sentence: '', real_risk: '', strongest_ignored_argument: '', test_first: '' },
+    revise: { sentence: '', real_risk: '', strongest_ignored_argument: '', test_first: '' },
+    mistrial: { sentence: '', real_risk: '', strongest_ignored_argument: '', test_first: '' },
+  };
 
-    // Use OpenAI if key is configured, otherwise fall back to mock
-    if (process.env.OPENAI_API_KEY) {
-      trialData = await generateWithOpenAI(intake);
-    } else {
-      trialData = generateMockTrial(intake);
-    }
+  const initialTrial: TrialData = {
+    id,
+    intake,
+    charge: '',
+    case_title: '',
+    prosecution: { opening: '', arguments: [] },
+    defense: { opening: '', arguments: [] },
+    cross_examination: [],
+    verdicts: emptyVerdicts,
+    createdAt: Date.now(),
+    isSample,
+    generationStep: 0,
+  };
 
-    const trial: TrialData = {
-      id,
-      ...trialData,
-      createdAt: Date.now(),
-      isSample,
-    };
+  await setTrial(id, initialTrial);
 
-    setTrial(id, trial);
-    return NextResponse.json(trial);
-  } catch (error) {
-    console.error('AI generation failed:', error);
-    // Fallback to mock on error
+  // Fire background generation — client polls for incremental progress
+  generateAndUpdateInBackground(id, intake, isSample).catch((err) => {
+    console.error('Background generation failed:', err);
     const mockData = generateMockTrial(intake);
-    const trial: TrialData = {
-      id,
-      ...mockData,
-      createdAt: Date.now(),
-      isSample,
-    };
-    setTrial(id, trial);
-    return NextResponse.json(trial);
+    updateTrial(id, { ...mockData, generationStep: 5 }).catch(e =>
+      console.error('Mock fallback save failed:', e)
+    );
+  });
+
+  return NextResponse.json({ id });
+}
+
+async function generateAndUpdateInBackground(id: string, intake: IntakeForm, isSample: boolean) {
+  if (process.env.OPENAI_API_KEY) {
+    // 5-step with progress saved to Supabase after each step
+    await generateWithOpenAIInBackground(id, intake);
+  } else if (process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY) {
+    // Edge function — one-shot, can't do incremental
+    const trialData = await generateWithEdgeFunction(intake);
+    await updateTrial(id, { ...trialData, generationStep: 5 });
+  } else {
+    // Mock — synchronous, one-shot
+    const mockData = generateMockTrial(intake);
+    await updateTrial(id, { ...mockData, generationStep: 5 });
   }
 }
 
-async function generateWithOpenAI(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
-  const openai = new OpenAI();
-
+async function generateWithOpenAIInBackground(id: string, intake: IntakeForm) {
   const systemPrompt = `You are the engine behind FEATURE COURT, where product decisions go on trial. You write three distinct voices: the BAILIFF "Bailiff Sprint" (dry, theatrical, always rushing the docket), the PROSECUTION "Prosecutor Mary T. Bug" (sharp, relentless, exposes every flaw with surgical precision), and the DEFENSE "Defense Attorney Edward 'Edge' Case" (optimistic, principled, steel-mans the upside with conviction). Be specific to THIS decision. Every argument must reference the actual proposal, user, timing, or tradeoff given. Be witty but substantive. Do not invent facts about real companies or real events. Return ONLY valid JSON matching the schema.`;
 
-  const userInput = `Generate a Feature Court trial for this product decision:
+  const intakeContext = `Product Decision:
 Proposal: ${intake.proposal}
 Who it serves: ${intake.audience}
 Why now: ${intake.whyNow}
-Tradeoff: ${intake.tradeoff}
+Tradeoff: ${intake.tradeoff}`;
 
-Return the JSON in this exact format:
-{
-  "charge": "...",
-  "case_title": "...",
-  "prosecution": { "opening": "...", "arguments": ["...", "...", "..."] },
-  "defense": { "opening": "...", "arguments": ["...", "...", "..."] },
-  "cross_examination": ["...", "..."],
-  "verdicts": {
-    "ship": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },
-    "kill": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },
-    "revise": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },
-    "mistrial": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." }
+  async function callOpenAI(params: {
+    input: string;
+    instructions?: string;
+    previous_response_id?: string;
+  }): Promise<{ id: string; text: string }> {
+    const body: Record<string, unknown> = {
+      model: "gpt-4o-mini",
+      instructions: params.instructions || systemPrompt,
+      input: params.input,
+      max_output_tokens: 4096,
+    };
+    if (params.previous_response_id) {
+      body.previous_response_id = params.previous_response_id;
+    }
+
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`OpenAI API error ${response.status}: ${errBody}`);
+    }
+
+    const data = await response.json();
+    const content = data.output_text || data.output?.[0]?.content?.[0]?.text;
+    if (!content) throw new Error("No content in OpenAI response");
+    return { id: data.id, text: content };
   }
-}`;
 
-  const response = await openai.responses.create({
-    model: 'gpt-5.4',
-    instructions: systemPrompt,
-    input: userInput,
-    max_output_tokens: 8192,
+  function extractJSON(text: string): Record<string, unknown> {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("No JSON found in OpenAI response");
+    return JSON.parse(match[0]);
+  }
+
+  // === STEP 1: Charge and Case Title — save to Supabase immediately ===
+  const step1 = await callOpenAI({
+    input: `${intakeContext}\n\nGenerate only the charge and case_title for this Feature Court trial. The charge is a single dramatic sentence describing what this proposal "stands charged" with. The case_title is a short, theatrical court case name.\n\nReturn JSON:\n{\n  "charge": "...",\n  "case_title": "..."\n}`,
   });
+  const chargeData = extractJSON(step1.text);
+  const charge = chargeData.charge as string;
+  const case_title = chargeData.case_title as string;
+  await updateTrial(id, { intake, charge, case_title, generationStep: 1 });
 
-  const content = response.output_text;
-  if (!content) throw new Error('No content in OpenAI response');
+  // === STEP 2: Prosecution Opening + Arguments ===
+  const step2 = await callOpenAI({
+    previous_response_id: step1.id,
+    input: `The charge has been read: "${charge}"\n\nNow generate the PROSECUTION's opening statement and 3 arguments. Prosecutor Mary T. Bug is sharp, relentless, exposes every flaw with surgical precision. Each argument must reference the actual proposal, audience, timing, or tradeoff.\n\nReturn JSON:\n{\n  "prosecution": { "opening": "...", "arguments": ["...", "...", "..."] }\n}`,
+  });
+  const prosecutionData = extractJSON(step2.text);
+  const prosecution = prosecutionData.prosecution as { opening: string; arguments: string[] };
+  await updateTrial(id, { prosecution, generationStep: 2 });
 
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('No JSON found in OpenAI response');
+  // === STEP 3: Defense Opening + Arguments ===
+  const step3 = await callOpenAI({
+    previous_response_id: step2.id,
+    input: `The prosecution has made their case. Now generate the DEFENSE's opening statement and 3 arguments. Defense Attorney Edward "Edge" Case is optimistic, principled, steel-mans the upside with conviction. Each argument must directly respond to or reframe the prosecution's points and reference the actual proposal, audience, timing, or tradeoff.\n\nReturn JSON:\n{\n  "defense": { "opening": "...", "arguments": ["...", "...", "..."] }\n}`,
+  });
+  const defenseData = extractJSON(step3.text);
+  const defense = defenseData.defense as { opening: string; arguments: string[] };
+  await updateTrial(id, { defense, generationStep: 3 });
 
-  const parsed = JSON.parse(jsonMatch[0]);
-  return validateTrialJSON(parsed, intake);
+  // === STEP 4: Cross-Examination Questions with Choices ===
+  const step4 = await callOpenAI({
+    previous_response_id: step3.id,
+    input: `Both sides have argued. Now generate 2 cross-examination questions that the BAILIFF will ask the user (the judge) before they deliver their ruling. These should probe the user's conviction, honesty, and readiness — forcing them to reconcile the tension between the prosecution and defense arguments they just heard.
+
+Each question must have 3 answer choices. Each choice has:
+- label: a short label describing the type of answer (e.g. "Confident", "Cautious", "Pragmatic")
+- text: what the user says when they pick this choice
+- bailiff_reaction: Bailiff Sprint's dramatic reaction to this choice
+
+Make the questions and choices SPECIFIC to this trial's proposal, audience, timing, and tradeoff. NOT generic.
+
+Return JSON:
+{
+  "cross_examination": [
+    {
+      "question": "...",
+      "choices": [
+        { "label": "...", "text": "...", "bailiff_reaction": "..." },
+        { "label": "...", "text": "...", "bailiff_reaction": "..." },
+        { "label": "...", "text": "...", "bailiff_reaction": "..." }
+      ]
+    },
+    {
+      "question": "...",
+      "choices": [
+        { "label": "...", "text": "...", "bailiff_reaction": "..." },
+        { "label": "...", "text": "...", "bailiff_reaction": "..." },
+        { "label": "...", "text": "...", "bailiff_reaction": "..." }
+      ]
+    }
+  ]
+}`,
+  });
+  const crossData = extractJSON(step4.text);
+  const cross_examination = crossData.cross_examination as TrialData["cross_examination"];
+  await updateTrial(id, { cross_examination, generationStep: 4 });
+
+  // === STEP 5: All Verdicts ===
+  const step5 = await callOpenAI({
+    previous_response_id: step4.id,
+    input: `Now generate all 4 possible verdicts for this trial. Each verdict must have a sentence, real_risk, strongest_ignored_argument, and test_first. Reflect the specific arguments made by both sides in this case.\n\nReturn JSON:\n{\n  "verdicts": {\n    "ship": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },\n    "kill": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },\n    "revise": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },\n    "mistrial": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." }\n  }\n}`,
+  });
+  const verdictsData = extractJSON(step5.text);
+  const verdicts = verdictsData.verdicts as TrialData["verdicts"];
+  await updateTrial(id, { verdicts, generationStep: 5 });
 }
 
-function validateTrialJSON(json: Record<string, unknown>, intake: IntakeForm): Omit<TrialData, 'id' | 'createdAt' | 'isSample'> {
-  const j = json as unknown as Omit<TrialData, 'id' | 'createdAt' | 'isSample' | 'intake'>;
-  const required = ['charge', 'case_title', 'prosecution', 'defense', 'cross_examination', 'verdicts'];
-  for (const key of required) {
-    if (!json[key]) throw new Error(`Missing required field: ${key}`);
+async function generateWithEdgeFunction(intake: IntakeForm): Promise<Omit<TrialData, 'id' | 'createdAt' | 'isSample'>> {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/generate-trial`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseKey}`,
+    },
+    body: JSON.stringify({ intake }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Edge function error ${response.status}: ${errText}`);
   }
 
-  // Ensure prosecution has opening and arguments
-  if (!j.prosecution.opening || !Array.isArray(j.prosecution.arguments)) {
-    throw new Error('Invalid prosecution format');
-  }
-
-  // Ensure defense has opening and arguments
-  if (!j.defense.opening || !Array.isArray(j.defense.arguments)) {
-    throw new Error('Invalid defense format');
-  }
-
-  // Ensure cross_examination is an array
-  if (!Array.isArray(j.cross_examination)) {
-    throw new Error('Invalid cross_examination format');
-  }
-
-  // Ensure all verdicts exist
-  for (const v of ['ship', 'kill', 'revise', 'mistrial'] as const) {
-    if (!j.verdicts[v]?.sentence) {
-      throw new Error(`Missing sentence for verdict: ${v}`);
-    }
-  }
-
+  const trialData = await response.json();
   return {
     intake,
-    charge: j.charge,
-    case_title: j.case_title,
-    prosecution: {
-      opening: j.prosecution.opening,
-      arguments: j.prosecution.arguments,
-    },
-    defense: {
-      opening: j.defense.opening,
-      arguments: j.defense.arguments,
-    },
-    cross_examination: j.cross_examination,
-    verdicts: {
-      ship: j.verdicts.ship,
-      kill: j.verdicts.kill,
-      revise: j.verdicts.revise,
-      mistrial: j.verdicts.mistrial,
-    },
+    ...trialData,
   };
+}
+
+export async function PATCH(request: NextRequest) {
+  const { id, ruling } = await request.json();
+
+  if (!id || !ruling) {
+    return NextResponse.json({ error: 'Missing id or ruling' }, { status: 400 });
+  }
+
+  if (!['ship', 'kill', 'revise', 'mistrial'].includes(ruling)) {
+    return NextResponse.json({ error: 'Invalid ruling' }, { status: 400 });
+  }
+
+  const { recordRuling } = await import('@/lib/store');
+  await recordRuling(id, ruling);
+  return NextResponse.json({ success: true });
 }
