@@ -53,8 +53,8 @@ function ArraignmentContent() {
     // Poll the trial row until the charge is ready, with a hard cap so a stalled
     // generation (DB write race, edge function crash, silent OpenAI failure)
     // surfaces an error + retry escape hatch instead of spinning forever.
-    const MAX_RETRIES = 30; // 30 * 2s = 60s timeout
-    const POLL_INTERVAL_MS = 2000;
+    const MAX_RETRIES = 40; // 40 * 1.5s = 60s timeout
+    const POLL_INTERVAL_MS = 1500;
 
     async function readTrial(trialId: string) {
       let retries = 0;

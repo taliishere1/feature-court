@@ -49,7 +49,7 @@ function ProsecutionContent() {
 
         const hasProsecution = Boolean((row.prosecution as { opening?: string } | null)?.opening);
         if (!hasProsecution) {
-          const { error: fnError, response: fnResponse } = await supabase!.functions.invoke("prosecution-section", {
+          const { data: fnData, error: fnError, response: fnResponse } = await supabase!.functions.invoke("prosecution-section", {
             body: { trial_id: id },
           });
           if (cancelled) return;
@@ -62,14 +62,14 @@ function ProsecutionContent() {
             return;
           }
 
-          const second = await supabase!
-            .from("trials")
-            .select("*")
-            .eq("id", id)
-            .single();
-          if (cancelled) return;
-          if (second.error || !second.data) throw new Error("Trial not found");
-          row = second.data;
+          if (fnData?.prosecution) {
+            row = {
+              ...row,
+              prosecution: fnData.prosecution,
+              conversation_id: fnData.conversation_id,
+              generation_step: 2,
+            };
+          }
         }
 
         const converted = rowToTrialData(row);
@@ -97,7 +97,7 @@ function ProsecutionContent() {
       if (idx === (trial?.prosecution.arguments.length || 0) - 1) {
         setShowNext(true);
       }
-    }, 1500);
+    }, 900);
   }, [objectionActive, trial]);
 
   if (loadError) {
@@ -209,7 +209,7 @@ function ProsecutionContent() {
 function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
-      <div className="text-court-400 font-serif">Calling the first witness...</div>
+      <div className="text-court-400 font-serif">The prosecution presents its case...</div>
     </div>
   );
 }

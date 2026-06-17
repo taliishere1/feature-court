@@ -138,8 +138,8 @@ Tradeoff: "${intake.tradeoff}"`;
 
     const body: Record<string, unknown> = {
       model: "gpt-5.4",
-      reasoning: { effort: "low" },
-      max_output_tokens: 16000,
+      reasoning: { effort: "none" },
+      max_output_tokens: 6000,
       input: `${intakeContext}
 
 The charge: "${charge}"

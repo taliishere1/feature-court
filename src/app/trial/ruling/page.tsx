@@ -50,10 +50,11 @@ function RulingContent() {
           .single();
         if (!mounted.current) return;
 
+        let row = trialData;
         const hasVerdicts = trialData?.verdicts?.ship?.sentence && trialData.verdicts.ship.sentence.length > 0;
 
         if (!hasVerdicts) {
-          const { error: fnError, response: fnResponse } = await supabase!.functions.invoke("verdict-section", {
+          const { data: fnData, error: fnError, response: fnResponse } = await supabase!.functions.invoke("verdict-section", {
             body: { trial_id: id },
           });
           if (!mounted.current) return;
@@ -65,17 +66,18 @@ function RulingContent() {
             }
             return;
           }
+
+          if (fnData?.verdicts) {
+            row = {
+              ...trialData,
+              verdicts: fnData.verdicts,
+              conversation_id: fnData.conversation_id,
+              generation_step: 5,
+            };
+          }
         }
 
-        const { data: finalData, error: finalError } = await supabase!
-          .from("trials")
-          .select("*")
-          .eq("id", id)
-          .single();
-        if (!mounted.current) return;
-        if (finalError || !finalData) throw new Error("Trial not found");
-
-        setTrial(rowToTrialData(finalData));
+        setTrial(rowToTrialData(row));
       } catch (e) {
         console.error("Failed to load trial:", e);
         if (mounted.current) {
@@ -92,7 +94,7 @@ function RulingContent() {
 
   const handleReadyToRule = () => {
     setReadyClicked(true);
-    setTimeout(() => setShowOptions(true), 800);
+    setTimeout(() => setShowOptions(true), 400);
   };
 
   function handleSubmit() {

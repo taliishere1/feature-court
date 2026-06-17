@@ -62,7 +62,7 @@ function CrossContent() {
         const cross = row.cross_examination as unknown[] | null;
         const hasCross = Array.isArray(cross) && cross.length > 0;
         if (!hasCross) {
-          const { error: fnError, response: fnResponse } = await supabase!.functions.invoke("cross-section", {
+          const { data: fnData, error: fnError, response: fnResponse } = await supabase!.functions.invoke("cross-section", {
             body: { trial_id: id },
           });
           if (cancelled) return;
@@ -75,14 +75,15 @@ function CrossContent() {
             return;
           }
 
-          const second = await supabase!
-            .from("trials")
-            .select("*")
-            .eq("id", id)
-            .single();
-          if (cancelled) return;
-          if (second.error || !second.data) throw new Error("Trial not found");
-          row = second.data;
+          if (fnData?.cross_examination) {
+            row = {
+              ...row,
+              cross_examination: fnData.cross_examination,
+              cross_bailiff_dialogue: fnData.cross_bailiff_dialogue,
+              conversation_id: fnData.conversation_id,
+              generation_step: 4,
+            };
+          }
         }
 
         const converted = rowToTrialData(row);
@@ -133,7 +134,7 @@ function CrossContent() {
         setBailiffDialogueIndex(2);
         setBailiffText(BAILIFF_DIALOGUES[2]);
       }
-    }, 1200);
+    }, 800);
   }, [trial]);
 
   function handleSubmit(e: React.FormEvent) {

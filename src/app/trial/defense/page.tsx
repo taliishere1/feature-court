@@ -50,7 +50,7 @@ function DefenseContent() {
 
         const hasDefense = Boolean((row.defense as { opening?: string } | null)?.opening);
         if (!hasDefense) {
-          const { error: fnError, response: fnResponse } = await supabase!.functions.invoke("defense-section", {
+          const { data: fnData, error: fnError, response: fnResponse } = await supabase!.functions.invoke("defense-section", {
             body: { trial_id: id },
           });
           if (cancelled) return;
@@ -63,14 +63,14 @@ function DefenseContent() {
             return;
           }
 
-          const second = await supabase!
-            .from("trials")
-            .select("*")
-            .eq("id", id)
-            .single();
-          if (cancelled) return;
-          if (second.error || !second.data) throw new Error("Trial not found");
-          row = second.data;
+          if (fnData?.defense) {
+            row = {
+              ...row,
+              defense: fnData.defense,
+              conversation_id: fnData.conversation_id,
+              generation_step: 3,
+            };
+          }
         }
 
         const converted = rowToTrialData(row);
@@ -98,7 +98,7 @@ function DefenseContent() {
       if (idx === (trial?.defense.arguments.length || 0) - 1) {
         setShowNext(true);
       }
-    }, 1500);
+    }, 900);
   }, [objectionActive, trial]);
 
   if (loadError) {

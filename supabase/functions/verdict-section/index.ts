@@ -148,8 +148,8 @@ serve(async (req: Request) => {
 
     const body: Record<string, unknown> = {
       model: "gpt-5.4",
-      reasoning: { effort: "low" },
-      max_output_tokens: 16000,
+      reasoning: { effort: "none" },
+      max_output_tokens: 12000,
       input: `Product Proposal: "${intake.proposal}"
 Target Audience: "${intake.audience}"
 Timing/Rationale: "${intake.whyNow}"
