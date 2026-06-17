@@ -10,26 +10,60 @@ function ProsecutionContent() {
   const searchParams = useSearchParams();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [objectionActive, setObjectionActive] = useState(false);
   const [showNext, setShowNext] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
+
+  const handleRetry = useCallback(() => {
+    setError(false);
+    setLoading(true);
+    setRetryKey((k) => k + 1);
+  }, []);
+
+  const trialId = searchParams.get("id");
 
   useEffect(() => {
     mounted.current = true;
     const id = searchParams.get("id");
     if (!id) return;
-    fetch(`/api/trial?id=${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (mounted.current) {
-          setTrial(data);
-          setRevealed(true);
+
+    let cancelled = false;
+    let retries = 0;
+    const MAX_RETRIES = 30; // 30 × 2s = 60s — fail fast, offer retry
+
+    (async function poll() {
+      while (!cancelled && retries < MAX_RETRIES) {
+        try {
+          const res = await fetch(`/api/trial?id=${id}`);
+          const data: TrialData = await res.json();
+          if (cancelled) return;
+
+          const isReady = data.prosecution?.opening && data.prosecution.opening.length > 0;
+          if (isReady) {
+            if (mounted.current) {
+              setTrial(data);
+              setRevealed(true);
+              setLoading(false);
+            }
+            return;
+          }
+        } catch {
+          // retry on transient errors
         }
-      })
-      .finally(() => setLoading(false));
-    return () => { mounted.current = false; };
-  }, [searchParams]);
+        retries++;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      if (!cancelled && mounted.current) {
+        setError(true);
+        setLoading(false);
+      }
+    })();
+
+    return () => { mounted.current = false; cancelled = true; };
+  }, [searchParams, retryKey]);
 
   const handleEvidenceClick = useCallback((idx: number) => {
     if (objectionActive) return;
@@ -42,6 +76,7 @@ function ProsecutionContent() {
     }, 1500);
   }, [objectionActive, trial]);
 
+  if (error) return <TimeoutState onRetry={handleRetry} trialId={trialId} />;
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
@@ -135,6 +170,30 @@ function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
       <div className="text-court-400 font-serif">Calling the first witness...</div>
+    </div>
+  );
+}
+
+function TimeoutState({ onRetry, trialId }: { onRetry: () => void; trialId: string | null }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
+      <p className="text-court-400 font-serif">The prosecution is taking too long to assemble.</p>
+      <p className="text-court-600 text-sm font-legal">Generation timed out. You can retry or start over.</p>
+      {trialId && (
+        <button
+          onClick={onRetry}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 4v6h6M23 20v-6h-6" />
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+          </svg>
+          Retry
+        </button>
+      )}
+      <Link href="/file" className="inline-block text-sm text-gold-500 hover:text-gold-400 underline mt-2">
+        File a new case
+      </Link>
     </div>
   );
 }

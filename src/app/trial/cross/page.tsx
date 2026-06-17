@@ -6,78 +6,76 @@ import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox } from "@/components/court-components";
 
-const BAILIFF_REACTIONS: Record<string, Record<number, string>> = {
-  confident: {
-    0: "Confidence — a dangerous currency in this court.",
-    1: "You speak with conviction. The jury will note it.",
-  },
-  cautious: {
-    0: "Wisdom in uncertainty. The bench appreciates humility.",
-    1: "A measured response. Prudence has its place.",
-  },
-  contrarian: {
-    0: "Bold. The prosecution will have words about this.",
-    1: "Interesting angle. Defense Attorney Edward \"Edge\" Case would agree.",
-  },
-  practical: {
-    0: "A pragmatic answer. The numbers matter here.",
-    1: "Practicality — the unsung virtue of good judgment.",
-  },
-  honest: {
-    0: "Honesty. Rare in these chambers.",
-    1: "Truth-telling. The court values candor.",
-  },
-};
-
 const BAILIFF_DIALOGUES: string[] = [
   "The court has heard both sides. Before you rule, you must answer.",
   "Let us begin with the first question.",
   "Well reasoned. One more question to answer.",
 ];
 
-const CHOICES: Record<number, { label: string; reaction: keyof typeof BAILIFF_REACTIONS; text: string }[]> = {
-  0: [
-    { label: "The metric goes flat", reaction: "honest", text: "I'll watch it closely and kill this if it dips." },
-    { label: "It'll go up — I believe in this", reaction: "confident", text: "Growth. If I didn't believe in this, I wouldn't be here." },
-    { label: "I'd set a clear guardrail", reaction: "practical", text: "I'll define the metric upfront and set a decision gate." },
-  ],
-  1: [
-    { label: "It's real signal", reaction: "confident", text: "I've done the research. This isn't FOMO." },
-    { label: "Honestly? Maybe FOMO", reaction: "cautious", text: "It could be. Sometimes FOMO is just early market awareness." },
-    { label: "Both — signal AND urgency", reaction: "contrarian", text: "Signal says go, urgency says now. Both." },
-  ],
-};
-
 function CrossContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [selectedChoices, setSelectedChoices] = useState<Record<number, number | null>>({});
   const [bailiffMessages, setBailiffMessages] = useState<(string | null)[]>([null, null]);
   const [submitting, setSubmitting] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [showQuestion, setShowQuestion] = useState<number>(0);
+  const [showQuestion, setShowQuestion] = useState<number>(-1);
   const [bailiffText, setBailiffText] = useState("The court has heard both sides. Before you rule, you must answer.");
   const [showContinue, setShowContinue] = useState(false);
   const [bailiffDialogueIndex, setBailiffDialogueIndex] = useState(0);
+  const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
+
+  const handleRetry = useCallback(() => {
+    setError(false);
+    setLoading(true);
+    setRetryKey((k) => k + 1);
+  }, []);
+
+  const trialId = searchParams.get("id");
 
   useEffect(() => {
     mounted.current = true;
     const id = searchParams.get("id");
     if (!id) return;
-    fetch(`/api/trial?id=${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (mounted.current) {
-          setTrial(data);
-          setRevealed(true);
+
+    let cancelled = false;
+    let retries = 0;
+    const MAX_RETRIES = 30;
+
+    (async function poll() {
+      while (!cancelled && retries < MAX_RETRIES) {
+        try {
+          const res = await fetch(`/api/trial?id=${id}`);
+          const data: TrialData = await res.json();
+          if (cancelled) return;
+
+          const isReady = data.cross_examination?.length > 0;
+          if (isReady) {
+            if (mounted.current) {
+              setTrial(data);
+              setRevealed(true);
+              setLoading(false);
+            }
+            return;
+          }
+        } catch {
+          // retry on transient errors
         }
-      })
-      .finally(() => setLoading(false));
-    return () => { mounted.current = false; };
-  }, [searchParams]);
+        retries++;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      if (!cancelled && mounted.current) {
+        setError(true);
+        setLoading(false);
+      }
+    })();
+
+    return () => { mounted.current = false; cancelled = true; };
+  }, [searchParams, retryKey]);
 
   const handleDialogueComplete = useCallback(() => {
     setShowContinue(true);
@@ -94,14 +92,13 @@ function CrossContent() {
 
   const handleChoice = useCallback((questionIdx: number, choiceIdx: number) => {
     setSelectedChoices((prev) => ({ ...prev, [questionIdx]: choiceIdx }));
-    const choices = CHOICES[questionIdx];
-    if (!choices) return;
-    const choice = choices[choiceIdx];
-    const reactions = BAILIFF_REACTIONS[choice.reaction];
-    const msg = reactions[questionIdx] || reactions[0];
+    const questions = trial?.cross_examination;
+    if (!questions || !questions[questionIdx]) return;
+    const choice = questions[questionIdx].choices[choiceIdx];
+    if (!choice) return;
     setBailiffMessages((prev) => {
       const next = [...prev];
-      next[questionIdx] = msg;
+      next[questionIdx] = choice.bailiff_reaction;
       return next;
     });
     // Auto-advance to next question
@@ -112,7 +109,7 @@ function CrossContent() {
         setBailiffText(BAILIFF_DIALOGUES[2]);
       }
     }, 1200);
-  }, []);
+  }, [trial]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -145,6 +142,7 @@ function CrossContent() {
     return () => window.removeEventListener("keydown", handler);
   }, [showContinue, advanceDialogue]);
 
+  if (error) return <TimeoutState onRetry={handleRetry} trialId={trialId} />;
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
@@ -177,8 +175,8 @@ function CrossContent() {
 
           {/* Questions */}
           <form onSubmit={handleSubmit} className="space-y-8 mt-8">
-            {trial.cross_examination.slice(0, 2).map((question, i) => {
-              const choices = CHOICES[i];
+            {trial.cross_examination.slice(0, 2).map((cq, i) => {
+              const choices = cq.choices;
               const selected = selectedChoices[i];
               const isVisible = showQuestion === i;
               return (
@@ -190,7 +188,7 @@ function CrossContent() {
                     <div className="animate-dramatic-zoom text-center">
                       <div className="parchment p-6 max-w-xl mx-auto">
                         <span className="font-mono text-[9px] text-gold-500 uppercase tracking-[0.25em] block mb-3">Question {i + 1}</span>
-                        <p className="text-court-200 font-serif text-lg mb-5 leading-relaxed">{question}</p>
+                        <p className="text-court-200 font-serif text-lg mb-5 leading-relaxed">{cq.question}</p>
                         {choices && (
                           <div className="space-y-2">
                             {choices.map((choice, ci) => (
@@ -283,6 +281,30 @@ function LoadingState() {
   return (
     <div className="min-h-screen flex items-center justify-center wood-panel">
       <div className="text-court-400 font-serif">Preparing the questions...</div>
+    </div>
+  );
+}
+
+function TimeoutState({ onRetry, trialId }: { onRetry: () => void; trialId: string | null }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-5 wood-panel">
+      <p className="text-court-400 font-serif">The questions are taking too long to prepare.</p>
+      <p className="text-court-600 text-sm font-legal">Generation timed out. You can retry or start over.</p>
+      {trialId && (
+        <button
+          onClick={onRetry}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 4v6h6M23 20v-6h-6" />
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+          </svg>
+          Retry
+        </button>
+      )}
+      <Link href="/file" className="inline-block text-sm text-gold-500 hover:text-gold-400 underline mt-2">
+        File a new case
+      </Link>
     </div>
   );
 }
