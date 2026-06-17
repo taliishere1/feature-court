@@ -4,12 +4,18 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CourtroomBackground } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasCrossExamination } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { pendoTrack } from "@/lib/pendo-track";
 import { StageGenerationError } from "@/components/stage-generation-error";
+
+const FALLBACK_BAILIFF_DIALOGUES = [
+  "The court has heard both sides. Before you rule, you must answer.",
+  "Let us begin with the first question.",
+  "Well reasoned. One more question to answer.",
+];
 
 function CrossContent() {
   const searchParams = useSearchParams();
@@ -18,13 +24,26 @@ function CrossContent() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [selectedChoices, setSelectedChoices] = useState<Record<number, number | null>>({});
+  const [bailiffMessages, setBailiffMessages] = useState<(string | null)[]>([null, null]);
   const [submitting, setSubmitting] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [introComplete, setIntroComplete] = useState(false);
+  const [showContinue, setShowContinue] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
+
+  const bailiffDialogues =
+    trial?.cross_bailiff_dialogue?.filter(Boolean).length
+      ? trial.cross_bailiff_dialogue!.filter(Boolean)
+      : FALLBACK_BAILIFF_DIALOGUES;
 
   const handleRetry = useCallback(() => {
     setLoadError(null);
     setLoading(true);
+    setSelectedChoices({});
+    setBailiffMessages([null, null]);
+    setIntroComplete(false);
+    setShowContinue(false);
     setRetryKey((k) => k + 1);
   }, []);
 
@@ -83,6 +102,9 @@ function CrossContent() {
         const converted = rowToTrialData(row);
         if (mounted.current) {
           setTrial(converted);
+          setIntroComplete(false);
+          setShowContinue(false);
+          setRevealed(true);
           setLoading(false);
         }
       } catch {
@@ -96,9 +118,34 @@ function CrossContent() {
     return () => { mounted.current = false; cancelled = true; };
   }, [searchParams, retryKey]);
 
+  const introText = bailiffDialogues[0] ?? FALLBACK_BAILIFF_DIALOGUES[0];
+
+  const handleDialogueComplete = useCallback(() => {
+    setShowContinue(true);
+  }, []);
+
+  const advanceDialogue = useCallback(() => {
+    setShowContinue(false);
+    setIntroComplete(true);
+  }, []);
+
+  const skipDialogue = useCallback(() => {
+    setShowContinue(false);
+    setIntroComplete(true);
+  }, []);
+
   const handleChoice = useCallback((questionIdx: number, choiceIdx: number) => {
     setSelectedChoices((prev) => ({ ...prev, [questionIdx]: choiceIdx }));
-  }, []);
+    const questions = trial?.cross_examination;
+    if (!questions || !questions[questionIdx]) return;
+    const choice = questions[questionIdx].choices[choiceIdx];
+    if (!choice) return;
+    setBailiffMessages((prev) => {
+      const next = [...prev];
+      next[questionIdx] = choice.bailiff_reaction;
+      return next;
+    });
+  }, [trial]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -117,6 +164,17 @@ function CrossContent() {
 
     router.push(`/trial/ruling?id=${id}`);
   }
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.key === " " || e.key === "Enter") && showContinue && !introComplete) {
+        e.preventDefault();
+        advanceDialogue();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showContinue, advanceDialogue, introComplete]);
 
   if (loadError) {
     const id = searchParams.get("id");
@@ -145,7 +203,7 @@ function CrossContent() {
     <div className="min-h-screen flex flex-col wood-panel relative">
       <CourtroomBackground opacity={0.1} />
 
-      <header className="border-b border-court-800 relative z-10">
+      <header className="border-b border-court-800 relative z-40">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href={`/trial/defense?id=${trial.id}`} className="flex items-center gap-2 group">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
@@ -165,35 +223,55 @@ function CrossContent() {
 
           <StageProgress current={4} />
 
-          <p className="text-center text-court-400 text-sm font-legal mb-8">
-            Answer both questions before you rule.
-          </p>
+          <form onSubmit={handleSubmit} className="space-y-8 mt-8">
+            {introComplete && !allAnswered && (
+              <p className="text-center text-court-500 text-sm font-legal italic animate-fade-in-up">
+                Answer both questions before you rule.
+              </p>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
             {trial.cross_examination.slice(0, 2).map((cq, i) => {
               const choices = cq.choices;
               const selected = selectedChoices[i];
+              const isVisible = introComplete;
               return (
-                <div key={i} className="parchment p-6 max-w-xl mx-auto">
-                  <span className="font-mono text-[9px] text-gold-500 uppercase tracking-[0.25em] block mb-3">Question {i + 1}</span>
-                  <p className="text-court-200 font-serif text-lg mb-5 leading-relaxed">{cq.question}</p>
-                  {choices && (
-                    <div className="space-y-2">
-                      {choices.map((choice, ci) => (
-                        <button
-                          key={ci}
-                          type="button"
-                          onClick={() => handleChoice(i, ci)}
-                          disabled={selected !== undefined}
-                          className={`w-full text-left px-4 py-3 rounded-sm border text-sm font-legal tracking-wide transition-all duration-200 cursor-pointer ${
-                            selected === ci
-                              ? "border-gold-500 bg-gold-500/10 text-court-100 shadow-[0_0_12px_rgba(212,175,55,0.1)]"
-                              : "border-court-700 text-court-400 hover:border-court-500 hover:text-court-200"
-                          } ${selected !== undefined && selected !== ci ? "opacity-50" : ""}`}
-                        >
-                          <span className="block leading-relaxed">&ldquo;{choice.text}&rdquo;</span>
-                        </button>
-                      ))}
+                <div
+                  key={i}
+                  className={`transition-all duration-700 ${isVisible ? "opacity-100" : "opacity-0 pointer-events-none h-0 overflow-hidden"}`}
+                >
+                  {isVisible && (
+                    <div className="animate-dramatic-zoom text-center">
+                      <div className="parchment p-6 max-w-xl mx-auto">
+                        <span className="font-mono text-[9px] text-gold-500 uppercase tracking-[0.25em] block mb-3">Question {i + 1}</span>
+                        <p className="text-court-200 font-serif text-lg mb-5 leading-relaxed">{cq.question}</p>
+                        {choices && (
+                          <div className="space-y-2">
+                            {choices.map((choice, ci) => (
+                              <button
+                                key={ci}
+                                type="button"
+                                onClick={() => handleChoice(i, ci)}
+                                disabled={selected !== undefined}
+                                className={`w-full text-left px-4 py-3 rounded-sm border text-sm font-legal tracking-wide transition-all duration-200 cursor-pointer ${
+                                  selected === ci
+                                    ? "border-gold-500 bg-gold-500/10 text-court-100 shadow-[0_0_12px_rgba(212,175,55,0.1)]"
+                                    : "border-court-700 text-court-400 hover:border-court-500 hover:text-court-200"
+                                } ${selected !== undefined && selected !== ci ? "opacity-50" : ""}`}
+                              >
+                                <span className="block leading-relaxed">&ldquo;{choice.text}&rdquo;</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {selected !== undefined && bailiffMessages[i] && (
+                          <div className="mt-4 pt-3 border-t border-court-700 animate-fade-in-up">
+                            <div className="flex items-center gap-2 justify-center">
+                              <BailiffPortrait size="thumb" />
+                              <p className="text-court-500 text-xs italic font-legal">{bailiffMessages[i]}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -229,6 +307,21 @@ function CrossContent() {
           </form>
         </div>
       </main>
+
+      {revealed && !introComplete && (
+        <DialogueBox
+          portrait={<BailiffPortrait size="medium" />}
+          name="Bailiff Sprint"
+          text={introText}
+          color="#a67c00"
+          typingSpeed={25}
+          onComplete={handleDialogueComplete}
+          showContinue={showContinue}
+          onAdvance={advanceDialogue}
+          onSkip={skipDialogue}
+          showSkip
+        />
+      )}
     </div>
   );
 }

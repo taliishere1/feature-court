@@ -14,6 +14,17 @@ Based on [Keep a Changelog](https://keepachangelog.com/) • Uses [ISO 8601](htt
 =======================================================
 -->
 
+### [Fixed] - 2026-06-17T14:00:00 - Session 8: Restore bailiff dialogue + enlarge character portraits
+
+**[Bailiff Sprint conversation and portrait sizing restored across trial stages]**
+
+- **Arraignment** `src/app/trial/arraignment/page.tsx`: Restored `DialogueBox` + `BailiffPortrait` multi-line opening sequence (removed in `b10b5dd`). Uses AI-generated `charge_data.bailiff_dialogue` from DB when present, with fallback lines.
+- **Prosecution** `src/app/trial/prosecution/page.tsx`: Bailiff intro dialogue (`prosecution.bailiff_intro`) plays before case content; character name/title from API.
+- **Defense** `src/app/trial/defense/page.tsx`: Same bailiff intro pattern using `defense.bailiff_intro`.
+- **Cross** `src/app/trial/cross/page.tsx`: Restored staged bailiff dialogue, question reveal flow, and per-choice `bailiff_reaction` display (removed in `b10b5dd`). Uses `cross_bailiff_dialogue` from API when present.
+- **Portraits** `src/components/court-components.tsx`: Added `medium` size tier; bumped all portrait dimensions (`full` 220×244, `medium` 140×155, `thumb` 100×110). Enlarged `DialogueBox` portrait frame from 56px to 96×112px.
+- **Types** `src/lib/types.ts`, `src/lib/store.ts`: Extended `TrialData` with `charge_data`, `cross_bailiff_dialogue`, `bailiff_intro`, and `character` fields.
+
 ### [Fixed] - 2026-06-17T12:00:00 - Session 7: Pendo/Novus instrumentation + lint/build 0/0
 
 **[Novus Signals pipeline fed by correct Pendo install; ESLint clean]**

@@ -884,9 +884,16 @@ function PortraitHead({ expression = "neutral", color }: { expression: PortraitR
   );
 }
 
-export function ProsecutorPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: "full" | "thumb" }) {
-  const w = size === "full" ? 180 : 72;
-  const h = size === "full" ? 200 : 76;
+type PortraitSize = "full" | "medium" | "thumb";
+
+const PORTRAIT_DIMS: Record<PortraitSize, { w: number; h: number }> = {
+  full: { w: 220, h: 244 },
+  medium: { w: 140, h: 155 },
+  thumb: { w: 100, h: 110 },
+};
+
+export function ProsecutorPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: PortraitSize }) {
+  const { w, h } = PORTRAIT_DIMS[size];
   const color = "#b91c1c";
   return (
     <CharacterImage src="/images/prosecutor.png" alt="Prosecutor" width={w} height={h}>
@@ -908,9 +915,8 @@ export function ProsecutorPortrait({ reaction = "neutral", size = "full" }: { re
   );
 }
 
-export function DefensePortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: "full" | "thumb" }) {
-  const w = size === "full" ? 180 : 72;
-  const h = size === "full" ? 200 : 76;
+export function DefensePortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: PortraitSize }) {
+  const { w, h } = PORTRAIT_DIMS[size];
   const color = "#2563eb";
   return (
     <CharacterImage src="/images/defense.png" alt="Defense" width={w} height={h}>
@@ -934,9 +940,8 @@ export function DefensePortrait({ reaction = "neutral", size = "full" }: { react
   );
 }
 
-export function BailiffPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: "full" | "thumb" }) {
-  const w = size === "full" ? 180 : 72;
-  const h = size === "full" ? 200 : 76;
+export function BailiffPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: PortraitSize }) {
+  const { w, h } = PORTRAIT_DIMS[size];
   const color = "#a67c00";
   return (
     <CharacterImage src="/images/bailiff.png" alt="Bailiff" width={w} height={h}>
@@ -958,9 +963,10 @@ export function BailiffPortrait({ reaction = "neutral", size = "full" }: { react
 
 export function JudgePortrait({ reaction = "neutral" }: { reaction?: PortraitReaction }) {
   const color = "#6b7280";
+  const { w, h } = PORTRAIT_DIMS.full;
   return (
-    <CharacterImage src="/images/judge.png" alt="Judge" width={180} height={200}>
-      <svg width={180} height={200} viewBox="0 0 84 96" className="shrink-0">
+    <CharacterImage src="/images/judge.png" alt="Judge" width={w} height={h}>
+      <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
         {/* Robe */}
         <path d="M 8 96 L 14 52 Q 16 46 22 44 L 62 44 Q 68 46 70 52 L 76 96 Z" fill={color} opacity="0.12" />
         <path d="M 14 52 Q 16 46 22 44 L 62 44 Q 68 46 70 52" stroke={color} strokeWidth="1.5" fill="none" opacity="0.3" />
@@ -986,6 +992,9 @@ interface DialogueBoxProps {
   typingSpeed?: number;
   onComplete?: () => void;
   showContinue?: boolean;
+  onAdvance?: () => void;
+  onSkip?: () => void;
+  showSkip?: boolean;
 }
 
 export function DialogueBox({
@@ -996,6 +1005,9 @@ export function DialogueBox({
   typingSpeed = 25,
   onComplete,
   showContinue = true,
+  onAdvance,
+  onSkip,
+  showSkip = false,
 }: DialogueBoxProps) {
   type TBAction = { type: 'START_TYPING' } | { type: 'FINISH_TYPING' };
 
@@ -1033,20 +1045,40 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
     <div className="dialogue-box">
       <div className="dialogue-box-inner">
         <div className="dialogue-box-top">
-          <div className="w-14 h-14 rounded-full border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
-            style={{ borderColor: `${color}40` }}>
+          <div
+            className="w-24 h-24 rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
+            style={{ borderColor: `${color}40` }}
+          >
             {portrait}
           </div>
           <span className="dialogue-box-name" style={{ color }}>{name}</span>
+          {showSkip && onSkip && (
+            <button
+              type="button"
+              onClick={onSkip}
+              className="ml-auto shrink-0 text-xs font-mono uppercase tracking-wider text-court-300 hover:text-gold-400 py-2 px-3 -mr-1 rounded-sm transition-colors"
+            >
+              Skip
+            </button>
+          )}
         </div>
-        <div className="dialogue-box-body">
+        <div className="dialogue-box-body dialogue-box-body-with-portrait">
           {typing ? (
             <TypewriterText text={text} speed={typingSpeed} tag="span" onComplete={handleTypeComplete} />
           ) : (
             <span>{text}</span>
           )}
         </div>
-        {showContinue && typingDone && (
+        {showContinue && typingDone && onAdvance && (
+          <button
+            type="button"
+            onClick={onAdvance}
+            className="dialogue-box-continue dialogue-box-continue-btn"
+          >
+            ▼ Continue
+          </button>
+        )}
+        {showContinue && typingDone && !onAdvance && (
           <div className="dialogue-box-continue">▼ Continue</div>
         )}
       </div>

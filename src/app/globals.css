@@ -481,6 +481,10 @@ body {
   padding-left: 2.75rem;
 }
 
+.dialogue-box-body-with-portrait {
+  padding-left: 6.5rem;
+}
+
 .dialogue-box-continue {
   text-align: center;
   margin-top: 0.5rem;
@@ -489,6 +493,20 @@ body {
   color: var(--color-gold-500);
   letter-spacing: 0.1em;
   animation: glow-pulse 1.5s ease-in-out infinite;
+}
+
+.dialogue-box-continue-btn {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.dialogue-box-continue-btn:hover {
+  color: var(--color-gold-400);
 }
 
 /* ─── Evidence Card ─── */
