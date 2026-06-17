@@ -2,18 +2,20 @@
 
 import { supabase } from "./supabase";
 
+// Must match the key used in PENDO_INSTALL_SNIPPET in pendo.ts
 const SESSION_KEY = "fc-session-visitor-id";
 
 /**
  * Returns the anonymous visitor ID for this browser session.
- * A new UUID is generated each session (sessionStorage clears on tab close).
- * The ID is inserted into the visitors table in Supabase the first time it's used.
+ * The Pendo install snippet creates this ID first (in <head>), so by the time
+ * React runs this function the key already exists in sessionStorage.
+ * Falls back to generating one if called before the snippet runs (e.g. SSR guard).
  */
 export function getSessionVisitorId(): string {
   if (typeof window === "undefined") return "";
   let id = sessionStorage.getItem(SESSION_KEY);
   if (!id) {
-    id = crypto.randomUUID();
+    id = "anon-" + crypto.randomUUID();
     sessionStorage.setItem(SESSION_KEY, id);
   }
   return id;
