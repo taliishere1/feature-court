@@ -111,6 +111,26 @@ export async function getAllTrials(): Promise<TrialData[]> {
   );
 }
 
+export async function getMyTrials(visitorId: string): Promise<TrialData[]> {
+  requireSupabase();
+
+  const { data, error } = await supabase!
+    .from("trials")
+    .select("*")
+    .eq("is_sample", false)
+    .eq("visitor_id", visitorId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Supabase query error:", error);
+    return [];
+  }
+
+  return (data || []).map((row) =>
+    rowToTrialData(row as Record<string, unknown>)
+  );
+}
+
 export async function getPublicTrials(): Promise<TrialData[]> {
   requireSupabase();
 

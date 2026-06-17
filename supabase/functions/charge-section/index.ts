@@ -119,10 +119,12 @@ serve(async (req: Request) => {
 
   let intake: IntakeForm;
   let isSample = false;
+  let visitorId: string | null = null;
   try {
     const parsed = await req.json();
     intake = parsed.intake;
     isSample = Boolean(parsed.isSample);
+    visitorId = typeof parsed.visitor_id === "string" && parsed.visitor_id ? parsed.visitor_id : null;
   } catch {
     return json({ error: "Invalid request body" }, 400);
   }
@@ -198,6 +200,11 @@ You are generating the OPENING SCENE of a Feature Court trial.
     const bailiff_dialogue = (parsed.bailiff_dialogue as string[]) || [];
     const conversation_id = data.id as string;
 
+    // Register visitor if provided
+    if (visitorId) {
+      await supabase.from("visitors").upsert({ id: visitorId }, { onConflict: "id", ignoreDuplicates: true });
+    }
+
     const { error: insertError } = await supabase.from("trials").insert({
       id: trial_id,
       intake,
@@ -208,6 +215,7 @@ You are generating the OPENING SCENE of a Feature Court trial.
       generation_step: 1,
       created_at: new Date().toISOString(),
       is_sample: isSample,
+      visitor_id: visitorId,
       prosecution: { opening: "", arguments: [], closing: "", character: { name: "", title: "" }, bailiff_intro: "" },
       defense: { opening: "", arguments: [], closing: "", character: { name: "", title: "" }, bailiff_intro: "" },
       cross_examination: [],

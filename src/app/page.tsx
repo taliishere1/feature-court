@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CourtroomBackground, CourtSeal, InteractiveGavel } from "@/components/court-components";
 import { Ruling } from "@/lib/types";
-import { getAllTrials } from "@/lib/store";
+import { getMyTrials } from "@/lib/store";
+import { getVisitorId } from "@/lib/visitor";
 
 export default function LandingPage() {
   const [casesTried, setCasesTried] = useState(0);
@@ -14,10 +15,14 @@ export default function LandingPage() {
 
   const isReturning = loaded && casesTried > 0;
 
-  // Fetch stats directly from Supabase
+  // Fetch stats for this visitor only (persists across sessions via localStorage)
   useEffect(() => {
     let cancelled = false;
-    getAllTrials()
+    const visitorId = getVisitorId();
+    const load = visitorId
+      ? getMyTrials(visitorId)
+      : Promise.resolve([] as import("@/lib/types").TrialData[]);
+    load
       .then((data) => {
         if (cancelled) return;
         const ruled = data.filter((t) => !t.isSample && t.ruling);
