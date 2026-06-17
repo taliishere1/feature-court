@@ -1,33 +1,98 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function getPublishableKey(): string {
+  const raw = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed?.default) return parsed.default as string;
+      const first = Object.values(parsed)[0];
+      if (typeof first === "string") return first;
+    } catch {
+      // fall through to single-key fallbacks
+    }
+  }
+  return (
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ||
+    Deno.env.get("SUPABASE_ANON_KEY") ||
+    ""
+  );
+}
+
+function getSupabaseClient() {
+  const url = Deno.env.get("SUPABASE_URL") ?? "";
+  return createClient(url, getPublishableKey());
+}
+
+function extractOutputText(payload: Record<string, unknown>): string {
+  if (typeof payload.output_text === "string" && payload.output_text) {
+    return payload.output_text;
+  }
+  const output = payload.output as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(output)) {
+    for (const item of output) {
+      const content = item.content as Array<Record<string, unknown>> | undefined;
+      if (Array.isArray(content)) {
+        for (const c of content) {
+          if (c.type === "output_text" && typeof c.text === "string") {
+            return c.text;
+          }
+        }
+      }
+    }
+  }
+  return "";
+}
+
 serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return json({ error: "Method not allowed" }, 405);
   }
 
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: "OpenAI API key not configured" }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return json({ error: "OpenAI API key not configured" }, 500);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !supabaseKey) {
-    return new Response(JSON.stringify({ error: "Supabase not configured" }), { status: 500, headers: { "Content-Type": "application/json" } });
+  if (!supabaseUrl || !getPublishableKey()) {
+    return json({ error: "Supabase not configured" }, 500);
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseClient();
 
-  const { trial_id }: { trial_id: string } = await req.json();
+  let trial_id: string;
+  try {
+    const parsed = await req.json();
+    trial_id = parsed.trial_id;
+  } catch {
+    return json({ error: "Invalid request body" }, 400);
+  }
   if (!trial_id) {
-    return new Response(JSON.stringify({ error: "Missing trial_id" }), { status: 400, headers: { "Content-Type": "application/json" } });
+    return json({ error: "Missing trial_id" }, 400);
   }
 
   try {
     const { data: trial, error: loadError } = await supabase.from("trials").select("*").eq("id", trial_id).single();
     if (loadError || !trial) {
-      return new Response(JSON.stringify({ error: "Trial not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+      return json({ error: "Trial not found" }, 404);
     }
 
     const intake = trial.intake as { proposal: string; audience: string; whyNow: string; tradeoff: string };
@@ -35,7 +100,9 @@ serve(async (req: Request) => {
     const charge = trial.charge as string;
 
     const body: Record<string, unknown> = {
-      model: "gpt-4o",
+      model: "gpt-5.4",
+      reasoning: { effort: "low" },
+      max_output_tokens: 16000,
       input: `Product Proposal: "${intake.proposal}"
 Target Audience: "${intake.audience}"
 Timing/Rationale: "${intake.whyNow}"
@@ -43,46 +110,58 @@ Tradeoff: "${intake.tradeoff}"
 
 The charge: "${charge}"
 
-Both sides have argued the case. Now generate the CROSS-EXAMINATION for this trial.
+Both sides have argued the case. Generate the CROSS-EXAMINATION.
 
-Generate 2 questions that the BAILIFF will ask the user (the judge) before they deliver their ruling. These should probe the user's conviction, honesty, and readiness.
-
-Each question must have 3 answer choices. Each choice has:
+Generate exactly 2 questions that the BAILIFF asks the user (the judge) before they rule. They should probe the user's conviction, honesty, and readiness. Each question has exactly 3 answer choices. Each choice has:
 - label: a short label (e.g. "Confident", "Cautious", "Pragmatic")
 - text: what the user says when they pick this choice
 - bailiff_reaction: Bailiff Sprint's dramatic reaction
 
-Also generate a "bailiff_dialogue" array of exactly 3 lines that Bailiff Sprint says:
+Also generate "bailiff_dialogue" — exactly these 3 lines:
 1. "The court has heard both sides. Before you rule, you must answer."
 2. "Let us begin with the first question."
 3. "Well reasoned. One more question to answer."
 
-Make questions and choices SPECIFIC to this trial. NOT generic.
-
-Return ONLY this JSON:
-{
-  "questions": [
-    {
-      "question": "...",
-      "choices": [
-        { "label": "...", "text": "...", "bailiff_reaction": "..." },
-        { "label": "...", "text": "...", "bailiff_reaction": "..." },
-        { "label": "...", "text": "...", "bailiff_reaction": "..." }
-      ]
-    },
-    {
-      "question": "...",
-      "choices": [
-        { "label": "...", "text": "...", "bailiff_reaction": "..." },
-        { "label": "...", "text": "...", "bailiff_reaction": "..." },
-        { "label": "...", "text": "...", "bailiff_reaction": "..." }
-      ]
-    }
-  ],
-  "bailiff_dialogue": ["...", "...", "..."]
-}`,
-      max_output_tokens: 4096,
-      temperature: 0.8,
+Make questions and choices SPECIFIC to this trial. NOT generic.`,
+      text: {
+        format: {
+          type: "json_schema",
+          name: "cross_examination",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              questions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    question: { type: "string" },
+                    choices: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          label: { type: "string" },
+                          text: { type: "string" },
+                          bailiff_reaction: { type: "string" },
+                        },
+                        required: ["label", "text", "bailiff_reaction"],
+                        additionalProperties: false,
+                      },
+                    },
+                  },
+                  required: ["question", "choices"],
+                  additionalProperties: false,
+                },
+              },
+              bailiff_dialogue: { type: "array", items: { type: "string" } },
+            },
+            required: ["questions", "bailiff_dialogue"],
+            additionalProperties: false,
+          },
+        },
+      },
     };
 
     if (previousConversationId) {
@@ -103,33 +182,34 @@ Return ONLY this JSON:
     }
 
     const data = await response.json();
-    const contentText = data.output_text || data.output?.[0]?.content?.[0]?.text;
+    if (data.status === "incomplete") {
+      throw new Error(`OpenAI response incomplete: ${data.incomplete_details?.reason ?? "unknown"}`);
+    }
+
+    const contentText = extractOutputText(data);
     if (!contentText) throw new Error("No content in OpenAI response");
 
-    const jsonMatch = contentText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("No JSON found in OpenAI response");
-    const parsed = JSON.parse(jsonMatch[0]);
-
+    const parsed = JSON.parse(contentText);
     const questions = parsed.questions as Array<{ question: string; choices: Array<{ label: string; text: string; bailiff_reaction: string }> }>;
-    const bailiff_dialogue = parsed.bailiff_dialogue as string[];
-    const conversation_id = data.id;
+    const bailiff_dialogue = (parsed.bailiff_dialogue as string[]) || [];
+    const conversation_id = data.id as string;
 
     const { error: updateError } = await supabase.from("trials").update({
       cross_examination: questions,
-      cross_bailiff_dialogue: bailiff_dialogue || [],
+      cross_bailiff_dialogue: bailiff_dialogue,
       conversation_id,
       generation_step: 4,
     }).eq("id", trial_id);
 
     if (updateError) throw new Error(`Supabase update error: ${updateError.message}`);
 
-    return new Response(JSON.stringify({
+    return json({
       cross_examination: questions,
-      cross_bailiff_dialogue: bailiff_dialogue || [],
+      cross_bailiff_dialogue: bailiff_dialogue,
       conversation_id,
-    }), { headers: { "Content-Type": "application/json" } });
+    });
   } catch (error) {
     console.error("cross-section error:", error);
-    return new Response(JSON.stringify({ error: "Cross-examination generation failed" }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return json({ error: "Cross-examination generation failed" }, 500);
   }
 });

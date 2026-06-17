@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 interface IntakeForm {
   proposal: string;
   audience: string;
@@ -41,15 +47,21 @@ interface TrialOutput {
 }
 
 serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) {
     return new Response(JSON.stringify({ error: "OpenAI API key not configured" }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -58,20 +70,20 @@ serve(async (req: Request) => {
   if (!intake?.proposal || !intake?.audience || !intake?.whyNow || !intake?.tradeoff) {
     return new Response(JSON.stringify({ error: "Missing required fields" }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
   try {
     const trialData = await generateTrial(intake, apiKey);
     return new Response(JSON.stringify(trialData), {
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("Edge function error:", error);
     return new Response(JSON.stringify({ error: "AI generation failed" }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
@@ -83,10 +95,11 @@ async function callOpenAI(params: {
   previous_response_id?: string;
 }): Promise<{ id: string; text: string }> {
   const body: Record<string, unknown> = {
-    model: "gpt-4o-mini",
+    model: "gpt-5.4",
+    reasoning: { effort: "low" },
     instructions: params.instructions || systemPrompt,
     input: params.input,
-    max_output_tokens: 4096,
+    max_output_tokens: 16000,
   };
   if (params.previous_response_id) {
     body.previous_response_id = params.previous_response_id;
@@ -107,7 +120,23 @@ async function callOpenAI(params: {
   }
 
   const data = await response.json();
-  const content = data.output_text || data.output?.[0]?.content?.[0]?.text;
+  if (data.status === "incomplete") {
+    throw new Error(`OpenAI response incomplete: ${data.incomplete_details?.reason ?? "unknown"}`);
+  }
+  let content = data.output_text as string | undefined;
+  if (!content && Array.isArray(data.output)) {
+    for (const item of data.output) {
+      if (Array.isArray(item.content)) {
+        for (const c of item.content) {
+          if (c.type === "output_text" && typeof c.text === "string") {
+            content = c.text;
+            break;
+          }
+        }
+      }
+      if (content) break;
+    }
+  }
   if (!content) throw new Error("No content in OpenAI response");
   return { id: data.id, text: content };
 }

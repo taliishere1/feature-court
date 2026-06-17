@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CourtroomBackground, CourtSeal, InteractiveGavel } from "@/components/court-components";
-import { TrialData, Ruling } from "@/lib/types";
+import { Ruling } from "@/lib/types";
+import { getAllTrials } from "@/lib/store";
 
 export default function LandingPage() {
   const [casesTried, setCasesTried] = useState(0);
@@ -13,11 +14,12 @@ export default function LandingPage() {
 
   const isReturning = loaded && casesTried > 0;
 
-  // Fetch stats from Supabase via API
+  // Fetch stats directly from Supabase
   useEffect(() => {
-    fetch("/api/trial?all=true")
-      .then((r) => r.json())
-      .then((data: TrialData[]) => {
+    let cancelled = false;
+    getAllTrials()
+      .then((data) => {
+        if (cancelled) return;
         const ruled = data.filter((t) => !t.isSample && t.ruling);
         setCasesTried(ruled.length);
         if (ruled.length > 0) {
@@ -32,7 +34,13 @@ export default function LandingPage() {
           setStreak(s);
         }
       })
-      .finally(() => setLoaded(true));
+      .catch((err) => console.error("Failed to load trials:", err))
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const [intro, setIntro] = useState({
