@@ -10,10 +10,9 @@ const VISITOR_STORAGE_KEY = "fc-visitor-id";
 const ACCOUNT_STORAGE_KEY = "fc-account-id";
 
 /**
- * Single inline install: stub loads pendo.js and queues initialize before the SDK
- * arrives. Do NOT split initialize into a React effect — Next.js Script onReady
- * does not reliably run for inline snippets, which leaves Pendo stuck on a temp
- * visitor ID and breaks session replay.
+ * Single inline install in document head: stub loads pendo.js and queues
+ * initialize before the SDK arrives. SPA pageLoad hooks fire on every client
+ * navigation so replay eligibility and funnel steps stay correlated.
  */
 export const PENDO_INSTALL_SNIPPET = `(function(apiKey){
 (function(p,e,n,d,o){var v,w,x,y,z;o=p[d]=p[d]||{};o._q=o._q||[];
@@ -26,4 +25,9 @@ if(!visitorId){visitorId='anon-'+crypto.randomUUID().slice(0,8);localStorage.set
 var accountId=localStorage.getItem('${ACCOUNT_STORAGE_KEY}');
 if(!accountId){accountId='feature-court1-'+crypto.randomUUID().slice(0,8);localStorage.setItem('${ACCOUNT_STORAGE_KEY}',accountId);}
 pendo.initialize({visitor:{id:visitorId},account:{id:accountId},recording:{enabled:true,autoStart:true}});
+function fcPendoPageLoad(){if(window.pendo&&pendo.pageLoad)pendo.pageLoad();}
+var _fcPush=history.pushState,_fcReplace=history.replaceState;
+history.pushState=function(){var r=_fcPush.apply(this,arguments);fcPendoPageLoad();return r;};
+history.replaceState=function(){var r=_fcReplace.apply(this,arguments);fcPendoPageLoad();return r;};
+window.addEventListener('popstate',fcPendoPageLoad);
 })('${PENDO_API_KEY}');`;

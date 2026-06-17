@@ -8,6 +8,7 @@ import { StageProgress, CourtroomBackground } from "@/components/court-component
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasCrossExamination } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
+import { pendoTrack } from "@/lib/pendo-track";
 import { StageGenerationError } from "@/components/stage-generation-error";
 
 function CrossContent() {
@@ -107,14 +108,12 @@ function CrossContent() {
     setSubmitting(true);
     const id = searchParams.get("id");
 
-    if (typeof window !== "undefined" && window.pendo) {
-      window.pendo.track("cross_examination_submitted", {
-        trial_id: id,
-        question_count: trial?.cross_examination.length ?? 0,
-        total_answer_length: Object.keys(selectedChoices).length,
-        case_title: trial?.case_title ?? "",
-      });
-    }
+    pendoTrack("cross_examination_submitted", {
+      trial_id: id ?? "",
+      question_count: trial?.cross_examination.length ?? 0,
+      total_answer_length: Object.keys(selectedChoices).length,
+      case_title: trial?.case_title ?? "",
+    });
 
     router.push(`/trial/ruling?id=${id}`);
   }
