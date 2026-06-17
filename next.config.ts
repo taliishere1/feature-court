@@ -25,16 +25,15 @@ const securityHeaders = [
     key: "Referrer-Policy",
     value: "strict-origin-when-cross-origin",
   },
-  // Pendo session replay requires blob: workers and data.pendo.io connectivity.
+  // Pendo session replay CSP — see https://support.pendo.io/hc/en-us/articles/360032209131
   {
     key: "Content-Security-Policy",
     value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://cdn.pendo.io",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "script-src 'self' 'unsafe-inline' https://cdn.pendo.io https://pendo-io-static.storage.googleapis.com https://*.storage.googleapis.com https://data.pendo.io",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://pendo-io-static.storage.googleapis.com https://*.storage.googleapis.com https://*.static.pendo.io",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://cdn.pendo.io https://*.pendo.io",
-      "connect-src 'self' https://*.supabase.co https://data.pendo.io https://cdn.pendo.io https://*.pendo.io wss://*.supabase.co",
+      "img-src 'self' data: blob: https://cdn.pendo.io https://data.pendo.io https://*.pendo.io https://*.storage.googleapis.com",
+      "connect-src 'self' https://*.supabase.co https://data.pendo.io https://cdn.pendo.io https://*.pendo.io https://*.storage.googleapis.com wss://*.supabase.co",
       "worker-src 'self' blob:",
       "frame-ancestors 'none'",
     ].join("; "),

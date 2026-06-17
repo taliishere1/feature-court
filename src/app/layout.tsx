@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
-import Script from "next/script";
-import PendoPageTracker from "@/components/PendoPageTracker";
-import { PENDO_INSTALL_SNIPPET } from "@/lib/pendo";
+import PendoProvider from "@/components/PendoProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://feature-court.vercel.app"),
@@ -47,13 +45,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="min-h-full antialiased">
-        <Script
-          id="pendo"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: PENDO_INSTALL_SNIPPET }}
-        />
         <Suspense fallback={null}>
-          <PendoPageTracker />
+          <PendoProvider />
         </Suspense>
         {children}
       </body>
