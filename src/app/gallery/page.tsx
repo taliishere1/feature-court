@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { getAllTrials } from "@/lib/store";
+import { getMyTrials } from "@/lib/store";
+import { getSessionVisitorId } from "@/lib/visitor";
 import { CourtroomBackground, CourtSeal, JudgePortrait } from "@/components/court-components";
 
 const RULING_LABELS: Record<Ruling, string> = {
@@ -33,7 +34,11 @@ export default function GalleryPage() {
 
   useEffect(() => {
     let cancelled = false;
-    getAllTrials()
+    const visitorId = getSessionVisitorId();
+    const load = visitorId
+      ? getMyTrials(visitorId)
+      : Promise.resolve([] as import("@/lib/types").TrialData[]);
+    load
       .then((data) => {
         if (cancelled) return;
         setTrials(data.filter((t) => !t.isSample));

@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { pendoTrack } from "@/lib/pendo-track";
+import { registerVisitor } from "@/lib/visitor";
 import { StageGenerationError } from "@/components/stage-generation-error";
 
 const PROGRESS_STEPS = [
@@ -161,8 +162,9 @@ function ArraignmentContent() {
         try {
           // Create the trial via the charge-section edge function (it generates
           // the charge + opening scene and inserts the row).
+          const visitorId = await registerVisitor();
           const { data, error: fnError, response: fnResponse } = await supabase.functions.invoke("charge-section", {
-            body: { intake, isSample: true },
+            body: { intake, isSample: true, visitor_id: visitorId },
           });
           if (cancelled) return;
           if (fnError || !data?.trial_id) {

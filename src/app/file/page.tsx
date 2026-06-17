@@ -7,6 +7,7 @@ import { CourtroomBackground, CourtSeal } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { pendoTrack } from "@/lib/pendo-track";
+import { registerVisitor } from "@/lib/visitor";
 export default function FileCasePage() {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -25,8 +26,9 @@ export default function FileCasePage() {
     setSubmitError(null);
 
     try {
+      const visitorId = await registerVisitor();
       const { data, error, response } = await supabase!.functions.invoke("charge-section", {
-        body: { intake: { ...form, gutCall: form.gutCall === "unsure" ? undefined : form.gutCall } },
+        body: { intake: { ...form, gutCall: form.gutCall === "unsure" ? undefined : form.gutCall }, visitor_id: visitorId },
       });
       if (error || !data?.trial_id) {
         const info = error
