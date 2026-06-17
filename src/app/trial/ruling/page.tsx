@@ -1,12 +1,14 @@
 "use client";
 
-import { Suspense, useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
 import { StageProgress, ScrollworkBorder, CourtroomBackground } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
+import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
+import { StageGenerationError } from "@/components/stage-generation-error";
 
 const RULING_OPTIONS: { key: Ruling; label: string; description: string; sentence: string; color: string; bgClass: string }[] = [
   { key: "ship", label: "Ship It", description: "Full speed ahead.", sentence: "The evidence is sufficient. Proceed with confidence.", color: "var(--color-stamp-ship)", bgClass: "hover:bg-stamp-ship/5" },
@@ -23,7 +25,15 @@ function RulingContent() {
   const [selected, setSelected] = useState<Ruling | null>(null);
   const [showOptions, setShowOptions] = useState(false);
   const [readyClicked, setReadyClicked] = useState(false);
+  const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
+
+  const handleRetry = useCallback(() => {
+    setLoadError(null);
+    setLoading(true);
+    setRetryKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     mounted.current = true;
@@ -43,11 +53,18 @@ function RulingContent() {
         const hasVerdicts = trialData?.verdicts?.ship?.sentence && trialData.verdicts.ship.sentence.length > 0;
 
         if (!hasVerdicts) {
-          const { error: fnError } = await supabase!.functions.invoke("verdict-section", {
+          const { error: fnError, response: fnResponse } = await supabase!.functions.invoke("verdict-section", {
             body: { trial_id: id },
           });
           if (!mounted.current) return;
-          if (fnError) throw new Error(fnError.message);
+          if (fnError) {
+            const info = await parseEdgeFunctionError(fnError, fnResponse);
+            if (mounted.current) {
+              setLoadError(info);
+              setLoading(false);
+            }
+            return;
+          }
         }
 
         const { data: finalData, error: finalError } = await supabase!
@@ -61,12 +78,17 @@ function RulingContent() {
         setTrial(rowToTrialData(finalData));
       } catch (e) {
         console.error("Failed to load trial:", e);
+        if (mounted.current) {
+          setLoadError({ message: "Something went wrong. Please try again.", isRateLimited: false });
+          setLoading(false);
+        }
+        return;
       }
       if (mounted.current) setLoading(false);
     })();
 
     return () => { mounted.current = false; };
-  }, [searchParams]);
+  }, [searchParams, retryKey]);
 
   const handleReadyToRule = () => {
     setReadyClicked(true);
@@ -107,6 +129,22 @@ function RulingContent() {
     }
     localStorage.setItem("fc-last-ruling", selected);
     router.push(`/verdict/${trial.id}?ruling=${selected}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : ""));
+  }
+
+
+  if (loadError) {
+    return (
+      <StageGenerationError
+        headline={
+          loadError.isRateLimited
+            ? "The court is busy right now."
+            : "The bench is taking too long to prepare."
+        }
+        isRateLimited={loadError.isRateLimited}
+        message={loadError.message}
+        onRetry={handleRetry}
+      />
+    );
   }
 
   if (loading) return <LoadingState />;
