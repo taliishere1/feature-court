@@ -6,6 +6,38 @@ import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
 import { StageProgress, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
+import { supabase } from "@/lib/supabase";
+
+function migrateCrossExamination(data: unknown): Array<{ question: string; choices: Array<{ label: string; text: string; bailiff_reaction: string }> }> {
+  if (Array.isArray(data) && data.length > 0 && typeof data[0] === "string") {
+    return (data as string[]).map((q) => ({
+      question: q,
+      choices: [
+        { label: "Yes", text: "Yes. The evidence supports moving forward.", bailiff_reaction: "Decisive. The court respects conviction." },
+        { label: "No", text: "No. There are too many open questions.", bailiff_reaction: "Caution has its place in these chambers." },
+        { label: "I need more data", text: "I need more data before I can answer that.", bailiff_reaction: "Prudence over haste. Noted." },
+      ],
+    }));
+  }
+  return (data || []) as Array<{ question: string; choices: Array<{ label: string; text: string; bailiff_reaction: string }> }>;
+}
+
+function rowToTrialData(row: Record<string, unknown>): TrialData {
+  return {
+    id: row.id as string,
+    intake: row.intake as TrialData["intake"],
+    charge: row.charge as string,
+    case_title: row.case_title as string,
+    prosecution: row.prosecution as TrialData["prosecution"],
+    defense: row.defense as TrialData["defense"],
+    cross_examination: migrateCrossExamination(row.cross_examination as unknown),
+    verdicts: row.verdicts as TrialData["verdicts"],
+    createdAt: new Date(row.created_at as string).getTime(),
+    isSample: (row.is_sample as boolean) || undefined,
+    ruling: row.ruling as TrialData["ruling"] | undefined,
+    generationStep: row.generation_step as number | undefined,
+  };
+}
 
 const PROGRESS_STEPS = [
   { message: "The court is assembling...", sub: "Preparing the docket" },
@@ -46,46 +78,32 @@ function ArraignmentContent() {
 
     let cancelled = false;
 
-    async function pollTrial(trialId: string) {
-      let retries = 0;
-      const MAX_RETRIES = 30; // 30 × 2s = 60s — fail fast, offer retry
-
-      while (!cancelled && retries < MAX_RETRIES) {
+    async function readTrial(trialId: string) {
+      while (!cancelled) {
         try {
-          const res = await fetch(`/api/trial?id=${trialId}`);
-          const data: TrialData = await res.json();
-
+          const { data: trialData, error: readError } = await supabase!
+            .from("trials")
+            .select("*")
+            .eq("id", trialId)
+            .single();
           if (cancelled) return;
 
-          const step = data.generationStep ?? 0;
-          setGenerationStep(step);
-          setTrial(data);
+          if (readError || !trialData) throw new Error("Trial not found");
 
-          // Trial is ready when generationStep >= 5
-          // For old trials without generationStep, check all key fields populated
-          const isReady = step >= 5 || (
-            data.charge && data.charge.length > 0 &&
-            data.case_title && data.case_title.length > 0 &&
-            data.prosecution?.opening && data.prosecution.opening.length > 0 &&
-            data.defense?.opening && data.defense.opening.length > 0
-          );
+          const converted = rowToTrialData(trialData);
+          setGenerationStep(converted.generationStep ?? 0);
+          setTrial(converted);
 
+          const step = converted.generationStep ?? 0;
+          const isReady = step >= 5 || (converted.charge && converted.charge.length > 0 && converted.case_title && converted.case_title.length > 0);
           if (isReady) {
             setLoading(false);
             return;
           }
         } catch {
-          // Retry on transient errors
+          // retry on transient errors
         }
-
-        retries++;
         await new Promise((r) => setTimeout(r, 2000));
-      }
-
-      // Exceeded retries — show error state
-      if (!cancelled) {
-        setError(true);
-        setLoading(false);
       }
     }
 
@@ -111,13 +129,13 @@ function ArraignmentContent() {
 
           // Update URL with the new trial ID without navigation
           router.replace(`/trial/arraignment?id=${newId}`, { scroll: false });
-          await pollTrial(newId);
+          await readTrial(newId);
         } catch {
           // Fallback — load directly
           setLoading(false);
         }
       } else if (id) {
-        await pollTrial(id);
+        await readTrial(id);
       } else {
         setLoading(false);
       }

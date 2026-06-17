@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
 import { StageProgress, ScrollworkBorder, CourtroomBackground } from "@/components/court-components";
+import { supabase } from "@/lib/supabase";
 
 const RULING_OPTIONS: { key: Ruling; label: string; description: string; sentence: string; color: string; bgClass: string }[] = [
   { key: "ship", label: "Ship It", description: "Full speed ahead.", sentence: "The evidence is sufficient. Proceed with confidence.", color: "var(--color-stamp-ship)", bgClass: "hover:bg-stamp-ship/5" },
@@ -27,12 +28,42 @@ function RulingContent() {
     mounted.current = true;
     const id = searchParams.get("id");
     if (!id) return;
-    fetch(`/api/trial?id=${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (mounted.current) setTrial(data);
-      })
-      .finally(() => setLoading(false));
+
+    (async function load() {
+      try {
+        // First try to read trial — if it has verdicts, great. If not, generate them.
+        const { data: trialData, error: readError } = await supabase!
+          .from("trials")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (!mounted.current) return;
+
+        const hasVerdicts = trialData?.verdicts?.ship?.sentence && trialData.verdicts.ship.sentence.length > 0;
+
+        if (!hasVerdicts) {
+          const { error: fnError } = await supabase!.functions.invoke("verdict-section", {
+            body: { trial_id: id },
+          });
+          if (!mounted.current) return;
+          if (fnError) throw new Error(fnError.message);
+        }
+
+        const { data: finalData, error: finalError } = await supabase!
+          .from("trials")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (!mounted.current) return;
+        if (finalError || !finalData) throw new Error("Trial not found");
+
+        setTrial(rowToTrialData(finalData));
+      } catch (e) {
+        console.error("Failed to load trial:", e);
+      }
+      if (mounted.current) setLoading(false);
+    })();
+
     return () => { mounted.current = false; };
   }, [searchParams]);
 
@@ -55,11 +86,9 @@ function RulingContent() {
       });
     }
 
-    // Save ruling to Supabase
-    fetch("/api/trial", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: trial.id, ruling: selected }),
+    // Save ruling to Supabase via edge function
+    supabase!.functions.invoke("record-ruling", {
+      body: { trial_id: trial.id, ruling: selected },
     }).catch((e) => console.error("Failed to save ruling:", e));
 
     // Local storage for instant landing page stats (legacy — will replace)
@@ -217,6 +246,37 @@ function RulingContent() {
       </main>
     </div>
   );
+}
+
+function migrateCrossExamination(data: unknown): Array<{ question: string; choices: Array<{ label: string; text: string; bailiff_reaction: string }> }> {
+  if (Array.isArray(data) && data.length > 0 && typeof data[0] === "string") {
+    return (data as string[]).map((q) => ({
+      question: q,
+      choices: [
+        { label: "Yes", text: "Yes. The evidence supports moving forward.", bailiff_reaction: "Decisive. The court respects conviction." },
+        { label: "No", text: "No. There are too many open questions.", bailiff_reaction: "Caution has its place in these chambers." },
+        { label: "I need more data", text: "I need more data before I can answer that.", bailiff_reaction: "Prudence over haste. Noted." },
+      ],
+    }));
+  }
+  return (data || []) as Array<{ question: string; choices: Array<{ label: string; text: string; bailiff_reaction: string }> }>;
+}
+
+function rowToTrialData(row: Record<string, unknown>): TrialData {
+  return {
+    id: row.id as string,
+    intake: row.intake as TrialData["intake"],
+    charge: row.charge as string,
+    case_title: row.case_title as string,
+    prosecution: row.prosecution as TrialData["prosecution"],
+    defense: row.defense as TrialData["defense"],
+    cross_examination: migrateCrossExamination(row.cross_examination as unknown),
+    verdicts: row.verdicts as TrialData["verdicts"],
+    createdAt: new Date(row.created_at as string).getTime(),
+    isSample: (row.is_sample as boolean) || undefined,
+    ruling: row.ruling as TrialData["ruling"] | undefined,
+    generationStep: row.generation_step as number | undefined,
+  };
 }
 
 function LoadingState() {

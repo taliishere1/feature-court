@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay } from "@/components/court-components";
+import { supabase } from "@/lib/supabase";
 
 function DefenseContent() {
   const searchParams = useSearchParams();
@@ -34,31 +35,33 @@ function DefenseContent() {
     let retries = 0;
     const MAX_RETRIES = 30; // 30 × 2s = 60s — fail fast, offer retry
 
-    (async function poll() {
-      while (!cancelled && retries < MAX_RETRIES) {
-        try {
-          const res = await fetch(`/api/trial?id=${id}`);
-          const data: TrialData = await res.json();
-          if (cancelled) return;
+    (async function load() {
+      try {
+        const { error: fnError } = await supabase!.functions.invoke("defense-section", {
+          body: { trial_id: id },
+        });
+        if (cancelled) return;
+        if (fnError) throw new Error(fnError.message);
 
-          const isReady = data.defense?.opening && data.defense.opening.length > 0;
-          if (isReady) {
-            if (mounted.current) {
-              setTrial(data);
-              setRevealed(true);
-              setLoading(false);
-            }
-            return;
-          }
-        } catch {
-          // retry on transient errors
+        const { data: trialData, error: readError } = await supabase!
+          .from("trials")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (cancelled) return;
+        if (readError || !trialData) throw new Error("Trial not found");
+
+        const converted = rowToTrialData(trialData);
+        if (mounted.current) {
+          setTrial(converted);
+          setRevealed(true);
+          setLoading(false);
         }
-        retries++;
-        await new Promise((r) => setTimeout(r, 2000));
-      }
-      if (!cancelled && mounted.current) {
-        setError(true);
-        setLoading(false);
+      } catch (e) {
+        if (!cancelled && mounted.current) {
+          setError(true);
+          setLoading(false);
+        }
       }
     })();
 
@@ -172,6 +175,37 @@ function LoadingState() {
       <div className="text-court-400 font-serif">The defense rises...</div>
     </div>
   );
+}
+
+function migrateCrossExamination(data: unknown): Array<{ question: string; choices: Array<{ label: string; text: string; bailiff_reaction: string }> }> {
+  if (Array.isArray(data) && data.length > 0 && typeof data[0] === "string") {
+    return (data as string[]).map((q) => ({
+      question: q,
+      choices: [
+        { label: "Yes", text: "Yes. The evidence supports moving forward.", bailiff_reaction: "Decisive. The court respects conviction." },
+        { label: "No", text: "No. There are too many open questions.", bailiff_reaction: "Caution has its place in these chambers." },
+        { label: "I need more data", text: "I need more data before I can answer that.", bailiff_reaction: "Prudence over haste. Noted." },
+      ],
+    }));
+  }
+  return (data || []) as Array<{ question: string; choices: Array<{ label: string; text: string; bailiff_reaction: string }> }>;
+}
+
+function rowToTrialData(row: Record<string, unknown>): TrialData {
+  return {
+    id: row.id as string,
+    intake: row.intake as TrialData["intake"],
+    charge: row.charge as string,
+    case_title: row.case_title as string,
+    prosecution: row.prosecution as TrialData["prosecution"],
+    defense: row.defense as TrialData["defense"],
+    cross_examination: migrateCrossExamination(row.cross_examination as unknown),
+    verdicts: row.verdicts as TrialData["verdicts"],
+    createdAt: new Date(row.created_at as string).getTime(),
+    isSample: (row.is_sample as boolean) || undefined,
+    ruling: row.ruling as TrialData["ruling"] | undefined,
+    generationStep: row.generation_step as number | undefined,
+  };
 }
 
 function TimeoutState({ onRetry, trialId }: { onRetry: () => void; trialId: string | null }) {
