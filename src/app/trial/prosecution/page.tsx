@@ -17,7 +17,6 @@ function ProsecutionContent() {
   const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [objectionActive, setObjectionActive] = useState(false);
-  const [showNext, setShowNext] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
 
@@ -36,8 +35,6 @@ function ProsecutionContent() {
 
     (async function load() {
       try {
-        // Read the trial first; only generate this stage if it doesn't exist yet,
-        // so revisiting the page doesn't regenerate (and overwrite) the content.
         const first = await supabase!
           .from("trials")
           .select("*")
@@ -89,16 +86,11 @@ function ProsecutionContent() {
     return () => { mounted.current = false; cancelled = true; };
   }, [searchParams, retryKey]);
 
-  const handleEvidenceClick = useCallback((idx: number) => {
+  const handleEvidenceClick = useCallback(() => {
     if (objectionActive) return;
     setObjectionActive(true);
-    setTimeout(() => {
-      setObjectionActive(false);
-      if (idx === (trial?.prosecution.arguments.length || 0) - 1) {
-        setShowNext(true);
-      }
-    }, 900);
-  }, [objectionActive, trial]);
+    setTimeout(() => setObjectionActive(false), 900);
+  }, [objectionActive]);
 
   if (loadError) {
     const id = searchParams.get("id");
@@ -145,7 +137,6 @@ function ProsecutionContent() {
 
           <StageProgress current={2} />
 
-          {/* Prosecutor identity badge */}
           {revealed && (
             <div className="text-center mb-4 animate-fade-in-up">
               <div className="inline-flex items-center gap-3 border border-court-700 rounded-sm px-4 py-2 bg-court-900/60">
@@ -158,7 +149,6 @@ function ProsecutionContent() {
             </div>
           )}
 
-          {/* Opening statement */}
           {revealed && (
             <div className="parchment-ruled p-4 mb-4 animate-fade-in-up max-w-lg mx-auto">
               <span className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 block mb-1 relative z-10">Opening Statement</span>
@@ -168,17 +158,16 @@ function ProsecutionContent() {
             </div>
           )}
 
-          {/* Evidence cards */}
           {revealed && (
             <div className="space-y-2 max-w-2xl mx-auto">
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 text-center mb-3">Click each exhibit to examine</p>
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 text-center mb-3">Click an exhibit to object</p>
               {trial.prosecution.arguments.map((arg, i) => (
                 <EvidenceCard
                   key={i}
                   exhibit={String.fromCharCode(65 + i)}
                   side="prosecution"
                   index={i}
-                  onClick={() => handleEvidenceClick(i)}
+                  onClick={handleEvidenceClick}
                 >
                   {arg}
                 </EvidenceCard>
@@ -186,9 +175,8 @@ function ProsecutionContent() {
             </div>
           )}
 
-          {/* Next button */}
-          {showNext && (
-            <div className="text-center mt-4 animate-fade-in-up">
+          {revealed && (
+            <div className="text-center mt-6 animate-fade-in-up">
               <Link
                 href={`/trial/defense?id=${trial.id}`}
                 className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"

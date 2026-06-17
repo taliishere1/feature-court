@@ -258,7 +258,17 @@ export function LegalRibbon({ text, color = "#8b1a1a" }: { text: string; color?:
 
 // ─── Signature Block ───
 
-export function SignatureBlock({ date, interactive = false, onSign }: { date?: string; interactive?: boolean; onSign?: () => void }) {
+export function SignatureBlock({
+  date,
+  interactive = false,
+  onSign,
+  judgeName = "Judge Ship Itwell",
+}: {
+  date?: string;
+  interactive?: boolean;
+  onSign?: () => void;
+  judgeName?: string;
+}) {
   const today = date || new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -277,8 +287,8 @@ export function SignatureBlock({ date, interactive = false, onSign }: { date?: s
       <p className="font-legal text-court-500 text-xs italic mb-4">
         So ordered this day, {today}.
       </p>
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
+      <div className="flex items-end gap-4">
+        <div className="flex-1 min-h-[2.5rem]">
           {interactive ? (
             <button
               onClick={handleSign}
@@ -286,18 +296,9 @@ export function SignatureBlock({ date, interactive = false, onSign }: { date?: s
               className={`block text-left w-full cursor-pointer ${signed ? "" : "group"}`}
             >
               {signed ? (
-                <svg viewBox="0 0 200 40" className="w-40 h-8 text-gold-400 animate-signature-draw">
-                  <path
-                    d="M10 30 Q30 10 50 25 Q70 5 90 20 Q110 8 130 22 Q150 10 170 25 Q180 18 190 20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    opacity="0.6"
-                    strokeDasharray="300"
-                    strokeDashoffset="300"
-                  />
-                </svg>
+                <p className="font-serif italic text-2xl text-gold-400 leading-none tracking-wide">
+                  Ship Itwell
+                </p>
               ) : (
                 <div className="border border-dashed border-court-600 rounded-sm px-4 py-2 group-hover:border-gold-500/50 group-hover:bg-gold-500/5 transition-all duration-200">
                   <span className="font-mono text-[10px] text-court-500 group-hover:text-gold-500 uppercase tracking-[0.15em] transition-colors">
@@ -307,22 +308,13 @@ export function SignatureBlock({ date, interactive = false, onSign }: { date?: s
               )}
             </button>
           ) : (
-            <svg viewBox="0 0 200 40" className="w-40 h-8 text-court-400 animate-signature-draw">
-              <path
-                d="M10 30 Q30 10 50 25 Q70 5 90 20 Q110 8 130 22 Q150 10 170 25 Q180 18 190 20"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                opacity="0.6"
-                strokeDasharray="300"
-                strokeDashoffset="300"
-              />
-            </svg>
+            <p className="font-serif italic text-2xl text-gold-400 leading-none tracking-wide">
+              Ship Itwell
+            </p>
           )}
         </div>
-        <div className="text-right">
-          <p className="font-serif text-court-200 text-sm">Your Honor</p>
+        <div className="text-right shrink-0">
+          <p className="font-serif text-court-200 text-sm">{judgeName}</p>
           <p className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em]">Presiding Judge</p>
         </div>
       </div>
@@ -1125,7 +1117,7 @@ interface EvidenceCardProps {
 export function EvidenceCard({ exhibit, children, side = "prosecution", index = 0, onClick }: EvidenceCardProps) {
   const accentColor = side === "prosecution" ? "#b91c1c" : "#2563eb";
   const animClass = side === "prosecution" ? "animate-card-left" : "animate-card-right";
-  const delay = index * 0.15;
+  const delay = index * 0.03;
 
   return (
     <div

@@ -23,8 +23,6 @@ function RulingContent() {
   const [trial, setTrial] = useState<TrialData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Ruling | null>(null);
-  const [showOptions, setShowOptions] = useState(false);
-  const [readyClicked, setReadyClicked] = useState(false);
   const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
@@ -92,11 +90,6 @@ function RulingContent() {
     return () => { mounted.current = false; };
   }, [searchParams, retryKey]);
 
-  const handleReadyToRule = () => {
-    setReadyClicked(true);
-    setTimeout(() => setShowOptions(true), 400);
-  };
-
   function handleSubmit() {
     if (!selected || !trial) return;
 
@@ -161,7 +154,7 @@ function RulingContent() {
 
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href={`/trial/cross?id=${trial.id}`} className={`flex items-center gap-2 group ${showOptions ? "" : ""}`}>
+          <Link href={`/trial/cross?id=${trial.id}`} className="flex items-center gap-2 group">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
@@ -190,102 +183,63 @@ function RulingContent() {
             </p>
           </div>
 
-          {/* Dramatic pause - click to reveal options */}
-          {!showOptions ? (
-            <div className="text-center animate-fade-in-up stagger-2">
-              <div className="parchment p-6 mb-8 max-w-md mx-auto">
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500">The Bench</span>
-                </div>
-                <p className="text-court-300 font-legal italic text-lg leading-relaxed mb-6">
-                  &ldquo;You have heard both sides. The evidence has been presented.
-                  The arguments have been made. Now you must decide.&rdquo;
-                </p>
-                <button
-                  onClick={handleReadyToRule}
-                  disabled={readyClicked}
-                  className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
-                >
-                  {readyClicked ? (
-                    <>
-                      <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.25" />
-                        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                      Summoning the options...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                      </svg>
-                      Ready to rule
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-                {RULING_OPTIONS.map((option, i) => {
-                  const isSelected = selected === option.key;
-                  return (
-                    <ScrollworkBorder key={option.key}>
-                      <button
-                        onClick={() => setSelected(option.key)}
-                        className={`w-full border rounded-sm text-left transition-all duration-300 animate-fade-in-up cursor-pointer ${
-                          isSelected
-                            ? "border-gold-500 bg-gold-500/10 shadow-[0_0_20px_rgba(212,175,55,0.12)]"
-                            : `border-court-700 bg-court-900/50 ${option.bgClass} hover:border-court-500`
-                        }`}
-                        style={{ animationDelay: `${i * 0.1}s` }}
-                      >
-                        <div className="p-5">
-                          <div className="flex items-center gap-3 mb-2.5">
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              isSelected ? "border-gold-500" : "border-court-500"
-                            }`}>
-                              {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-gold-500 animate-seal-appear" />}
-                            </div>
-                            <span className={`font-serif text-lg font-bold transition-colors ${
-                              isSelected ? "gold-foil" : "text-court-200"
-                            }`}>
-                              {option.label}
-                            </span>
-                          </div>
-                          <p className="text-court-500 text-xs ml-8 leading-relaxed mb-2">{option.description}</p>
-                          {isSelected && (
-                            <div className="ml-8 mt-2 pt-2 border-t border-gold-500/20">
-                              <p className="font-legal text-court-400 text-xs italic animate-fade-in-up">
-                                &ldquo;{option.sentence}&rdquo;
-                              </p>
-                            </div>
-                          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+            {RULING_OPTIONS.map((option, i) => {
+              const isSelected = selected === option.key;
+              return (
+                <ScrollworkBorder key={option.key}>
+                  <button
+                    onClick={() => setSelected(option.key)}
+                    className={`w-full border rounded-sm text-left transition-all duration-300 animate-fade-in-up cursor-pointer ${
+                      isSelected
+                        ? "border-gold-500 bg-gold-500/10 shadow-[0_0_20px_rgba(212,175,55,0.12)]"
+                        : `border-court-700 bg-court-900/50 ${option.bgClass} hover:border-court-500`
+                    }`}
+                    style={{ animationDelay: `${i * 0.05}s` }}
+                  >
+                    <div className="p-5">
+                      <div className="flex items-center gap-3 mb-2.5">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          isSelected ? "border-gold-500" : "border-court-500"
+                        }`}>
+                          {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-gold-500 animate-seal-appear" />}
                         </div>
-                        {isSelected && (
-                          <div className="h-0.5 bg-gradient-to-r from-gold-500 to-transparent" />
-                        )}
-                      </button>
-                    </ScrollworkBorder>
-                  );
-                })}
-              </div>
+                        <span className={`font-serif text-lg font-bold transition-colors ${
+                          isSelected ? "gold-foil" : "text-court-200"
+                        }`}>
+                          {option.label}
+                        </span>
+                      </div>
+                      <p className="text-court-500 text-xs ml-8 leading-relaxed mb-2">{option.description}</p>
+                      {isSelected && (
+                        <div className="ml-8 mt-2 pt-2 border-t border-gold-500/20">
+                          <p className="font-legal text-court-400 text-xs italic animate-fade-in-up">
+                            &ldquo;{option.sentence}&rdquo;
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {isSelected && (
+                      <div className="h-0.5 bg-gradient-to-r from-gold-500 to-transparent" />
+                    )}
+                  </button>
+                </ScrollworkBorder>
+              );
+            })}
+          </div>
 
-              <div className="text-center animate-fade-in-up stagger-5">
-                <button
-                  onClick={handleSubmit}
-                  disabled={!selected}
-                  className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
-                >
-                  Read the verdict
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </>
-          )}
+          <div className="text-center animate-fade-in-up">
+            <button
+              onClick={handleSubmit}
+              disabled={!selected}
+              className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+            >
+              Read the verdict
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </main>
     </div>
