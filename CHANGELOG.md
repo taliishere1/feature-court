@@ -8,11 +8,34 @@ Based on [Keep a Changelog](https://keepachangelog.com/) • Uses [ISO 8601](htt
 
 ## [Unreleased]
 
-
-
 <!--
 =======================================================
   📝 ADD NEW ENTRIES BELOW THIS LINE
+=======================================================
+-->
+
+### [Fixed] - 2026-06-16T23:05:00 - Session 6: Production review fixes, lint/build to 0/0
+
+**[Closed all Medium/Low production review findings; 0 lint errors, 0 warnings]**
+
+- **M1** `public/images/seal.png`: resized 2000×2000 → 256×256, quantized to 40 KB (was 6.7 MB); added `outputFileTracingIncludes` in `next.config.ts` for the `/og` Vercel function bundle.
+- **M3** All 7 edge functions: added fail-open per-IP in-memory rate limiter (10 req/min) before any OpenAI call.
+- **L1** `src/app/file/page.tsx`: Pendo event `trial_id` was reading `data.id` (undefined); fixed to `data.trial_id`.
+- **L2** Removed 6 duplicate copies of `rowToTrialData()` / `migrateCrossExamination()` from page files; exported from `src/lib/store.ts` and imported everywhere.
+- **L3** Removed unused `openai` and `uuid` from `package.json`.
+- **L4** `src/app/verdict/[id]/page.tsx`: guarded `trial.verdicts?.[ruling]` — falls back to `<NotFoundState />` if verdicts missing.
+- **L6** Dropped legacy `"Enable all for service_role"` RLS policy from `public.trials` (live + migration file).
+- **L7** Pinned Node `22.x` via `package.json` `engines` field and `.nvmrc`.
+- **L8** Added `metadataBase` to root layout metadata — eliminates build warning about localhost OG URLs.
+- **Lint** `src/app/og/route.tsx`: restored `<img>` (correct for Satori/ImageResponse) with scoped `eslint-disable-next-line` comment explaining why.
+- **Lint** `src/app/trial/ruling/page.tsx` line 36: removed unused `_readError` destructure.
+- **CourtSeal** `src/components/court-components.tsx`: removed `useState` error-state + entire inline SVG fallback (~50 lines). PNG is always present in `public/`; the fallback was dead orchids code.
+- **Files**: `next.config.ts`, `src/app/layout.tsx`, `src/app/file/page.tsx`, `src/app/verdict/[id]/page.tsx`, `src/lib/store.ts`, `src/app/og/route.tsx`, `src/app/trial/ruling/page.tsx`, `src/components/court-components.tsx`, `package.json`, `.nvmrc`, `supabase/migrations/20260616000005_drop_service_role_policy.sql`, + 6 page files (arraignment, prosecution, defense, cross, ruling, verdict) for L2 import swap
+- **Impact**: `npm run lint` → 0 problems; `npm run build` → 0 errors, 0 warnings; 7 edge functions redeployed and verified live (HTTP 200)
+
+<!--
+=======================================================
+  📝 ADD NEW ENTRIES ABOVE THIS LINE
 =======================================================
 -->
 

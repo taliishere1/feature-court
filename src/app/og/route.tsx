@@ -46,6 +46,7 @@ export async function GET() {
             background: "linear-gradient(90deg, transparent, #c8a03c, transparent)",
           }}
         />
+        {/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse (Satori) requires <img>, Next.js <Image> is not supported here */}
         <img
           src={sealDataUrl}
           width={180}
