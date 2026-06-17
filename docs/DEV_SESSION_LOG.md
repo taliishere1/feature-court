@@ -13,6 +13,78 @@
 =======================================================
 -->
 
+## 2026-06-16T23:05:00 — Session 6: Production review fixes + lint/build to 0/0
+
+**Session Context:**
+- 📚 Docs Loaded: All source files, AGENTS.md, CHANGELOG.md
+- 🎯 Objective: Fix all Medium/Low findings from production review; achieve 0 lint errors, 0 warnings, 0 build errors
+- 🚫 Non-Goals: RLS permissive-true warnings (intentional by design for public no-auth app); H1 Vercel env vars (handled by user)
+- ✅ Done When: `npm run lint` and `npm run build` both report 0 problems; all review findings closed; edge functions redeployed and verified live
+
+### Summary
+
+Addressed every actionable finding from the production & security review. Eliminated 2 lint warnings that were introduced during the session. Removed the SVG fallback in `CourtSeal` (orchids dead code). Deployed updated edge functions; verified live HTTP 200.
+
+### Changes Made
+
+**M1 — OG image asset (6.7 MB → 40 KB)**
+- Resized `public/images/seal.png` from 2000×2000 to 256×256 using `sips`, then quantized with `pngquant --quality=70-90` → 40 KB (99.4% reduction). File is now optimally sized for both the 180px OG use and the 48px UI use.
+- Added `outputFileTracingIncludes: { "/og": ["./public/images/seal.png"] }` to `next.config.ts` so Vercel's file tracer always bundles the asset with the `/og` function (no ENOENT risk at runtime).
+
+**M3 — Rate limiting on all 7 edge functions**
+- Added a fail-open per-IP in-memory rate limiter (10 req/min/IP) to `charge-section`, `prosecution-section`, `defense-section`, `cross-section`, `verdict-section`, `summary-section`, and `generate-trial`. Guard runs before any OpenAI call, so blocked requests cost nothing. Fails open on any error (missing IP, etc.) to never break the happy path.
+
+**L1 — Analytics typo**
+- `src/app/file/page.tsx` line ~120: Pendo event was recording `trial_id: data.id` (always `undefined`). Changed to `data.trial_id`.
+
+**L2 — Duplicate helper consolidation**
+- Removed 6 identical copies of `rowToTrialData()` and `migrateCrossExamination()` from arraignment, prosecution, defense, cross, ruling, and verdict pages.
+- Exported both functions from `src/lib/store.ts` and added import statements to the 6 pages.
+
+**L3 — Unused dependencies**
+- Removed `openai` (^6.42.0) and `uuid` (^14.0.0) from `package.json`. Neither is imported anywhere in `src/` — edge functions use `Deno.fetch` and `crypto.randomUUID()` natively. Ran `npm install` to sync `package-lock.json`.
+
+**L4 — Verdict page robustness**
+- `src/app/verdict/[id]/page.tsx`: Added optional chaining on `trial.verdicts?.[ruling]` and a guard that returns `<NotFoundState />` if `verdict` or `verdict.sentence` is falsy. Prevents a runtime throw on direct URL navigation before verdicts exist.
+
+**L6 — Legacy service_role RLS policy**
+- Dropped `"Enable all for service_role"` policy from `public.trials` via MCP (`apply_migration`). Also wrote `supabase/migrations/20260616000005_drop_service_role_policy.sql`. No function uses the service_role key anymore — all DB access goes through the publishable key under the three scoped anon policies (SELECT/INSERT/UPDATE).
+
+**L7 — Node version pinning**
+- Added `"engines": { "node": "22.x" }` to `package.json`.
+- Created `.nvmrc` with `22`.
+
+**L8 — metadataBase**
+- Added `metadataBase: new URL("https://feature-court.vercel.app")` to `export const metadata` in `src/app/layout.tsx`. Eliminates the Next.js build warning about OG/Twitter image URLs resolving to localhost.
+
+**Lint warning fix — `@next/next/no-img-element` in OG route**
+- `src/app/og/route.tsx`: `<img>` is the correct element inside `ImageResponse` (Satori doesn't support Next.js `<Image>`). Added a scoped `eslint-disable-next-line` comment with explanation rather than a blanket rule disable.
+
+**Lint warning fix — unused variable in ruling page**
+- `src/app/trial/ruling/page.tsx` line 36: `_readError` was destructured but never used. Removed from the destructure.
+
+**CourtSeal SVG fallback removal**
+- `src/components/court-components.tsx`: Removed the `useState(false)` / `onError` error-state branch and the entire inline SVG fallback (~50 lines). The PNG at `public/images/seal.png` is always present and served statically; the fallback was orchids dead code that added a React state cycle and unnecessary markup to every page that renders the seal.
+
+### Performance & Safety Notes
+
+- No memory leaks or subscription leaks introduced. All `useEffect` cleanups were already in place.
+- Rate limiter uses a `Map<string, number[]>` in isolate memory — entries are bounded per-IP by the sliding window filter; no unbounded growth.
+- The `rlBuckets` map is isolate-scoped (Deno), so it resets on cold starts. This is intentional and documented — it's friction, not a hard global cap.
+- Removed 6 copies of `rowToTrialData` reduces parse work on every page load slightly.
+
+### Follow-up Items
+
+- RLS `rls_policy_always_true` WARNs on INSERT/UPDATE are intentional for a public no-auth app and accepted as-is.
+- `generate-trial` legacy monolith is not in the per-stage path; can be removed in a future cleanup pass.
+
+### Session Stats
+- Files Modified: 12 (`next.config.ts`, `src/app/layout.tsx`, `src/app/file/page.tsx`, `src/app/verdict/[id]/page.tsx`, `src/lib/store.ts`, `src/app/og/route.tsx`, `src/app/trial/ruling/page.tsx`, `src/components/court-components.tsx`, `package.json`, + 6 page files for L2 import swap)
+- Files Created: 3 (`supabase/migrations/20260616000005_drop_service_role_policy.sql`, `.nvmrc`, updated `package-lock.json`)
+- Edge Functions Redeployed: 7 (charge, prosecution, defense, cross, verdict, summary, generate-trial)
+- Build result: ✓ 0 errors, 0 warnings
+- Lint result: ✓ 0 errors, 0 warnings
+
 ## 2026-06-16T18:00:00 — Session 5: Clean Verification
 
 **Session Context:**

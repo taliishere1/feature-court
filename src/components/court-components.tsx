@@ -6,73 +6,17 @@ import Image from "next/image";
 // ─── Ornate Court Seal ───
 
 export function CourtSeal({ className = "w-12 h-12", animated = false }: { className?: string; animated?: boolean }) {
-  const [imgError, setImgError] = useState(false);
-
-  if (!imgError) {
-    return (
-      <div className={`relative ${animated ? "animate-seal-appear" : ""}`}>
-        <Image
-          src="/images/seal.png"
-          alt="Court seal"
-          width={48}
-          height={48}
-          className={`${className} object-contain`}
-          unoptimized
-          onError={() => setImgError(true)}
-          priority
-        />
-      </div>
-    );
-  }
-
   return (
     <div className={`relative ${animated ? "animate-seal-appear" : ""}`}>
-      <svg viewBox="0 0 100 100" fill="none" className={className}>
-        {/* Outer ring */}
-        <circle cx="50" cy="50" r="48" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
-        <circle cx="50" cy="50" r="44" stroke="currentColor" strokeWidth="0.5" opacity="0.2" />
-        {/* Decorative dots on outer ring */}
-        {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => (
-          <circle key={angle} cx={50 + 46 * Math.cos((angle * Math.PI) / 180)} cy={50 + 46 * Math.sin((angle * Math.PI) / 180)} r="1" fill="currentColor" opacity="0.4" />
-        ))}
-        {/* Inner ring */}
-        <circle cx="50" cy="50" r="38" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        {/* Inner decorative ring */}
-        <circle cx="50" cy="50" r="34" stroke="currentColor" strokeWidth="0.3" opacity="0.15" strokeDasharray="2 4" />
-        {/* Star in center */}
-        <polygon
-          points="50,18 55,32 70,32 58,42 62,56 50,48 38,56 42,42 30,32 45,32"
-          fill="currentColor"
-          opacity="0.8"
-        />
-        {/* Radiating lines from star */}
-        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-          <line
-            key={angle}
-            x1={50 + 13 * Math.cos((angle * Math.PI) / 180)}
-            y1={50 + 13 * Math.sin((angle * Math.PI) / 180)}
-            x2={50 + 36 * Math.cos((angle * Math.PI) / 180)}
-            y2={50 + 36 * Math.sin((angle * Math.PI) / 180)}
-            stroke="currentColor"
-            strokeWidth="0.5"
-            opacity="0.3"
-          />
-        ))}
-        {/* Crosshatch pattern inside */}
-        <line x1="25" y1="25" x2="75" y2="75" stroke="currentColor" strokeWidth="0.3" opacity="0.15" />
-        <line x1="25" y1="75" x2="75" y2="25" stroke="currentColor" strokeWidth="0.3" opacity="0.15" />
-        {/* Extra detailing */}
-        <circle cx="50" cy="50" r="8" stroke="currentColor" strokeWidth="0.3" opacity="0.2" />
-        {/* Small diamond accents */}
-        {[0, 90, 180, 270].map((angle) => (
-          <polygon
-            key={`diamond-${angle}`}
-            points={`${50 + 28 * Math.cos((angle * Math.PI) / 180)},${50 + 28 * Math.sin((angle * Math.PI) / 180) - 2} ${50 + 28 * Math.cos((angle * Math.PI) / 180) + 2},${50 + 28 * Math.sin((angle * Math.PI) / 180)} ${50 + 28 * Math.cos((angle * Math.PI) / 180)},${50 + 28 * Math.sin((angle * Math.PI) / 180) + 2} ${50 + 28 * Math.cos((angle * Math.PI) / 180) - 2},${50 + 28 * Math.sin((angle * Math.PI) / 180)}`}
-            fill="currentColor"
-            opacity="0.5"
-          />
-        ))}
-      </svg>
+      <Image
+        src="/images/seal.png"
+        alt="Court seal"
+        width={48}
+        height={48}
+        className={`${className} object-contain`}
+        unoptimized
+        priority
+      />
     </div>
   );
 }
