@@ -32,7 +32,7 @@ function RulingContent() {
     (async function load() {
       try {
         // First try to read trial — if it has verdicts, great. If not, generate them.
-        const { data: trialData, error: readError } = await supabase!
+        const { data: trialData, error: _readError } = await supabase!
           .from("trials")
           .select("*")
           .eq("id", id)

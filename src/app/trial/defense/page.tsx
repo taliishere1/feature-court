@@ -32,8 +32,7 @@ function DefenseContent() {
     if (!id) return;
 
     let cancelled = false;
-    let retries = 0;
-    const MAX_RETRIES = 30; // 30 × 2s = 60s — fail fast, offer retry
+     // 30 × 2s = 60s — fail fast, offer retry
 
     (async function load() {
       try {
@@ -57,7 +56,7 @@ function DefenseContent() {
           setRevealed(true);
           setLoading(false);
         }
-      } catch (e) {
+      } catch {
         if (!cancelled && mounted.current) {
           setError(true);
           setLoading(false);
