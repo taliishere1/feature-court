@@ -1056,7 +1056,7 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
             <button
               type="button"
               onClick={onSkip}
-              className="ml-auto text-[10px] font-mono uppercase tracking-wider text-court-500 hover:text-court-300 transition-colors"
+              className="ml-auto shrink-0 text-xs font-mono uppercase tracking-wider text-court-300 hover:text-gold-400 py-2 px-3 -mr-1 rounded-sm transition-colors"
             >
               Skip
             </button>
