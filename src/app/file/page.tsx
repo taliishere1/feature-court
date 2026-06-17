@@ -28,7 +28,7 @@ export default function FileCasePage() {
 
       if (typeof window !== "undefined" && window.pendo) {
         window.pendo.track("case_filed", {
-          trial_id: data.id,
+          trial_id: data.trial_id,
           gut_call: form.gutCall,
           proposal_length: form.proposal.length,
           audience_length: form.audience.length,

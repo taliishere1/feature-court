@@ -1,7 +1,7 @@
 import { TrialData, Ruling, CrossExaminationQuestion } from "./types";
 import { supabase, isSupabaseConfigured } from "./supabase";
 
-function migrateCrossExamination(data: unknown): CrossExaminationQuestion[] {
+export function migrateCrossExamination(data: unknown): CrossExaminationQuestion[] {
   // Handle old format (string[]) — convert to new format with default choices
   if (Array.isArray(data) && data.length > 0 && typeof data[0] === "string") {
     return (data as string[]).map((q) => ({
@@ -16,7 +16,7 @@ function migrateCrossExamination(data: unknown): CrossExaminationQuestion[] {
   return (data || []) as CrossExaminationQuestion[];
 }
 
-function rowToTrialData(row: Record<string, unknown>): TrialData {
+export function rowToTrialData(row: Record<string, unknown>): TrialData {
   return {
     id: row.id as string,
     intake: row.intake as TrialData["intake"],

@@ -135,7 +135,8 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
   if (loading) return <LoadingState />;
   if (!trial || !ruling) return <NotFoundState />;
 
-  const verdict = trial.verdicts[ruling];
+  const verdict = trial.verdicts?.[ruling];
+  if (!verdict || !verdict.sentence) return <NotFoundState />;
   const gutMismatch = gutCall && ruling !== gutCall;
   const accentColor = RULING_ACCENTS[ruling];
 

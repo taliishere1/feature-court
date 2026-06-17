@@ -47,21 +47,37 @@ function CrossContent() {
 
     (async function load() {
       try {
-        const { error: fnError } = await supabase!.functions.invoke("cross-section", {
-          body: { trial_id: id },
-        });
-        if (cancelled) return;
-        if (fnError) throw new Error(fnError.message);
-
-        const { data: trialData, error: readError } = await supabase!
+        // Read the trial first; only generate this stage if it doesn't exist yet,
+        // so revisiting the page doesn't regenerate (and overwrite) the content.
+        const first = await supabase!
           .from("trials")
           .select("*")
           .eq("id", id)
           .single();
         if (cancelled) return;
-        if (readError || !trialData) throw new Error("Trial not found");
+        if (first.error || !first.data) throw new Error("Trial not found");
+        let row = first.data;
 
-        const converted = rowToTrialData(trialData);
+        const cross = row.cross_examination as unknown[] | null;
+        const hasCross = Array.isArray(cross) && cross.length > 0;
+        if (!hasCross) {
+          const { error: fnError } = await supabase!.functions.invoke("cross-section", {
+            body: { trial_id: id },
+          });
+          if (cancelled) return;
+          if (fnError) throw new Error(fnError.message);
+
+          const second = await supabase!
+            .from("trials")
+            .select("*")
+            .eq("id", id)
+            .single();
+          if (cancelled) return;
+          if (second.error || !second.data) throw new Error("Trial not found");
+          row = second.data;
+        }
+
+        const converted = rowToTrialData(row);
         if (mounted.current) {
           setTrial(converted);
           setRevealed(true);
