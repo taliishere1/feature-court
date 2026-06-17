@@ -14,6 +14,17 @@ Based on [Keep a Changelog](https://keepachangelog.com/) • Uses [ISO 8601](htt
 =======================================================
 -->
 
+### [Fixed] - 2026-06-17T12:00:00 - Session 7: Pendo/Novus instrumentation + lint/build 0/0
+
+**[Novus Signals pipeline fed by correct Pendo install; ESLint clean]**
+
+- **Pendo init** `src/lib/pendo.ts`, `src/app/layout.tsx`: Moved install snippet to document `<head>` with inline `pendo.initialize()` (recording enabled), plus `history.pushState`/`replaceState`/`popstate` hooks for SPA `pageLoad()`. Removed broken Next.js `Script`/`PendoProvider` path that left `pendo.isReady()` false on production.
+- **Track events** `src/lib/pendo-track.ts` + 5 page files: Added `pendoTrack()` helper that waits for `pendo.isReady()` before firing; migrated all 6 Novus track events (`case_filed`, `sample_case_started`, `cross_examination_submitted`, `verdict_delivered`, `verdict_link_copied`, `verdict_shared`).
+- **Types** `src/global.d.ts`: Added `isReady?: () => boolean` to `PendoSDK`.
+- **Lint** `src/app/trial/arraignment/page.tsx` line 157: Removed `useEffect` that called `setRevealed(true)` synchronously (`react-hooks/set-state-in-effect`). Moved `setRevealed(true)` into the async `readTrial` ready branch (same pattern as prosecution/defense); reset `revealed` on retry.
+- **Verified live** `feature-court.vercel.app`: `pendo.isReady() === true`, stable visitor/account IDs, sample trial arraignment loads; commit `7a87c05` deployed.
+- **Impact**: `npm run lint` → 0 problems; `npm run build` → 0 errors, 0 warnings
+
 ### [Fixed] - 2026-06-16T23:05:00 - Session 6: Production review fixes, lint/build to 0/0
 
 **[Closed all Medium/Low production review findings; 0 lint errors, 0 warnings]**
