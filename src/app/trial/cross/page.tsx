@@ -6,6 +6,7 @@ import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
+import { rowToTrialData } from "@/lib/store";
 
 const BAILIFF_DIALOGUES: string[] = [
   "The court has heard both sides. Before you rule, you must answer.",
@@ -300,37 +301,6 @@ function LoadingState() {
       <div className="text-court-400 font-serif">Preparing the questions...</div>
     </div>
   );
-}
-
-function migrateCrossExamination(data: unknown): Array<{ question: string; choices: Array<{ label: string; text: string; bailiff_reaction: string }> }> {
-  if (Array.isArray(data) && data.length > 0 && typeof data[0] === "string") {
-    return (data as string[]).map((q) => ({
-      question: q,
-      choices: [
-        { label: "Yes", text: "Yes. The evidence supports moving forward.", bailiff_reaction: "Decisive. The court respects conviction." },
-        { label: "No", text: "No. There are too many open questions.", bailiff_reaction: "Caution has its place in these chambers." },
-        { label: "I need more data", text: "I need more data before I can answer that.", bailiff_reaction: "Prudence over haste. Noted." },
-      ],
-    }));
-  }
-  return (data || []) as Array<{ question: string; choices: Array<{ label: string; text: string; bailiff_reaction: string }> }>;
-}
-
-function rowToTrialData(row: Record<string, unknown>): TrialData {
-  return {
-    id: row.id as string,
-    intake: row.intake as TrialData["intake"],
-    charge: row.charge as string,
-    case_title: row.case_title as string,
-    prosecution: row.prosecution as TrialData["prosecution"],
-    defense: row.defense as TrialData["defense"],
-    cross_examination: migrateCrossExamination(row.cross_examination as unknown),
-    verdicts: row.verdicts as TrialData["verdicts"],
-    createdAt: new Date(row.created_at as string).getTime(),
-    isSample: (row.is_sample as boolean) || undefined,
-    ruling: row.ruling as TrialData["ruling"] | undefined,
-    generationStep: row.generation_step as number | undefined,
-  };
 }
 
 function TimeoutState({ onRetry, trialId }: { onRetry: () => void; trialId: string | null }) {
