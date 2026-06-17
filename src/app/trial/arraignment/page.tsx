@@ -35,7 +35,7 @@ function ArraignmentContent() {
   const [generationStep, setGenerationStep] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [dialogueIndex, setDialogueIndex] = useState(0);
-  const [showCharge, setShowCharge] = useState(false);
+  const [dialogueDismissed, setDialogueDismissed] = useState(false);
   const [showContinue, setShowContinue] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -44,7 +44,7 @@ function ArraignmentContent() {
     setLoading(true);
     setRevealed(false);
     setDialogueIndex(0);
-    setShowCharge(false);
+    setDialogueDismissed(false);
     setShowContinue(false);
     setRetryKey((k) => k + 1);
   }, []);
@@ -58,27 +58,36 @@ function ArraignmentContent() {
     if (dialogueIndex < bailiffDialogues.length - 1) {
       setShowContinue(true);
     } else {
-      setShowCharge(true);
+      setDialogueDismissed(true);
     }
   }, [dialogueIndex, bailiffDialogues.length]);
 
   const advanceDialogue = useCallback(() => {
+    setShowContinue(false);
     if (dialogueIndex < bailiffDialogues.length - 1) {
       setDialogueIndex((i) => i + 1);
-      setShowContinue(false);
+    } else {
+      setDialogueDismissed(true);
     }
   }, [dialogueIndex, bailiffDialogues.length]);
+
+  const skipDialogue = useCallback(() => {
+    setShowContinue(false);
+    setDialogueDismissed(true);
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === " " || e.key === "Enter") {
-        e.preventDefault();
-        if (showContinue) advanceDialogue();
+        if (showContinue && !dialogueDismissed) {
+          e.preventDefault();
+          advanceDialogue();
+        }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [showContinue, advanceDialogue]);
+  }, [showContinue, advanceDialogue, dialogueDismissed]);
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -113,7 +122,7 @@ function ArraignmentContent() {
           const isReady = step >= 5 || (converted.charge && converted.charge.length > 0 && converted.case_title && converted.case_title.length > 0);
           if (isReady) {
             setDialogueIndex(0);
-            setShowCharge(false);
+            setDialogueDismissed(false);
             setShowContinue(false);
             setRevealed(true);
             setLoading(false);
@@ -254,7 +263,7 @@ function ArraignmentContent() {
     <div className="min-h-screen flex flex-col wood-panel relative">
       <CourtroomBackground opacity={0.1} />
 
-      <header className="border-b border-court-800 relative z-10">
+      <header className="border-b border-court-800 relative z-40">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-display text-base text-gold-500">
             <CourtSeal className="w-5 h-5 text-gold-500" />
@@ -274,8 +283,8 @@ function ArraignmentContent() {
 
           <StageProgress current={1} />
 
-          {/* Charge */}
-          <div className={`text-center mb-6 transition-all duration-700 ${showCharge ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+          {/* Charge — visible as soon as data loads; bailiff plays as bottom overlay */}
+          <div className={`text-center mb-6 transition-all duration-300 ${revealed ? "opacity-100" : "opacity-0"}`}>
             <div className="animate-dramatic-zoom">
               <div className="parchment p-6 max-w-2xl mx-auto">
                 <div className="flex items-center justify-center gap-2 mb-3">
@@ -323,7 +332,7 @@ function ArraignmentContent() {
         </div>
       </main>
 
-      {revealed && !showCharge && (
+      {revealed && !dialogueDismissed && (
         <DialogueBox
           portrait={<BailiffPortrait size="medium" reaction="neutral" />}
           name="Bailiff Sprint"
@@ -332,14 +341,9 @@ function ArraignmentContent() {
           typingSpeed={25}
           onComplete={handleDialogueComplete}
           showContinue={showContinue}
-        />
-      )}
-
-      {showContinue && (
-        <div
-          className="fixed inset-0 z-30 cursor-pointer"
-          onClick={advanceDialogue}
-          aria-label="Continue dialogue"
+          onAdvance={advanceDialogue}
+          onSkip={skipDialogue}
+          showSkip
         />
       )}
     </div>

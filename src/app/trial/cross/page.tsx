@@ -27,10 +27,8 @@ function CrossContent() {
   const [bailiffMessages, setBailiffMessages] = useState<(string | null)[]>([null, null]);
   const [submitting, setSubmitting] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [showQuestion, setShowQuestion] = useState<number>(-1);
-  const [bailiffText, setBailiffText] = useState(FALLBACK_BAILIFF_DIALOGUES[0]);
+  const [introComplete, setIntroComplete] = useState(false);
   const [showContinue, setShowContinue] = useState(false);
-  const [bailiffDialogueIndex, setBailiffDialogueIndex] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
 
@@ -44,10 +42,8 @@ function CrossContent() {
     setLoading(true);
     setSelectedChoices({});
     setBailiffMessages([null, null]);
-    setShowQuestion(-1);
-    setBailiffText(FALLBACK_BAILIFF_DIALOGUES[0]);
+    setIntroComplete(false);
     setShowContinue(false);
-    setBailiffDialogueIndex(0);
     setRetryKey((k) => k + 1);
   }, []);
 
@@ -104,15 +100,10 @@ function CrossContent() {
         }
 
         const converted = rowToTrialData(row);
-        const lines =
-          converted.cross_bailiff_dialogue?.filter(Boolean).length
-            ? converted.cross_bailiff_dialogue!.filter(Boolean)
-            : FALLBACK_BAILIFF_DIALOGUES;
         if (mounted.current) {
           setTrial(converted);
-          setBailiffText(lines[0]);
-          setBailiffDialogueIndex(0);
-          setShowQuestion(-1);
+          setIntroComplete(false);
+          setShowContinue(false);
           setRevealed(true);
           setLoading(false);
         }
@@ -127,18 +118,21 @@ function CrossContent() {
     return () => { mounted.current = false; cancelled = true; };
   }, [searchParams, retryKey]);
 
+  const introText = bailiffDialogues[0] ?? FALLBACK_BAILIFF_DIALOGUES[0];
+
   const handleDialogueComplete = useCallback(() => {
     setShowContinue(true);
   }, []);
 
   const advanceDialogue = useCallback(() => {
     setShowContinue(false);
-    if (bailiffDialogueIndex === 0) {
-      setBailiffDialogueIndex(1);
-      setBailiffText(bailiffDialogues[1] ?? FALLBACK_BAILIFF_DIALOGUES[1]);
-      setShowQuestion(0);
-    }
-  }, [bailiffDialogueIndex, bailiffDialogues]);
+    setIntroComplete(true);
+  }, []);
+
+  const skipDialogue = useCallback(() => {
+    setShowContinue(false);
+    setIntroComplete(true);
+  }, []);
 
   const handleChoice = useCallback((questionIdx: number, choiceIdx: number) => {
     setSelectedChoices((prev) => ({ ...prev, [questionIdx]: choiceIdx }));
@@ -151,14 +145,7 @@ function CrossContent() {
       next[questionIdx] = choice.bailiff_reaction;
       return next;
     });
-    setTimeout(() => {
-      if (questionIdx === 0) {
-        setShowQuestion(1);
-        setBailiffDialogueIndex(2);
-        setBailiffText(bailiffDialogues[2] ?? FALLBACK_BAILIFF_DIALOGUES[2]);
-      }
-    }, 800);
-  }, [trial, bailiffDialogues]);
+  }, [trial]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -180,14 +167,14 @@ function CrossContent() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.key === " " || e.key === "Enter") && showContinue) {
+      if ((e.key === " " || e.key === "Enter") && showContinue && !introComplete) {
         e.preventDefault();
         advanceDialogue();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [showContinue, advanceDialogue]);
+  }, [showContinue, advanceDialogue, introComplete]);
 
   if (loadError) {
     const id = searchParams.get("id");
@@ -216,7 +203,7 @@ function CrossContent() {
     <div className="min-h-screen flex flex-col wood-panel relative">
       <CourtroomBackground opacity={0.1} />
 
-      <header className="border-b border-court-800 relative z-10">
+      <header className="border-b border-court-800 relative z-40">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href={`/trial/defense?id=${trial.id}`} className="flex items-center gap-2 group">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
@@ -237,14 +224,20 @@ function CrossContent() {
           <StageProgress current={4} />
 
           <form onSubmit={handleSubmit} className="space-y-8 mt-8">
+            {introComplete && !allAnswered && (
+              <p className="text-center text-court-500 text-sm font-legal italic animate-fade-in-up">
+                Answer both questions before you rule.
+              </p>
+            )}
+
             {trial.cross_examination.slice(0, 2).map((cq, i) => {
               const choices = cq.choices;
               const selected = selectedChoices[i];
-              const isVisible = showQuestion === i;
+              const isVisible = introComplete;
               return (
                 <div
                   key={i}
-                  className={`transition-all duration-700 ${isVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                  className={`transition-all duration-700 ${isVisible ? "opacity-100" : "opacity-0 pointer-events-none h-0 overflow-hidden"}`}
                 >
                   {isVisible && (
                     <div className="animate-dramatic-zoom text-center">
@@ -315,21 +308,19 @@ function CrossContent() {
         </div>
       </main>
 
-      {revealed && (
-        <>
-          <DialogueBox
-            portrait={<BailiffPortrait size="medium" />}
-            name="Bailiff Sprint"
-            text={bailiffText}
-            color="#a67c00"
-            typingSpeed={25}
-            onComplete={handleDialogueComplete}
-            showContinue={showContinue && bailiffDialogueIndex === 0}
-          />
-          {showContinue && bailiffDialogueIndex === 0 && (
-            <div className="fixed inset-0 z-30 cursor-pointer" onClick={advanceDialogue} aria-label="Continue dialogue" />
-          )}
-        </>
+      {revealed && !introComplete && (
+        <DialogueBox
+          portrait={<BailiffPortrait size="medium" />}
+          name="Bailiff Sprint"
+          text={introText}
+          color="#a67c00"
+          typingSpeed={25}
+          onComplete={handleDialogueComplete}
+          showContinue={showContinue}
+          onAdvance={advanceDialogue}
+          onSkip={skipDialogue}
+          showSkip
+        />
       )}
     </div>
   );

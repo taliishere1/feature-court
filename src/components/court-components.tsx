@@ -992,6 +992,9 @@ interface DialogueBoxProps {
   typingSpeed?: number;
   onComplete?: () => void;
   showContinue?: boolean;
+  onAdvance?: () => void;
+  onSkip?: () => void;
+  showSkip?: boolean;
 }
 
 export function DialogueBox({
@@ -1002,6 +1005,9 @@ export function DialogueBox({
   typingSpeed = 25,
   onComplete,
   showContinue = true,
+  onAdvance,
+  onSkip,
+  showSkip = false,
 }: DialogueBoxProps) {
   type TBAction = { type: 'START_TYPING' } | { type: 'FINISH_TYPING' };
 
@@ -1039,20 +1045,40 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
     <div className="dialogue-box">
       <div className="dialogue-box-inner">
         <div className="dialogue-box-top">
-          <div className="w-24 h-28 rounded-full border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
-            style={{ borderColor: `${color}40` }}>
+          <div
+            className="w-24 h-24 rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
+            style={{ borderColor: `${color}40` }}
+          >
             {portrait}
           </div>
           <span className="dialogue-box-name" style={{ color }}>{name}</span>
+          {showSkip && onSkip && (
+            <button
+              type="button"
+              onClick={onSkip}
+              className="ml-auto text-[10px] font-mono uppercase tracking-wider text-court-500 hover:text-court-300 transition-colors"
+            >
+              Skip
+            </button>
+          )}
         </div>
-        <div className="dialogue-box-body" style={{ paddingLeft: "6.5rem" }}>
+        <div className="dialogue-box-body dialogue-box-body-with-portrait">
           {typing ? (
             <TypewriterText text={text} speed={typingSpeed} tag="span" onComplete={handleTypeComplete} />
           ) : (
             <span>{text}</span>
           )}
         </div>
-        {showContinue && typingDone && (
+        {showContinue && typingDone && onAdvance && (
+          <button
+            type="button"
+            onClick={onAdvance}
+            className="dialogue-box-continue dialogue-box-continue-btn"
+          >
+            ▼ Continue
+          </button>
+        )}
+        {showContinue && typingDone && !onAdvance && (
           <div className="dialogue-box-continue">▼ Continue</div>
         )}
       </div>
