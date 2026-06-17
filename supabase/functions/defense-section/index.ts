@@ -14,6 +14,33 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+// Lightweight per-IP rate limit held in isolate memory. Fail-open: any error or
+// missing IP allows the request. Caps abusive bursts against the public,
+// no-auth function URL (each call spends a gpt-5.4 generation) without adding
+// auth infrastructure. Not a global limit, but real friction for scripted abuse.
+const RL_WINDOW_MS = 60_000;
+const RL_MAX_PER_WINDOW = 10;
+const rlBuckets = new Map<string, number[]>();
+function isRateLimited(req: Request): boolean {
+  try {
+    const ip =
+      (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
+      req.headers.get("cf-connecting-ip") ||
+      "unknown";
+    const now = Date.now();
+    const recent = (rlBuckets.get(ip) ?? []).filter((t) => now - t < RL_WINDOW_MS);
+    if (recent.length >= RL_MAX_PER_WINDOW) {
+      rlBuckets.set(ip, recent);
+      return true;
+    }
+    recent.push(now);
+    rlBuckets.set(ip, recent);
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function getPublishableKey(): string {
   const raw = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
   if (raw) {
@@ -64,6 +91,10 @@ serve(async (req: Request) => {
   }
   if (req.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
+  }
+
+  if (isRateLimited(req)) {
+    return json({ error: "Too many requests. Please wait a moment and try again." }, 429);
   }
 
   const apiKey = Deno.env.get("OPENAI_API_KEY");
