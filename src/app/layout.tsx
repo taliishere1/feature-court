@@ -4,6 +4,7 @@ import Script from "next/script";
 import PendoInitializer from "@/components/PendoInitializer";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://feature-court.vercel.app"),
   title: "Feature Court — Put your product decision on trial",
   description:
     "Your product decision goes on trial. The prosecution tears it apart, the defense fights for it, and you deliver the verdict.",
