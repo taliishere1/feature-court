@@ -54,7 +54,8 @@ export default function LandingPage() {
   // When data loads, skip to end for returning users
   useEffect(() => {
     if (loaded && isReturning) {
-      setIntro({ dark: false, title: true, tagline: true, cta: true });
+      const t = setTimeout(() => setIntro({ dark: false, title: true, tagline: true, cta: true }), 0);
+      return () => clearTimeout(t);
     }
   }, [loaded, isReturning]);
 

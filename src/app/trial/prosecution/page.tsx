@@ -57,7 +57,7 @@ function ProsecutionContent() {
           setRevealed(true);
           setLoading(false);
         }
-      } catch (e) {
+      } catch {
         if (!cancelled && mounted.current) {
           setError(true);
           setLoading(false);
