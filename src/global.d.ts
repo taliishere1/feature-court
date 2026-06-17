@@ -9,6 +9,7 @@ interface PendoSDK {
   track: (event: string, metadata?: Record<string, unknown>) => void;
   identify: (config: { visitor: { id: string }; account?: { id: string } }) => void;
   pageLoad: () => void;
+  flushNow?: () => void;
   isReady?: () => boolean;
   getVisitorId?: () => string;
   getAccountId?: () => string;
