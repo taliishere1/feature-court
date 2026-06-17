@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
-import { StageProgress, CourtroomBackground, CourtSeal } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -21,6 +21,11 @@ const PROGRESS_STEPS = [
   { message: "Weighing the verdicts...", sub: "The bench is considering possible outcomes" },
 ];
 
+const FALLBACK_ARRAIGNMENT_DIALOGUES = [
+  "All rise for the Honorable Judge Ship Itwell...",
+  "The court is now in session. The Honorable Judge Ship Itwell presiding.",
+];
+
 function ArraignmentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -29,14 +34,51 @@ function ArraignmentContent() {
   const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [generationStep, setGenerationStep] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [dialogueIndex, setDialogueIndex] = useState(0);
+  const [showCharge, setShowCharge] = useState(false);
+  const [showContinue, setShowContinue] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
   const handleRetry = useCallback(() => {
     setLoadError(null);
     setLoading(true);
     setRevealed(false);
+    setDialogueIndex(0);
+    setShowCharge(false);
+    setShowContinue(false);
     setRetryKey((k) => k + 1);
   }, []);
+
+  const bailiffDialogues =
+    trial?.charge_data?.bailiff_dialogue?.filter(Boolean).length
+      ? trial.charge_data.bailiff_dialogue!.filter(Boolean)
+      : FALLBACK_ARRAIGNMENT_DIALOGUES;
+
+  const handleDialogueComplete = useCallback(() => {
+    if (dialogueIndex < bailiffDialogues.length - 1) {
+      setShowContinue(true);
+    } else {
+      setShowCharge(true);
+    }
+  }, [dialogueIndex, bailiffDialogues.length]);
+
+  const advanceDialogue = useCallback(() => {
+    if (dialogueIndex < bailiffDialogues.length - 1) {
+      setDialogueIndex((i) => i + 1);
+      setShowContinue(false);
+    }
+  }, [dialogueIndex, bailiffDialogues.length]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        if (showContinue) advanceDialogue();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showContinue, advanceDialogue]);
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -70,6 +112,9 @@ function ArraignmentContent() {
           const step = converted.generationStep ?? 0;
           const isReady = step >= 5 || (converted.charge && converted.charge.length > 0 && converted.case_title && converted.case_title.length > 0);
           if (isReady) {
+            setDialogueIndex(0);
+            setShowCharge(false);
+            setShowContinue(false);
             setRevealed(true);
             setLoading(false);
             return;
@@ -230,7 +275,7 @@ function ArraignmentContent() {
           <StageProgress current={1} />
 
           {/* Charge */}
-          <div className={`text-center mb-6 transition-all duration-300 ${revealed ? "opacity-100" : "opacity-0"}`}>
+          <div className={`text-center mb-6 transition-all duration-700 ${showCharge ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
             <div className="animate-dramatic-zoom">
               <div className="parchment p-6 max-w-2xl mx-auto">
                 <div className="flex items-center justify-center gap-2 mb-3">
@@ -277,6 +322,26 @@ function ArraignmentContent() {
           </div>
         </div>
       </main>
+
+      {revealed && !showCharge && (
+        <DialogueBox
+          portrait={<BailiffPortrait size="medium" reaction="neutral" />}
+          name="Bailiff Sprint"
+          text={bailiffDialogues[dialogueIndex] ?? ""}
+          color="#a67c00"
+          typingSpeed={25}
+          onComplete={handleDialogueComplete}
+          showContinue={showContinue}
+        />
+      )}
+
+      {showContinue && (
+        <div
+          className="fixed inset-0 z-30 cursor-pointer"
+          onClick={advanceDialogue}
+          aria-label="Continue dialogue"
+        />
+      )}
     </div>
   );
 }

@@ -17,14 +17,18 @@ export function migrateCrossExamination(data: unknown): CrossExaminationQuestion
 }
 
 export function rowToTrialData(row: Record<string, unknown>): TrialData {
+  const prosecution = (row.prosecution as TrialData["prosecution"]) || { opening: "", arguments: [] };
+  const defense = (row.defense as TrialData["defense"]) || { opening: "", arguments: [] };
   return {
     id: row.id as string,
     intake: row.intake as TrialData["intake"],
     charge: row.charge as string,
     case_title: row.case_title as string,
-    prosecution: row.prosecution as TrialData["prosecution"],
-    defense: row.defense as TrialData["defense"],
+    charge_data: row.charge_data as TrialData["charge_data"],
+    prosecution,
+    defense,
     cross_examination: migrateCrossExamination(row.cross_examination as unknown),
+    cross_bailiff_dialogue: row.cross_bailiff_dialogue as string[] | undefined,
     verdicts: row.verdicts as TrialData["verdicts"],
     createdAt: new Date(row.created_at as string).getTime(),
     isSample: (row.is_sample as boolean) || undefined,

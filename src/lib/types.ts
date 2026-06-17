@@ -26,20 +26,29 @@ export interface CrossExaminationQuestion {
   choices: CrossExaminationChoice[];
 }
 
+export interface TrialCharacter {
+  name: string;
+  title: string;
+}
+
+export interface TrialSide {
+  opening: string;
+  arguments: string[];
+  closing?: string;
+  bailiff_intro?: string;
+  character?: TrialCharacter;
+}
+
 export interface TrialData {
   id: string;
   intake: IntakeForm;
   charge: string;
   case_title: string;
-  prosecution: {
-    opening: string;
-    arguments: string[];
-  };
-  defense: {
-    opening: string;
-    arguments: string[];
-  };
+  charge_data?: { bailiff_dialogue?: string[] };
+  prosecution: TrialSide;
+  defense: TrialSide;
   cross_examination: CrossExaminationQuestion[];
+  cross_bailiff_dialogue?: string[];
   verdicts: {
     ship: VerdictContent;
     kill: VerdictContent;

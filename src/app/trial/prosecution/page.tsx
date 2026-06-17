@@ -120,6 +120,9 @@ function ProsecutionContent() {
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
+  const prosecutorName = trial.prosecution.character?.name || "Prosecutor Mary T. Bug";
+  const prosecutorTitle = trial.prosecution.character?.title || "Staff PM · Bug hunter since day one";
+
   return (
     <div className="min-h-screen flex flex-col wood-panel relative">
       <CourtroomBackground opacity={0.1} />
@@ -147,11 +150,11 @@ function ProsecutionContent() {
 
           {revealed && (
             <div className="text-center mb-4 animate-fade-in-up">
-              <div className="inline-flex items-center gap-3 border border-court-700 rounded-sm px-4 py-2 bg-court-900/60">
-                <ProsecutorPortrait size="thumb" />
+              <div className="inline-flex items-center gap-4 border border-court-700 rounded-sm px-5 py-3 bg-court-900/60">
+                <ProsecutorPortrait size="medium" />
                 <div className="text-left">
-                  <h2 className="font-serif text-sm text-court-100">Prosecutor Mary T. Bug</h2>
-                  <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em]">Staff PM · Bug hunter since day one</p>
+                  <h2 className="font-serif text-base text-court-100">{prosecutorName}</h2>
+                  <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em]">{prosecutorTitle}</p>
                 </div>
               </div>
             </div>

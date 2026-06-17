@@ -120,6 +120,9 @@ function DefenseContent() {
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
+  const defenseName = trial.defense.character?.name || "Defense Attorney Edward \"Edge\" Case";
+  const defenseTitle = trial.defense.character?.title || "Principal PM · Edge case specialist";
+
   return (
     <div className="min-h-screen flex flex-col wood-panel relative">
       <CourtroomBackground opacity={0.1} />
@@ -147,11 +150,11 @@ function DefenseContent() {
 
           {revealed && (
             <div className="text-center mb-4 animate-fade-in-up">
-              <div className="inline-flex items-center gap-3 border border-court-700 rounded-sm px-4 py-2 bg-court-900/60">
-                <DefensePortrait size="thumb" />
+              <div className="inline-flex items-center gap-4 border border-court-700 rounded-sm px-5 py-3 bg-court-900/60">
+                <DefensePortrait size="medium" />
                 <div className="text-left">
-                  <h2 className="font-serif text-sm text-court-100">Defense Attorney Edward &ldquo;Edge&rdquo; Case</h2>
-                  <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em]">Principal PM · Edge case specialist</p>
+                  <h2 className="font-serif text-base text-court-100">{defenseName}</h2>
+                  <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em]">{defenseTitle}</p>
                 </div>
               </div>
             </div>
