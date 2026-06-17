@@ -168,6 +168,7 @@ function CrossContent() {
   }, [showContinue, advanceDialogue]);
 
   if (loadError) {
+    const id = searchParams.get("id");
     return (
       <StageGenerationError
         headline={
@@ -178,6 +179,8 @@ function CrossContent() {
         isRateLimited={loadError.isRateLimited}
         message={loadError.message}
         onRetry={handleRetry}
+        backHref={id ? `/trial/defense?id=${id}` : undefined}
+        backLabel="Back to defense"
       />
     );
   }

@@ -9,6 +9,8 @@ type StageGenerationErrorProps = {
   isRateLimited: boolean;
   message?: string;
   onRetry?: () => void;
+  backHref?: string;
+  backLabel?: string;
   newCaseHref?: string;
   newCaseLabel?: string;
 };
@@ -18,6 +20,8 @@ export function StageGenerationError({
   isRateLimited,
   message,
   onRetry,
+  backHref,
+  backLabel = "Go back",
   newCaseHref = "/file",
   newCaseLabel = "File a new case",
 }: StageGenerationErrorProps) {
@@ -59,9 +63,16 @@ export function StageGenerationError({
           Retry
         </button>
       )}
-      <Link href={newCaseHref} className="inline-block text-sm text-gold-500 hover:text-gold-400 underline mt-2">
-        {newCaseLabel}
-      </Link>
+      <div className="flex flex-col items-center gap-2 mt-2">
+        {backHref && (
+          <Link href={backHref} className="inline-block text-sm text-court-400 hover:text-court-200 underline">
+            {backLabel}
+          </Link>
+        )}
+        <Link href={newCaseHref} className="inline-block text-sm text-gold-500 hover:text-gold-400 underline">
+          {newCaseLabel}
+        </Link>
+      </div>
     </div>
   );
 }

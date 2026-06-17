@@ -102,6 +102,7 @@ function DefenseContent() {
   }, [objectionActive, trial]);
 
   if (loadError) {
+    const id = searchParams.get("id");
     return (
       <StageGenerationError
         headline={
@@ -112,6 +113,8 @@ function DefenseContent() {
         isRateLimited={loadError.isRateLimited}
         message={loadError.message}
         onRetry={handleRetry}
+        backHref={id ? `/trial/prosecution?id=${id}` : undefined}
+        backLabel="Back to prosecution"
       />
     );
   }
