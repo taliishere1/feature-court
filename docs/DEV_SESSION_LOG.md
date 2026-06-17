@@ -13,6 +13,57 @@
 =======================================================
 -->
 
+## 2026-06-17T12:00:00 — Session 7: Pendo/Novus fix + build/lint 0/0
+
+**Session Context:**
+- 📚 Docs Loaded: AGENTS.md, CHANGELOG.md, all Pendo-related source files
+- 🎯 Objective: Fix Novus/Pendo tracking on Feature-court1; achieve 0 lint errors, 0 warnings, 0 build errors
+- 🚫 Non-Goals: Novus product Signals AI pipeline timing (platform-side ~24h); committing/pushing (user rules)
+- ✅ Done When: Production Pendo verified live; `npm run lint` and `npm run build` both report 0 problems
+
+### Summary
+
+Root cause of stalled replays and missing track events was `pendo.initialize()` never running — Next.js `Script`/`PendoProvider` refactor left visitors on temp IDs with `pendo.isReady() === false`. Replaced with official inline head install + SPA navigation hooks + SDK-ready track queue. Verified on live production via browser CDP. Fixed one preexisting ESLint error in arraignment page.
+
+### Changes Made
+
+**Pendo install — `src/lib/pendo.ts`, `src/app/layout.tsx`**
+- Single inline snippet in `<head>`: loads SDK, queues `initialize()` with `recording: { enabled: true, autoStart: true }`, stable visitor/account IDs in localStorage.
+- History API hooks fire `pageLoad()` on every client-side navigation (Pendo SPA requirement).
+- `PendoPageTracker` retained in layout as App Router backup.
+
+**Track event queue — `src/lib/pendo-track.ts`**
+- New helper implements Pendo's official retry-until-ready pattern for `pendo.track()`.
+- Wired into all 5 files that emit the 6 Novus-instrumented events.
+
+**Production verification (browser CDP on feature-court.vercel.app)**
+- Landing: `isReady: true`, visitor `anon-01d08cb4`, account `feature-court1-442e4c58`, SDK `2.328.2_prod-io`.
+- Sample trial: `/trial/arraignment?sample=0` → trial `3c31877b-...` created, charge rendered, Pendo still ready after navigation.
+
+**Lint fix — `src/app/trial/arraignment/page.tsx`**
+- **Issue**: `react-hooks/set-state-in-effect` — `setRevealed(true)` called synchronously inside `useEffect` (line 157).
+- **Fix**: Removed the effect; call `setRevealed(true)` alongside `setLoading(false)` in `readTrial` when charge is ready; `setRevealed(false)` on retry. Matches prosecution/defense pattern.
+
+### Performance & Safety Notes
+
+- **Pendo polling** (`arraignment/page.tsx`): `readTrial` polls Supabase every 1.5s, max 40 retries (60s cap). `cancelled` flag on unmount prevents setState after navigation — no leak.
+- **pendoTrack**: Retries every 500ms until `isReady()` — bounded by user session; no infinite network, only local timer. Consider adding max-retry cap in future if needed (not required for lint/build).
+- **History hook patch**: Applied once at install; no duplicate listeners.
+- **No new DB load**: Lint fix only reorganizes when `revealed` flips; no extra queries.
+
+### Verification
+
+```
+npm run build  → ✓ 0 errors
+npm run lint   → ✓ 0 problems
+```
+
+### Follow-up Items
+
+- Novus product Signals still 0 until ~24h clean traffic post-fix (platform pipeline, not code).
+- Session replays index ~1h after capture; newest replay before fix was 03:46 UTC Jun 17.
+- Arraignment lint fix is local uncommitted; Pendo fix commit `7a87c05` is on `origin/main`.
+
 ## 2026-06-16T23:05:00 — Session 6: Production review fixes + lint/build to 0/0
 
 **Session Context:**

@@ -34,6 +34,7 @@ function ArraignmentContent() {
   const handleRetry = useCallback(() => {
     setLoadError(null);
     setLoading(true);
+    setRevealed(false);
     setRetryKey((k) => k + 1);
   }, []);
 
@@ -69,6 +70,7 @@ function ArraignmentContent() {
           const step = converted.generationStep ?? 0;
           const isReady = step >= 5 || (converted.charge && converted.charge.length > 0 && converted.case_title && converted.case_title.length > 0);
           if (isReady) {
+            setRevealed(true);
             setLoading(false);
             return;
           }
@@ -150,13 +152,6 @@ function ArraignmentContent() {
     init();
     return () => { cancelled = true; };
   }, [searchParams, router, retryKey]);
-
-  // Show content immediately once the trial is loaded
-  useEffect(() => {
-    if (!loading && trial) {
-      setRevealed(true);
-    }
-  }, [loading, trial]);
 
   if (loadError) {
     return (
