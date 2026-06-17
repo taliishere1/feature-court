@@ -137,3 +137,52 @@ export async function recordRuling(id: string, ruling: Ruling): Promise<void> {
     console.error("Supabase update error:", error);
   }
 }
+
+export async function refetchTrialRow(trialId: string): Promise<Record<string, unknown>> {
+  requireSupabase();
+  const { data, error } = await supabase!
+    .from("trials")
+    .select("*")
+    .eq("id", trialId)
+    .single();
+  if (error || !data) throw new Error("Trial not found");
+  return data as Record<string, unknown>;
+}
+
+export async function resolveTrialRowAfterGeneration(
+  trialId: string,
+  row: Record<string, unknown>,
+  fnData: unknown,
+  applyFnData: (row: Record<string, unknown>, data: Record<string, unknown>) => Record<string, unknown>,
+  hasStageContent: (row: Record<string, unknown>) => boolean,
+): Promise<Record<string, unknown>> {
+  let next = row;
+  if (fnData && typeof fnData === "object" && fnData !== null && !("error" in fnData)) {
+    next = applyFnData(row, fnData as Record<string, unknown>);
+  }
+  if (!hasStageContent(next)) {
+    next = await refetchTrialRow(trialId);
+  }
+  if (!hasStageContent(next)) {
+    throw new Error("Stage generation returned no content");
+  }
+  return next;
+}
+
+export function rowHasProsecution(row: Record<string, unknown>): boolean {
+  return Boolean((row.prosecution as { opening?: string } | null)?.opening);
+}
+
+export function rowHasDefense(row: Record<string, unknown>): boolean {
+  return Boolean((row.defense as { opening?: string } | null)?.opening);
+}
+
+export function rowHasCrossExamination(row: Record<string, unknown>): boolean {
+  const cross = row.cross_examination as unknown[] | null;
+  return Array.isArray(cross) && cross.length > 0;
+}
+
+export function rowHasVerdicts(row: Record<string, unknown>): boolean {
+  const verdicts = row.verdicts as { ship?: { sentence?: string } } | null;
+  return Boolean(verdicts?.ship?.sentence && verdicts.ship.sentence.length > 0);
+}

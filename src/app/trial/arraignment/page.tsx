@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
-import { StageProgress, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, CourtSeal } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -28,9 +28,6 @@ function ArraignmentContent() {
   const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [generationStep, setGenerationStep] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  const [dialogueIndex, setDialogueIndex] = useState(0);
-  const [showCharge, setShowCharge] = useState(false);
-  const [showContinue, setShowContinue] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
   const handleRetry = useCallback(() => {
@@ -38,11 +35,6 @@ function ArraignmentContent() {
     setLoading(true);
     setRetryKey((k) => k + 1);
   }, []);
-
-  const bailiffDialogues = [
-    "All rise for the Honorable Judge Ship Itwell...",
-    "The court is now in session. The Honorable Judge Ship Itwell presiding.",
-  ];
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -53,8 +45,8 @@ function ArraignmentContent() {
     // Poll the trial row until the charge is ready, with a hard cap so a stalled
     // generation (DB write race, edge function crash, silent OpenAI failure)
     // surfaces an error + retry escape hatch instead of spinning forever.
-    const MAX_RETRIES = 30; // 30 * 2s = 60s timeout
-    const POLL_INTERVAL_MS = 2000;
+    const MAX_RETRIES = 40; // 40 * 1.5s = 60s timeout
+    const POLL_INTERVAL_MS = 1500;
 
     async function readTrial(trialId: string) {
       let retries = 0;
@@ -160,41 +152,12 @@ function ArraignmentContent() {
     return () => { cancelled = true; };
   }, [searchParams, router, retryKey]);
 
-  // Reveal on load
+  // Show content immediately once the trial is loaded
   useEffect(() => {
     if (!loading && trial) {
-      const t = setTimeout(() => setRevealed(true), 500);
-      return () => clearTimeout(t);
+      setRevealed(true);
     }
   }, [loading, trial]);
-
-  const handleDialogueComplete = useCallback(() => {
-    if (dialogueIndex < bailiffDialogues.length - 1) {
-      setShowContinue(true);
-    } else {
-      setShowCharge(true);
-    }
-  }, [dialogueIndex, bailiffDialogues.length]);
-
-  const advanceDialogue = useCallback(() => {
-    if (dialogueIndex < bailiffDialogues.length - 1) {
-      setDialogueIndex((i) => i + 1);
-      setShowContinue(false);
-    }
-  }, [dialogueIndex, bailiffDialogues.length]);
-
-  // Keyboard support
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === " " || e.key === "Enter") {
-        e.preventDefault();
-        if (showContinue) advanceDialogue();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [showContinue, advanceDialogue]);
-
 
   if (loadError) {
     return (
@@ -272,8 +235,8 @@ function ArraignmentContent() {
 
           <StageProgress current={1} />
 
-          {/* Charge reveal */}
-          <div className={`text-center mb-6 transition-all duration-700 ${showCharge ? "opacity-100" : "opacity-0"}`}>
+          {/* Charge */}
+          <div className={`text-center mb-6 transition-all duration-300 ${revealed ? "opacity-100" : "opacity-0"}`}>
             <div className="animate-dramatic-zoom">
               <div className="parchment p-6 max-w-2xl mx-auto">
                 <div className="flex items-center justify-center gap-2 mb-3">
@@ -320,27 +283,6 @@ function ArraignmentContent() {
           </div>
         </div>
       </main>
-
-      {/* Dialogue box - bailiff */}
-      {revealed && !showCharge && (
-        <DialogueBox
-          portrait={<BailiffPortrait size="thumb" reaction="neutral" />}
-          name="Bailiff Sprint"
-          text={bailiffDialogues[dialogueIndex]}
-          color="#a67c00"
-          typingSpeed={25}
-          onComplete={handleDialogueComplete}
-          showContinue={showContinue}
-        />
-      )}
-
-      {/* Click to advance overlay */}
-      {showContinue && (
-        <div
-          className="fixed inset-0 z-30 cursor-pointer"
-          onClick={advanceDialogue}
-        />
-      )}
     </div>
   );
 }

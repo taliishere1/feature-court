@@ -6,7 +6,7 @@ import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
-import { rowToTrialData } from "@/lib/store";
+import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasDefense } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { StageGenerationError } from "@/components/stage-generation-error";
 
@@ -17,7 +17,6 @@ function DefenseContent() {
   const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [objectionActive, setObjectionActive] = useState(false);
-  const [showNext, setShowNext] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
 
@@ -33,12 +32,9 @@ function DefenseContent() {
     if (!id) return;
 
     let cancelled = false;
-     // 30 × 2s = 60s — fail fast, offer retry
 
     (async function load() {
       try {
-        // Read the trial first; only generate this stage if it doesn't exist yet,
-        // so revisiting the page doesn't regenerate (and overwrite) the content.
         const first = await supabase!
           .from("trials")
           .select("*")
@@ -48,9 +44,9 @@ function DefenseContent() {
         if (first.error || !first.data) throw new Error("Trial not found");
         let row = first.data;
 
-        const hasDefense = Boolean((row.defense as { opening?: string } | null)?.opening);
+        const hasDefense = rowHasDefense(row);
         if (!hasDefense) {
-          const { error: fnError, response: fnResponse } = await supabase!.functions.invoke("defense-section", {
+          const { data: fnData, error: fnError, response: fnResponse } = await supabase!.functions.invoke("defense-section", {
             body: { trial_id: id },
           });
           if (cancelled) return;
@@ -63,14 +59,22 @@ function DefenseContent() {
             return;
           }
 
-          const second = await supabase!
-            .from("trials")
-            .select("*")
-            .eq("id", id)
-            .single();
+          row = await resolveTrialRowAfterGeneration(
+            id,
+            row,
+            fnData,
+            (current, data) =>
+              data.defense
+                ? {
+                    ...current,
+                    defense: data.defense,
+                    conversation_id: data.conversation_id,
+                    generation_step: 3,
+                  }
+                : current,
+            rowHasDefense,
+          );
           if (cancelled) return;
-          if (second.error || !second.data) throw new Error("Trial not found");
-          row = second.data;
         }
 
         const converted = rowToTrialData(row);
@@ -90,16 +94,11 @@ function DefenseContent() {
     return () => { mounted.current = false; cancelled = true; };
   }, [searchParams, retryKey]);
 
-  const handleEvidenceClick = useCallback((idx: number) => {
+  const handleEvidenceClick = useCallback(() => {
     if (objectionActive) return;
     setObjectionActive(true);
-    setTimeout(() => {
-      setObjectionActive(false);
-      if (idx === (trial?.defense.arguments.length || 0) - 1) {
-        setShowNext(true);
-      }
-    }, 1500);
-  }, [objectionActive, trial]);
+    setTimeout(() => setObjectionActive(false), 900);
+  }, [objectionActive]);
 
   if (loadError) {
     const id = searchParams.get("id");
@@ -146,7 +145,6 @@ function DefenseContent() {
 
           <StageProgress current={3} />
 
-          {/* Defense identity badge */}
           {revealed && (
             <div className="text-center mb-4 animate-fade-in-up">
               <div className="inline-flex items-center gap-3 border border-court-700 rounded-sm px-4 py-2 bg-court-900/60">
@@ -159,7 +157,6 @@ function DefenseContent() {
             </div>
           )}
 
-          {/* Opening statement */}
           {revealed && (
             <div className="parchment-ruled p-4 mb-4 animate-fade-in-up max-w-lg mx-auto">
               <span className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 block mb-1 relative z-10">Opening Statement</span>
@@ -169,17 +166,16 @@ function DefenseContent() {
             </div>
           )}
 
-          {/* Evidence cards */}
           {revealed && (
             <div className="space-y-2 max-w-2xl mx-auto">
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 text-center mb-3">Click each exhibit to examine</p>
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 text-center mb-3">Click an exhibit to hold it</p>
               {trial.defense.arguments.map((arg, i) => (
                 <EvidenceCard
                   key={i}
                   exhibit={String(i + 1)}
                   side="defense"
                   index={i}
-                  onClick={() => handleEvidenceClick(i)}
+                  onClick={handleEvidenceClick}
                 >
                   {arg}
                 </EvidenceCard>
@@ -187,9 +183,8 @@ function DefenseContent() {
             </div>
           )}
 
-          {/* Next button */}
-          {showNext && (
-            <div className="text-center mt-4 animate-fade-in-up">
+          {revealed && (
+            <div className="text-center mt-6 animate-fade-in-up">
               <Link
                 href={`/trial/cross?id=${trial.id}`}
                 className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
