@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
+import { getAllTrials } from "@/lib/store";
 import { CourtroomBackground, CourtSeal, JudgePortrait } from "@/components/court-components";
 
 const RULING_LABELS: Record<Ruling, string> = {
@@ -31,12 +32,19 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/trial?all=true")
-      .then((r) => r.json())
+    let cancelled = false;
+    getAllTrials()
       .then((data) => {
-        setTrials(data.filter((t: TrialData) => !t.isSample));
+        if (cancelled) return;
+        setTrials(data.filter((t) => !t.isSample));
       })
-      .finally(() => setLoading(false));
+      .catch((err) => console.error("Failed to load trials:", err))
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const ruledTrials = trials.filter((t) => t.ruling);

@@ -78,8 +78,15 @@ function ArraignmentContent() {
 
     let cancelled = false;
 
+    // Poll the trial row until the charge is ready, with a hard cap so a stalled
+    // generation (DB write race, edge function crash, silent OpenAI failure)
+    // surfaces an error + retry escape hatch instead of spinning forever.
+    const MAX_RETRIES = 30; // 30 * 2s = 60s timeout
+    const POLL_INTERVAL_MS = 2000;
+
     async function readTrial(trialId: string) {
-      while (!cancelled) {
+      let retries = 0;
+      while (!cancelled && retries < MAX_RETRIES) {
         try {
           const { data: trialData, error: readError } = await supabase!
             .from("trials")
@@ -103,21 +110,38 @@ function ArraignmentContent() {
         } catch {
           // retry on transient errors
         }
-        await new Promise((r) => setTimeout(r, 2000));
+        retries++;
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+      }
+      if (!cancelled) {
+        // Timed out (or the row never became ready) — give the user a way out.
+        setError(true);
+        setLoading(false);
       }
     }
 
     async function init() {
+      if (!supabase) {
+        if (!cancelled) {
+          setError(true);
+          setLoading(false);
+        }
+        return;
+      }
+
       if (sampleIdx !== null) {
         const idx = parseInt(sampleIdx);
         const intake = SAMPLE_CASES[idx] || SAMPLE_CASES[0];
         try {
-          const res = await fetch("/api/trial", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...intake, isSample: true }),
+          // Create the trial via the charge-section edge function (it generates
+          // the charge + opening scene and inserts the row).
+          const { data, error: fnError } = await supabase.functions.invoke("charge-section", {
+            body: { intake, isSample: true },
           });
-          const { id: newId } = await res.json();
+          if (cancelled) return;
+          if (fnError || !data?.trial_id) throw new Error("Failed to open the sample case");
+
+          const newId = data.trial_id as string;
 
           if (typeof window !== "undefined" && window.pendo) {
             window.pendo.track("sample_case_started", {
@@ -131,8 +155,10 @@ function ArraignmentContent() {
           router.replace(`/trial/arraignment?id=${newId}`, { scroll: false });
           await readTrial(newId);
         } catch {
-          // Fallback — load directly
-          setLoading(false);
+          if (!cancelled) {
+            setError(true);
+            setLoading(false);
+          }
         }
       } else if (id) {
         await readTrial(id);
