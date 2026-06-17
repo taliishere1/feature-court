@@ -2,31 +2,39 @@
 
 import { supabase } from "./supabase";
 
-// Must match the key used in PENDO_INSTALL_SNIPPET in pendo.ts
-const SESSION_KEY = "fc-session-visitor-id";
+// Must match VISITOR_STORAGE_KEY in pendo.ts
+const VISITOR_KEY = "fc-visitor-id";
+const LEGACY_SESSION_KEY = "fc-session-visitor-id";
 
 /**
- * Returns the anonymous visitor ID for this browser session.
- * The Pendo install snippet creates this ID first (in <head>), so by the time
- * React runs this function the key already exists in sessionStorage.
- * Falls back to generating one if called before the snippet runs (e.g. SSR guard).
+ * Returns the anonymous visitor ID for this browser.
+ * Persists in localStorage so returning users keep their record across tabs and sessions.
+ * Pendo reads the same key in its install snippet.
  */
-export function getSessionVisitorId(): string {
+export function getVisitorId(): string {
   if (typeof window === "undefined") return "";
-  let id = sessionStorage.getItem(SESSION_KEY);
+  let id = localStorage.getItem(VISITOR_KEY);
+  if (!id) {
+    // One-time migration from the old sessionStorage key
+    id = sessionStorage.getItem(LEGACY_SESSION_KEY);
+    if (id) sessionStorage.removeItem(LEGACY_SESSION_KEY);
+  }
   if (!id) {
     id = "anon-" + crypto.randomUUID();
-    sessionStorage.setItem(SESSION_KEY, id);
   }
+  localStorage.setItem(VISITOR_KEY, id);
   return id;
 }
 
+/** @deprecated Use getVisitorId */
+export const getSessionVisitorId = getVisitorId;
+
 /**
- * Registers the session visitor ID in Supabase.
- * Safe to call multiple times — uses upsert so duplicates are ignored.
+ * Registers the visitor ID in Supabase.
+ * Safe to call multiple times — upsert ignores duplicates.
  */
 export async function registerVisitor(): Promise<string> {
-  const id = getSessionVisitorId();
+  const id = getVisitorId();
   if (!id || !supabase) return id;
   await supabase.from("visitors").upsert({ id }, { onConflict: "id", ignoreDuplicates: true });
   return id;

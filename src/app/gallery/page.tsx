@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { getMyTrials } from "@/lib/store";
-import { getSessionVisitorId } from "@/lib/visitor";
+import { getAllTrials, getMyTrials } from "@/lib/store";
+import { getVisitorId } from "@/lib/visitor";
 import { CourtroomBackground, CourtSeal, JudgePortrait } from "@/components/court-components";
 
 const RULING_LABELS: Record<Ruling, string> = {
@@ -30,18 +30,22 @@ const RULING_BG: Record<Ruling, string> = {
 
 export default function GalleryPage() {
   const [trials, setTrials] = useState<TrialData[]>([]);
+  const [myRuledTrials, setMyRuledTrials] = useState<TrialData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    const visitorId = getSessionVisitorId();
-    const load = visitorId
+    const visitorId = getVisitorId();
+    const allLoad = getAllTrials();
+    const myLoad = visitorId
       ? getMyTrials(visitorId)
-      : Promise.resolve([] as import("@/lib/types").TrialData[]);
-    load
-      .then((data) => {
+      : Promise.resolve([] as TrialData[]);
+
+    Promise.all([allLoad, myLoad])
+      .then(([allData, myData]) => {
         if (cancelled) return;
-        setTrials(data.filter((t) => !t.isSample));
+        setTrials(allData.filter((t) => !t.isSample));
+        setMyRuledTrials(myData.filter((t) => !t.isSample && t.ruling));
       })
       .catch((err) => console.error("Failed to load trials:", err))
       .finally(() => {
@@ -52,16 +56,14 @@ export default function GalleryPage() {
     };
   }, []);
 
-  const ruledTrials = trials.filter((t) => t.ruling);
-  const totalVerdicts = ruledTrials.length;
+  const totalVerdicts = myRuledTrials.length;
 
   const stats: { key: Ruling; count: number; pct: number }[] = (["ship", "kill", "revise", "mistrial"] as Ruling[]).map((key) => {
-    const count = ruledTrials.filter((t) => t.ruling === key).length;
+    const count = myRuledTrials.filter((t) => t.ruling === key).length;
     return { key, count, pct: totalVerdicts > 0 ? Math.round((count / totalVerdicts) * 100) : 0 };
   });
 
-  // Compute streak from Supabase data
-  const sortedByTime = [...ruledTrials].sort((a, b) => a.createdAt - b.createdAt);
+  const sortedByTime = [...myRuledTrials].sort((a, b) => a.createdAt - b.createdAt);
   const lastRuling = sortedByTime.length > 0 ? sortedByTime[sortedByTime.length - 1].ruling : null;
   let streak = 0;
   for (let i = sortedByTime.length - 1; i >= 0; i--) {
@@ -119,7 +121,7 @@ export default function GalleryPage() {
             <div className="max-w-5xl mx-auto mb-8">
               <div className="parchment p-4 animate-fade-in-up">
                 <div className="flex items-center justify-between mb-3 relative z-10">
-                  <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500">Court Record</span>
+                  <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-court-500">Your Record</span>
                   <span className="font-mono text-[9px] text-court-500">
                     <span className="text-gold-500">{totalVerdicts}</span> case{totalVerdicts !== 1 ? "s" : ""} tried
                   </span>
@@ -167,7 +169,7 @@ export default function GalleryPage() {
                 <JudgePortrait />
               </div>
               <p className="text-court-500 font-serif text-lg mb-2 relative z-10">The docket is empty</p>
-              <p className="text-court-600 text-sm mb-6 relative z-10">No verdicts have been delivered yet.</p>
+              <p className="text-court-600 text-sm mb-6 relative z-10">No cases have been filed yet. Be the first to put a feature on trial.</p>
               <Link
                 href="/file"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"

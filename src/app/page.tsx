@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { CourtroomBackground, CourtSeal, InteractiveGavel } from "@/components/court-components";
 import { Ruling } from "@/lib/types";
 import { getMyTrials } from "@/lib/store";
-import { getSessionVisitorId } from "@/lib/visitor";
+import { getVisitorId } from "@/lib/visitor";
 
 export default function LandingPage() {
   const [casesTried, setCasesTried] = useState(0);
@@ -15,10 +15,10 @@ export default function LandingPage() {
 
   const isReturning = loaded && casesTried > 0;
 
-  // Fetch stats for this session's visitor only
+  // Fetch stats for this visitor only (persists across sessions via localStorage)
   useEffect(() => {
     let cancelled = false;
-    const visitorId = getSessionVisitorId();
+    const visitorId = getVisitorId();
     const load = visitorId
       ? getMyTrials(visitorId)
       : Promise.resolve([] as import("@/lib/types").TrialData[]);
