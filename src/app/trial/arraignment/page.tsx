@@ -12,6 +12,7 @@ import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-functi
 import { pendoTrack } from "@/lib/pendo-track";
 import { registerVisitor } from "@/lib/visitor";
 import { StageGenerationError } from "@/components/stage-generation-error";
+import { CAST } from "@/lib/cast";
 
 const PROGRESS_STEPS = [
   { message: "The court is assembling...", sub: "Preparing the docket" },
@@ -20,11 +21,6 @@ const PROGRESS_STEPS = [
   { message: "Preparing the defense...", sub: "Defense Attorney Edward \"Edge\" Case is building a response" },
   { message: "Drafting cross-examination...", sub: "Preparing questions for the witness" },
   { message: "Weighing the verdicts...", sub: "The bench is considering possible outcomes" },
-];
-
-const FALLBACK_ARRAIGNMENT_DIALOGUES = [
-  "All rise for the Honorable Judge Ship Itwell...",
-  "The court is now in session. The Honorable Judge Ship Itwell presiding.",
 ];
 
 function ArraignmentContent() {
@@ -50,10 +46,9 @@ function ArraignmentContent() {
     setRetryKey((k) => k + 1);
   }, []);
 
-  const bailiffDialogues =
-    trial?.charge_data?.bailiff_dialogue?.filter(Boolean).length
-      ? trial.charge_data.bailiff_dialogue!.filter(Boolean)
-      : FALLBACK_ARRAIGNMENT_DIALOGUES;
+  const bailiffDialogues = trial?.charge_data?.bailiff_dialogue?.filter((line) => line?.trim()) ?? [];
+  const hasDialogue = bailiffDialogues.length > 0;
+  const showCharge = revealed && (!hasDialogue || dialogueDismissed);
 
   const handleDialogueComplete = useCallback(() => {
     if (dialogueIndex < bailiffDialogues.length - 1) {
@@ -122,8 +117,9 @@ function ArraignmentContent() {
           const step = converted.generationStep ?? 0;
           const isReady = step >= 5 || (converted.charge && converted.charge.length > 0 && converted.case_title && converted.case_title.length > 0);
           if (isReady) {
+            const dialogues = converted.charge_data?.bailiff_dialogue?.filter((line) => line?.trim()) ?? [];
             setDialogueIndex(0);
-            setDialogueDismissed(false);
+            setDialogueDismissed(dialogues.length === 0);
             setShowContinue(false);
             setRevealed(true);
             setLoading(false);
@@ -285,8 +281,8 @@ function ArraignmentContent() {
 
           <StageProgress current={1} />
 
-          {/* Charge — visible as soon as data loads; bailiff plays as bottom overlay */}
-          <div className={`text-center mb-6 transition-all duration-300 ${revealed ? "opacity-100" : "opacity-0"}`}>
+          {/* Charge — after bailiff opening dialogue completes */}
+          <div className={`text-center mb-6 transition-all duration-300 ${showCharge ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
             <div className="animate-dramatic-zoom">
               <div className="parchment p-6 max-w-2xl mx-auto">
                 <div className="flex items-center justify-center gap-2 mb-3">
@@ -334,12 +330,12 @@ function ArraignmentContent() {
         </div>
       </main>
 
-      {revealed && !dialogueDismissed && (
+      {revealed && hasDialogue && !dialogueDismissed && (
         <DialogueBox
-          portrait={<BailiffPortrait size="medium" reaction="neutral" />}
-          name="Bailiff Sprint"
+          portrait={<BailiffPortrait size="thumb" reaction="neutral" />}
+          name={CAST.bailiff.name}
           text={bailiffDialogues[dialogueIndex] ?? ""}
-          color="#a67c00"
+          color={CAST.bailiff.color}
           typingSpeed={25}
           onComplete={handleDialogueComplete}
           showContinue={showContinue}

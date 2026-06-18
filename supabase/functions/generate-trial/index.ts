@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { callOpenAIResponses } from "../_shared/openai-responses.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,9 +7,111 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Lightweight per-IP rate limit held in isolate memory. Fail-open: any error or
-// missing IP allows the request. Caps abusive bursts against this public,
-// no-auth function URL (each call spends an expensive gpt-5.4 generation).
+/** Full GPT-5.4 system prompt — sent to OpenAI as `instructions` on every chained call. */
+const SYSTEM_PROMPT = `<instruction_priority>
+- User message task instructions override default style, tone, formatting, and initiative preferences unless they conflict with schema or safety.
+- Safety, honesty, privacy, and permission constraints do not yield.
+- If a newer user instruction conflicts with an earlier one, follow the newer instruction.
+- Preserve earlier instructions that do not conflict.
+</instruction_priority>
+
+<default_follow_through_policy>
+- If the task is clear and the next step is reversible and low-risk, proceed without asking.
+- Produce the required JSON output in one response; do not ask clarifying questions.
+- Do not omit required fields.
+</default_follow_through_policy>
+
+<personality>
+Bailiff Sprint — persistent voice for cross-examination bailiff_reaction fields.
+- Role: court announcer who cross-examines the presiding judge before they rule; presided over by Judge Ship Itwell.
+- Tone: dry, theatrical, always rushing the docket.
+- Decision style: efficient, procedural, no wasted words.
+- Substance: bailiff content must reference this trial's specific case; never generic courtroom filler.
+- Do not invent alternate bailiff names or roles. Write bailiff content only as Bailiff Sprint.
+
+Prosecutor Mary T. Bug — persistent voice for prosecution fields.
+- Role: prosecutor arguing against shipping this feature proposal; exposes flaws, risks, and weak reasoning.
+- Tone: sharp, relentless, surgical; treats product tradeoffs as evidence against the accused proposal.
+- Decision style: argument-driven, specific, no generic product-management platitudes.
+- Substance: every prosecution argument must reference this trial's intake fields; do not invent companies, metrics, or market events.
+- Do not invent alternate prosecutor names, titles, or roles.
+
+Defense Attorney Edward "Edge" Case — persistent voice for defense fields.
+- Role: defense attorney arguing for shipping this feature proposal; steel-mans upside and reframes risks.
+- Tone: optimistic, principled, conviction-driven.
+- Decision style: argument-driven, specific, responds directly to prosecution points.
+- Substance: every defense argument must reference this trial's intake fields or prosecution; do not invent companies, metrics, or market events.
+- Do not invent alternate defense names, titles, or roles.
+
+Judge Ship Itwell presides. Cast names are fixed and must not be altered in output.
+</personality>
+
+<personality_and_writing_controls>
+- Persona: Feature Court trial engine generating one step of a chained trial per user message.
+- Channel: courtroom legal argument and spoken dialogue displayed in-app.
+- Emotional register: theatrical but substantive, not campy, not melodramatic.
+- Formatting: plain prose inside JSON string values; no markdown, no bullets, no stage directions inside values.
+- Default follow-through: produce all required fields for the current step schema in one response without asking permission.
+</personality_and_writing_controls>
+
+<dependency_checks>
+- Each chained step builds on prior steps via previous_response_id.
+- Ground every field in the intake and prior-step context provided in the user message.
+- Do not skip prerequisite context from the user message.
+</dependency_checks>
+
+<grounding_rules>
+- Base every claim only on intake fields and prior-step context provided in the user message.
+- Do not invent companies, metrics, user counts, or market events not supported by intake.
+- If context is insufficient for a field, keep output narrow rather than guessing.
+- If a statement is an inference rather than a directly supported fact, keep it narrow to intake.
+</grounding_rules>
+
+<output_contract>
+- Return exactly the JSON fields required by the current step schema, in valid JSON only.
+- Do not add prose, markdown fences, or fields outside the schema.
+- Apply length limits only to the fields they are intended for.
+- Output only JSON matching the schema named in the user message output_format.
+</output_contract>
+
+<structured_output_contract>
+- Output only the requested JSON format.
+- Do not add prose or markdown fences unless they were requested.
+- Validate that parentheses and brackets are balanced.
+- Do not invent schema fields.
+</structured_output_contract>
+
+<verbosity_controls>
+- Prefer concise, information-dense writing.
+- Avoid repeating the user's request.
+- Do not shorten output so aggressively that required evidence or completion checks are omitted.
+</verbosity_controls>
+
+<completeness_contract>
+- Treat the task as incomplete until all fields required by the current step schema are present.
+- Keep an internal checklist of required deliverables for the current step.
+- Confirm coverage before finalizing.
+</completeness_contract>
+
+<verification_loop>
+Before finalizing:
+- Check correctness: does the output satisfy every requirement for this step?
+- Check grounding: are factual claims backed by the provided intake and prior-step context?
+- Check formatting: does the output match the current step schema?
+</verification_loop>
+
+<missing_context_gating>
+- Required intake is always provided in the user message.
+- Do not ask clarifying questions; produce the schema output.
+- Do not guess missing intake fields.
+</missing_context_gating>
+
+<dig_deeper_nudge>
+- Do not stop at the first plausible answer.
+- Look for second-order issues, edge cases, and missing constraints.
+- Perform at least one verification step before finalizing.
+</dig_deeper_nudge>`;
+
 const RL_WINDOW_MS = 60_000;
 const RL_MAX_PER_WINDOW = 10;
 const rlBuckets = new Map<string, number[]>();
@@ -121,146 +224,308 @@ serve(async (req: Request) => {
   }
 });
 
-async function callOpenAI(params: {
-  apiKey: string;
-  input: string;
-  instructions?: string;
-  previous_response_id?: string;
-}): Promise<{ id: string; text: string }> {
-  const body: Record<string, unknown> = {
-    model: "gpt-5.4",
-    reasoning: { effort: "low" },
-    instructions: params.instructions || systemPrompt,
-    input: params.input,
-    max_output_tokens: 16000,
-  };
-  if (params.previous_response_id) {
-    body.previous_response_id = params.previous_response_id;
-  }
-
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${params.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errBody = await response.text();
-    throw new Error(`OpenAI API error ${response.status}: ${errBody}`);
-  }
-
-  const data = await response.json();
-  if (data.status === "incomplete") {
-    throw new Error(`OpenAI response incomplete: ${data.incomplete_details?.reason ?? "unknown"}`);
-  }
-  let content = data.output_text as string | undefined;
-  if (!content && Array.isArray(data.output)) {
-    for (const item of data.output) {
-      if (Array.isArray(item.content)) {
-        for (const c of item.content) {
-          if (c.type === "output_text" && typeof c.text === "string") {
-            content = c.text;
-            break;
-          }
-        }
-      }
-      if (content) break;
-    }
-  }
-  if (!content) throw new Error("No content in OpenAI response");
-  return { id: data.id, text: content };
-}
-
-function extractJSON(text: string): Record<string, unknown> {
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error("No JSON found in OpenAI response");
-  return JSON.parse(match[0]);
-}
-
-const systemPrompt = `You are the engine behind FEATURE COURT, where product decisions go on trial. You write three distinct voices: the BAILIFF "Bailiff Sprint" (dry, theatrical, always rushing the docket), the PROSECUTION "Prosecutor Mary T. Bug" (sharp, relentless, exposes every flaw with surgical precision), and the DEFENSE "Defense Attorney Edward 'Edge' Case" (optimistic, principled, steel-mans the upside with conviction). Be specific to THIS decision. Every argument must reference the actual proposal, user, timing, or tradeoff given. Be witty but substantive. Do not invent facts about real companies or real events. Return ONLY valid JSON matching the schema.`;
-
 async function generateTrial(intake: IntakeForm, apiKey: string): Promise<TrialOutput> {
-  const intakeContext = `Product Decision:
-Proposal: ${intake.proposal}
-Who it serves: ${intake.audience}
-Why now: ${intake.whyNow}
-Tradeoff: ${intake.tradeoff}`;
+  const intakeContext = `<trial_intake>
+proposal: ${intake.proposal}
+audience: ${intake.audience}
+whyNow: ${intake.whyNow}
+tradeoff: ${intake.tradeoff}
+</trial_intake>`;
 
-  // === STEP 1: Charge and Case Title ===
-  const step1 = await callOpenAI({
+  const step1 = await callOpenAIResponses({
     apiKey,
-    input: `${intakeContext}\n\nGenerate only the charge and case_title for this Feature Court trial. The charge is a single dramatic sentence describing what this proposal "stands charged" with. The case_title is a short, theatrical court case name.\n\nReturn JSON:\n{\n  "charge": "...",\n  "case_title": "..."\n}`,
+    instructions: SYSTEM_PROMPT,
+    input: `${intakeContext}
+
+<task>
+Generate charge and case_title for this Feature Court trial.
+</task>
+
+<critical_rule>
+charge must be one dramatic sentence referencing proposal, audience, whyNow, and tradeoff.
+case_title must be a theatrical court case name derived from the proposal.
+</critical_rule>
+
+<execution_order>
+1. Write case_title grounded in intake.
+2. Write charge as one dramatic sentence grounded in all four intake fields.
+</execution_order>
+
+<edge_cases>
+- If intake fields are sparse, still produce both outputs grounded on what is provided.
+- Do not output placeholder or template prose.
+</edge_cases>
+
+<output_format>
+JSON matching charge_step schema only. No prose outside JSON.
+</output_format>`,
+    schemaName: "charge_step",
+    schema: {
+      type: "object",
+      properties: {
+        charge: { type: "string" },
+        case_title: { type: "string" },
+      },
+      required: ["charge", "case_title"],
+      additionalProperties: false,
+    },
   });
-  const chargeData = extractJSON(step1.text);
+  const chargeData = JSON.parse(step1.outputText);
   const charge = chargeData.charge as string;
   const case_title = chargeData.case_title as string;
 
-  // === STEP 2: Prosecution Opening + Arguments ===
-  const step2 = await callOpenAI({
+  const step2 = await callOpenAIResponses({
     apiKey,
-    previous_response_id: step1.id,
-    input: `The charge has been read: "${charge}"\n\nNow generate the PROSECUTION's opening statement and 3 arguments. Prosecutor Mary T. Bug is sharp, relentless, exposes every flaw with surgical precision. Each argument must reference the actual proposal, audience, timing, or tradeoff.\n\nReturn JSON:\n{\n  "prosecution": { "opening": "...", "arguments": ["...", "...", "..."] }\n}`,
+    instructions: SYSTEM_PROMPT,
+    previousResponseId: step1.id,
+    input: `${intakeContext}
+charge: ${charge}
+case_title: ${case_title}
+
+<task>
+Generate prosecution opening and exactly 3 arguments for this Feature Court trial.
+</task>
+
+<critical_rule>
+arguments must contain exactly 3 strings. No more, no fewer.
+Write in Prosecutor Mary T. Bug voice.
+</critical_rule>
+
+<execution_order>
+1. Write opening: sharp opening statement grounded in intake and charge.
+2. Write arguments[0], arguments[1], arguments[2]: three distinct paragraphs tied to proposal, audience, whyNow, or tradeoff.
+</execution_order>
+
+<edge_cases>
+- If intake fields are sparse, still produce all outputs grounded on what is provided and the charge.
+- Do not output placeholder or template prose.
+</edge_cases>
+
+<output_format>
+JSON matching prosecution_step schema only. No prose outside JSON.
+</output_format>`,
+    schemaName: "prosecution_step",
+    schema: {
+      type: "object",
+      properties: {
+        prosecution: {
+          type: "object",
+          properties: {
+            opening: { type: "string" },
+            arguments: {
+              type: "array",
+              items: { type: "string" },
+              minItems: 3,
+              maxItems: 3,
+            },
+          },
+          required: ["opening", "arguments"],
+          additionalProperties: false,
+        },
+      },
+      required: ["prosecution"],
+      additionalProperties: false,
+    },
   });
-  const prosecutionData = extractJSON(step2.text);
+  const prosecutionData = JSON.parse(step2.outputText);
   const prosecution = prosecutionData.prosecution as { opening: string; arguments: string[] };
 
-  // === STEP 3: Defense Opening + Arguments ===
-  const step3 = await callOpenAI({
+  const step3 = await callOpenAIResponses({
     apiKey,
-    previous_response_id: step2.id,
-    input: `The prosecution has made their case. Now generate the DEFENSE's opening statement and 3 arguments. Defense Attorney Edward "Edge" Case is optimistic, principled, steel-mans the upside with conviction. Each argument must directly respond to or reframe the prosecution's points and reference the actual proposal, audience, timing, or tradeoff.\n\nReturn JSON:\n{\n  "defense": { "opening": "...", "arguments": ["...", "...", "..."] }\n}`,
+    instructions: SYSTEM_PROMPT,
+    previousResponseId: step2.id,
+    input: `${intakeContext}
+charge: ${charge}
+prosecution_opening: ${prosecution.opening}
+
+<task>
+Generate defense opening and exactly 3 arguments for this Feature Court trial.
+</task>
+
+<critical_rule>
+arguments must contain exactly 3 strings. No more, no fewer.
+Write in Defense Attorney Edward "Edge" Case voice.
+Each argument must directly respond to or reframe the prosecution.
+</critical_rule>
+
+<execution_order>
+1. Write opening: optimistic opening statement grounded in intake and charge, responding to prosecution.
+2. Write arguments[0], arguments[1], arguments[2]: three distinct paragraphs responding to prosecution and tied to intake.
+</execution_order>
+
+<edge_cases>
+- If intake fields are sparse, still produce all outputs grounded on what is provided, the charge, and prosecution.
+- Do not output placeholder or template prose.
+</edge_cases>
+
+<output_format>
+JSON matching defense_step schema only. No prose outside JSON.
+</output_format>`,
+    schemaName: "defense_step",
+    schema: {
+      type: "object",
+      properties: {
+        defense: {
+          type: "object",
+          properties: {
+            opening: { type: "string" },
+            arguments: {
+              type: "array",
+              items: { type: "string" },
+              minItems: 3,
+              maxItems: 3,
+            },
+          },
+          required: ["opening", "arguments"],
+          additionalProperties: false,
+        },
+      },
+      required: ["defense"],
+      additionalProperties: false,
+    },
   });
-  const defenseData = extractJSON(step3.text);
+  const defenseData = JSON.parse(step3.outputText);
   const defense = defenseData.defense as { opening: string; arguments: string[] };
 
-  // === STEP 4: Cross-Examination Questions with Choices ===
-  const step4 = await callOpenAI({
-    apiKey,
-    previous_response_id: step3.id,
-    input: `Both sides have argued. Now generate 2 cross-examination questions that the BAILIFF will ask the user (the judge) before they deliver their ruling. These should probe the user's conviction, honesty, and readiness — forcing them to reconcile the tension between the prosecution and defense arguments they just heard.
-
-Each question must have 3 answer choices. Each choice has:
-- label: a short label describing the type of answer (e.g. "Confident", "Cautious", "Pragmatic")
-- text: what the user says when they pick this choice
-- bailiff_reaction: Bailiff Sprint's dramatic reaction to this choice
-
-Make the questions and choices SPECIFIC to this trial's proposal, audience, timing, and tradeoff. NOT generic.
-
-Return JSON:
-{
-  "cross_examination": [
-    {
-      "question": "...",
-      "choices": [
-        { "label": "...", "text": "...", "bailiff_reaction": "..." },
-        { "label": "...", "text": "...", "bailiff_reaction": "..." },
-        { "label": "...", "text": "...", "bailiff_reaction": "..." }
-      ]
+  const choiceSchema = {
+    type: "object",
+    properties: {
+      label: { type: "string" },
+      text: { type: "string" },
+      bailiff_reaction: { type: "string" },
     },
-    {
-      "question": "...",
-      "choices": [
-        { "label": "...", "text": "...", "bailiff_reaction": "..." },
-        { "label": "...", "text": "...", "bailiff_reaction": "..." },
-        { "label": "...", "text": "...", "bailiff_reaction": "..." }
-      ]
-    }
-  ]
-}`,
+    required: ["label", "text", "bailiff_reaction"],
+    additionalProperties: false,
+  };
+
+  const step4 = await callOpenAIResponses({
+    apiKey,
+    instructions: SYSTEM_PROMPT,
+    previousResponseId: step3.id,
+    input: `${intakeContext}
+charge: ${charge}
+
+<task>
+Generate cross-examination questions for this Feature Court trial.
+</task>
+
+<critical_rule>
+cross_examination must contain exactly 2 questions.
+Each question must have exactly 3 choices with label, text, and bailiff_reaction.
+bailiff_reaction must be in Bailiff Sprint voice.
+Questions must probe the judge's conviction on this specific case.
+</critical_rule>
+
+<execution_order>
+1. Write questions[0] with question text and 3 choices.
+2. Write questions[1] with question text and 3 choices.
+</execution_order>
+
+<edge_cases>
+- If intake fields are sparse, still produce all outputs grounded on what is provided and the charge.
+- Do not output placeholder or template prose.
+</edge_cases>
+
+<output_format>
+JSON matching cross_step schema only. No prose outside JSON.
+</output_format>`,
+    schemaName: "cross_step",
+    schema: {
+      type: "object",
+      properties: {
+        cross_examination: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              question: { type: "string" },
+              choices: {
+                type: "array",
+                items: choiceSchema,
+                minItems: 3,
+                maxItems: 3,
+              },
+            },
+            required: ["question", "choices"],
+            additionalProperties: false,
+          },
+          minItems: 2,
+          maxItems: 2,
+        },
+      },
+      required: ["cross_examination"],
+      additionalProperties: false,
+    },
   });
-  const crossData = extractJSON(step4.text);
+  const crossData = JSON.parse(step4.outputText);
   const cross_examination = crossData.cross_examination as CrossExaminationQuestion[];
 
-  // === STEP 5: All Verdicts ===
-  const step5 = await callOpenAI({
+  const verdictItemSchema = {
+    type: "object",
+    properties: {
+      sentence: { type: "string" },
+      real_risk: { type: "string" },
+      strongest_ignored_argument: { type: "string" },
+      test_first: { type: "string" },
+    },
+    required: ["sentence", "real_risk", "strongest_ignored_argument", "test_first"],
+    additionalProperties: false,
+  };
+
+  const step5 = await callOpenAIResponses({
     apiKey,
-    previous_response_id: step4.id,
-    input: `Now generate all 4 possible verdicts for this trial. Each verdict must have a sentence, real_risk, strongest_ignored_argument, and test_first. Reflect the specific arguments made by both sides in this case.\n\nReturn JSON:\n{\n  "verdicts": {\n    "ship": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },\n    "kill": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },\n    "revise": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." },\n    "mistrial": { "sentence": "...", "real_risk": "...", "strongest_ignored_argument": "...", "test_first": "..." }\n  }\n}`,
+    instructions: SYSTEM_PROMPT,
+    previousResponseId: step4.id,
+    maxOutputTokens: 16000,
+    input: `${intakeContext}
+charge: ${charge}
+
+<task>
+Generate all four verdicts for this Feature Court trial.
+</task>
+
+<critical_rule>
+verdicts must contain exactly four keys: ship, kill, revise, mistrial.
+Each verdict must have sentence, real_risk, strongest_ignored_argument, and test_first.
+Each verdict must reflect this specific trial, not generic product advice.
+</critical_rule>
+
+<execution_order>
+1. Write verdicts.ship.
+2. Write verdicts.kill.
+3. Write verdicts.revise.
+4. Write verdicts.mistrial.
+</execution_order>
+
+<edge_cases>
+- If intake fields are sparse, still produce all four verdicts grounded on what is provided and the charge.
+- Do not output placeholder or template prose.
+</edge_cases>
+
+<output_format>
+JSON matching verdicts_step schema only. No prose outside JSON.
+</output_format>`,
+    schemaName: "verdicts_step",
+    schema: {
+      type: "object",
+      properties: {
+        verdicts: {
+          type: "object",
+          properties: {
+            ship: verdictItemSchema,
+            kill: verdictItemSchema,
+            revise: verdictItemSchema,
+            mistrial: verdictItemSchema,
+          },
+          required: ["ship", "kill", "revise", "mistrial"],
+          additionalProperties: false,
+        },
+      },
+      required: ["verdicts"],
+      additionalProperties: false,
+    },
   });
-  const verdictsData = extractJSON(step5.text);
+  const verdictsData = JSON.parse(step5.outputText);
   const verdicts = verdictsData.verdicts as TrialOutput["verdicts"];
 
   const assembled: TrialOutput = {
@@ -283,18 +548,17 @@ function validateTrialJSON(json: Record<string, unknown>): TrialOutput {
 
   const j = json as unknown as TrialOutput;
 
-  if (!j.prosecution?.opening || !Array.isArray(j.prosecution?.arguments)) {
+  if (!j.prosecution?.opening || !Array.isArray(j.prosecution?.arguments) || j.prosecution.arguments.length !== 3) {
     throw new Error("Invalid prosecution format");
   }
-  if (!j.defense?.opening || !Array.isArray(j.defense?.arguments)) {
+  if (!j.defense?.opening || !Array.isArray(j.defense?.arguments) || j.defense.arguments.length !== 3) {
     throw new Error("Invalid defense format");
   }
-  if (!Array.isArray(j.cross_examination)) {
+  if (!Array.isArray(j.cross_examination) || j.cross_examination.length !== 2) {
     throw new Error("Invalid cross_examination format");
   }
-  // Validate each cross-examination question has question + choices
   for (const q of j.cross_examination) {
-    if (!q.question || !Array.isArray(q.choices) || q.choices.length < 2) {
+    if (!q.question || !Array.isArray(q.choices) || q.choices.length !== 3) {
       throw new Error("Invalid cross_examination question format");
     }
     for (const c of q.choices) {

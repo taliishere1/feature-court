@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasDefense } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { StageGenerationError } from "@/components/stage-generation-error";
+import { CAST } from "@/lib/cast";
 
 function DefenseContent() {
   const searchParams = useSearchParams();
@@ -120,8 +121,8 @@ function DefenseContent() {
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
-  const defenseName = trial.defense.character?.name || "Defense Attorney Edward \"Edge\" Case";
-  const defenseTitle = trial.defense.character?.title || "Principal PM · Edge case specialist";
+  const defenseName = trial.defense.character?.name ?? CAST.defense.name;
+  const defenseTitle = trial.defense.character?.title ?? CAST.defense.title;
 
   return (
     <div className="min-h-screen flex flex-col wood-panel relative">
@@ -161,16 +162,16 @@ function DefenseContent() {
           )}
 
           {revealed && (
-            <div className="parchment-ruled p-4 mb-4 animate-fade-in-up max-w-lg mx-auto">
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 block mb-1 relative z-10">Opening Statement</span>
-              <p className="text-court-200 text-base leading-relaxed font-legal italic relative z-10">
+            <div className="parchment-ruled p-4 mb-4 animate-fade-in-up max-w-lg mx-auto w-full">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
+              <p className="text-court-200 text-sm leading-relaxed font-legal italic relative z-10">
                 &ldquo;{trial.defense.opening}&rdquo;
               </p>
             </div>
           )}
 
           {revealed && (
-            <div className="space-y-2 max-w-2xl mx-auto">
+            <div className="space-y-2 max-w-lg mx-auto w-full">
               <p className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 text-center mb-3">Click an exhibit to hold it</p>
               {trial.defense.arguments.map((arg, i) => (
                 <EvidenceCard

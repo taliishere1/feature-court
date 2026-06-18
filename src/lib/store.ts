@@ -2,18 +2,12 @@ import { TrialData, Ruling, CrossExaminationQuestion } from "./types";
 import { supabase, isSupabaseConfigured } from "./supabase";
 
 export function migrateCrossExamination(data: unknown): CrossExaminationQuestion[] {
-  // Handle old format (string[]) — convert to new format with default choices
-  if (Array.isArray(data) && data.length > 0 && typeof data[0] === "string") {
-    return (data as string[]).map((q) => ({
-      question: q,
-      choices: [
-        { label: "Yes", text: "Yes. The evidence supports moving forward.", bailiff_reaction: "Decisive. The court respects conviction." },
-        { label: "No", text: "No. There are too many open questions.", bailiff_reaction: "Caution has its place in these chambers." },
-        { label: "I need more data", text: "I need more data before I can answer that.", bailiff_reaction: "Prudence over haste. Noted." },
-      ],
-    }));
+  if (!Array.isArray(data) || data.length === 0) return [];
+  // Legacy string[] format — preserve questions only; choices require regeneration via cross-section.
+  if (typeof data[0] === "string") {
+    return (data as string[]).map((q) => ({ question: q, choices: [] }));
   }
-  return (data || []) as CrossExaminationQuestion[];
+  return data as CrossExaminationQuestion[];
 }
 
 export function rowToTrialData(row: Record<string, unknown>): TrialData {
@@ -202,8 +196,9 @@ export function rowHasDefense(row: Record<string, unknown>): boolean {
 }
 
 export function rowHasCrossExamination(row: Record<string, unknown>): boolean {
-  const cross = row.cross_examination as unknown[] | null;
-  return Array.isArray(cross) && cross.length > 0;
+  const cross = row.cross_examination as Array<{ question?: string; choices?: unknown[] }> | null;
+  if (!Array.isArray(cross) || cross.length < 2) return false;
+  return cross.every((q) => Boolean(q.question?.trim()) && Array.isArray(q.choices) && q.choices.length === 3);
 }
 
 export function rowHasVerdicts(row: Record<string, unknown>): boolean {

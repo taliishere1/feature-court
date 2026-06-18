@@ -10,12 +10,7 @@ import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasCrossExamination 
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { pendoTrack } from "@/lib/pendo-track";
 import { StageGenerationError } from "@/components/stage-generation-error";
-
-const FALLBACK_BAILIFF_DIALOGUES = [
-  "The court has heard both sides. Before you rule, you must answer.",
-  "Let us begin with the first question.",
-  "Well reasoned. One more question to answer.",
-];
+import { CAST } from "@/lib/cast";
 
 function CrossContent() {
   const searchParams = useSearchParams();
@@ -32,10 +27,8 @@ function CrossContent() {
   const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
 
-  const bailiffDialogues =
-    trial?.cross_bailiff_dialogue?.filter(Boolean).length
-      ? trial.cross_bailiff_dialogue!.filter(Boolean)
-      : FALLBACK_BAILIFF_DIALOGUES;
+  const introText = trial?.cross_bailiff_dialogue?.[0]?.trim() ?? "";
+  const hasIntro = introText.length > 0;
 
   const handleRetry = useCallback(() => {
     setLoadError(null);
@@ -100,9 +93,10 @@ function CrossContent() {
         }
 
         const converted = rowToTrialData(row);
+        const intro = converted.cross_bailiff_dialogue?.[0]?.trim() ?? "";
         if (mounted.current) {
           setTrial(converted);
-          setIntroComplete(false);
+          setIntroComplete(intro.length === 0);
           setShowContinue(false);
           setRevealed(true);
           setLoading(false);
@@ -117,8 +111,6 @@ function CrossContent() {
 
     return () => { mounted.current = false; cancelled = true; };
   }, [searchParams, retryKey]);
-
-  const introText = bailiffDialogues[0] ?? FALLBACK_BAILIFF_DIALOGUES[0];
 
   const handleDialogueComplete = useCallback(() => {
     setShowContinue(true);
@@ -233,13 +225,12 @@ function CrossContent() {
             {trial.cross_examination.slice(0, 2).map((cq, i) => {
               const choices = cq.choices;
               const selected = selectedChoices[i];
-              const isVisible = introComplete;
               return (
                 <div
                   key={i}
-                  className={`transition-all duration-700 ${isVisible ? "opacity-100" : "opacity-0 pointer-events-none h-0 overflow-hidden"}`}
+                  className={`transition-all duration-700 ${introComplete ? "opacity-100" : "opacity-0 pointer-events-none h-0 overflow-hidden"}`}
                 >
-                  {isVisible && (
+                  {introComplete && (
                     <div className="animate-dramatic-zoom text-center">
                       <div className="parchment p-6 max-w-xl mx-auto">
                         <span className="font-mono text-[9px] text-gold-500 uppercase tracking-[0.25em] block mb-3">Question {i + 1}</span>
@@ -308,12 +299,12 @@ function CrossContent() {
         </div>
       </main>
 
-      {revealed && !introComplete && (
+      {revealed && hasIntro && !introComplete && (
         <DialogueBox
-          portrait={<BailiffPortrait size="medium" />}
-          name="Bailiff Sprint"
+          portrait={<BailiffPortrait size="thumb" />}
+          name={CAST.bailiff.name}
           text={introText}
-          color="#a67c00"
+          color={CAST.bailiff.color}
           typingSpeed={25}
           onComplete={handleDialogueComplete}
           showContinue={showContinue}

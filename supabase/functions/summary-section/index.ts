@@ -1,5 +1,94 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { callOpenAIResponses } from "../_shared/openai-responses.ts";
+
+const PROSECUTOR_NAME = "Prosecutor Mary T. Bug";
+const DEFENSE_NAME = 'Defense Attorney Edward "Edge" Case';
+
+/** Full GPT-5.4 system prompt — sent to OpenAI as `instructions` on every call. */
+const SYSTEM_PROMPT = `<instruction_priority>
+- User message task instructions override default style, tone, formatting, and initiative preferences unless they conflict with schema or safety.
+- Safety, honesty, privacy, and permission constraints do not yield.
+- If a newer user instruction conflicts with an earlier one, follow the newer instruction.
+- Preserve earlier instructions that do not conflict.
+</instruction_priority>
+
+<default_follow_through_policy>
+- If the task is clear and the next step is reversible and low-risk, proceed without asking.
+- Produce the required JSON output in one response; do not ask clarifying questions.
+- Do not omit required fields.
+</default_follow_through_policy>
+
+<personality>
+Feature Court docket clerk — theatrical brevity for Hall of Verdicts entries.
+- Role: write a brief docket summary after the judge has ruled.
+- Tone: theatrical docket entry style; efficient, specific to this case.
+- Decision style: summarize case, arguments, and ruling in 2-3 sentences.
+- Substance: must reference the fixed cast names provided in the user message; never invent alternate names.
+</personality>
+
+<personality_and_writing_controls>
+- Persona: docket clerk recording the trial outcome for the Hall of Verdicts.
+- Channel: short docket entry displayed on the verdict gallery page.
+- Emotional register: theatrical but concise, not campy, not melodramatic.
+- Formatting: plain prose inside JSON string values; no markdown, no bullets, no stage directions inside values.
+- Length: summary is 2-3 sentences total.
+- Default follow-through: produce the schema output in one response without asking permission.
+</personality_and_writing_controls>
+
+<dependency_checks>
+- This runs after the judge has ruled. Case title, charge, ruling, and counsel openings are provided in the user message.
+- Ground the summary in the provided trial context before finalizing.
+</dependency_checks>
+
+<grounding_rules>
+- Base the summary only on fields provided in the user message.
+- Use the fixed prosecutor and defense names from the user message; do not invent alternate names.
+- Do not invent companies, metrics, or events not supported by the provided context.
+- If context is insufficient, keep the summary narrow rather than guessing.
+</grounding_rules>
+
+<output_contract>
+- Return exactly the JSON fields required by the schema, in valid JSON only.
+- Do not add prose, markdown fences, or fields outside the schema.
+- Output only JSON matching the docket_summary schema.
+</output_contract>
+
+<structured_output_contract>
+- Output only the requested JSON format.
+- Do not add prose or markdown fences unless they were requested.
+- Validate that parentheses and brackets are balanced.
+- Do not invent schema fields.
+</structured_output_contract>
+
+<verbosity_controls>
+- Prefer concise, information-dense writing.
+- Summary: 2-3 sentences only.
+</verbosity_controls>
+
+<completeness_contract>
+- Treat the task as incomplete until summary is present and 2-3 sentences.
+- Confirm coverage before finalizing.
+</completeness_contract>
+
+<verification_loop>
+Before finalizing:
+- Check correctness: does the summary satisfy every requirement?
+- Check grounding: does the summary reference this case and ruling?
+- Check formatting: does the output match the docket_summary schema?
+- Confirm summary is 2-3 sentences.
+</verification_loop>
+
+<missing_context_gating>
+- Required trial context is always provided in the user message.
+- Do not ask clarifying questions; produce the schema output.
+</missing_context_gating>
+
+<dig_deeper_nudge>
+- Do not stop at the first plausible answer.
+- Ensure the summary captures the tension between prosecution and defense and the final ruling.
+- Perform at least one verification step before finalizing.
+</dig_deeper_nudge>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,10 +103,6 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// Lightweight per-IP rate limit held in isolate memory. Fail-open: any error or
-// missing IP allows the request. Caps abusive bursts against the public,
-// no-auth function URL (each call spends a gpt-5.4 generation) without adding
-// auth infrastructure. Not a global limit, but real friction for scripted abuse.
 const RL_WINDOW_MS = 60_000;
 const RL_MAX_PER_WINDOW = 10;
 const rlBuckets = new Map<string, number[]>();
@@ -50,7 +135,7 @@ function getPublishableKey(): string {
       const first = Object.values(parsed)[0];
       if (typeof first === "string") return first;
     } catch {
-      // fall through to single-key fallbacks
+      // fall through
     }
   }
   return (
@@ -63,26 +148,6 @@ function getPublishableKey(): string {
 function getSupabaseClient() {
   const url = Deno.env.get("SUPABASE_URL") ?? "";
   return createClient(url, getPublishableKey());
-}
-
-function extractOutputText(payload: Record<string, unknown>): string {
-  if (typeof payload.output_text === "string" && payload.output_text) {
-    return payload.output_text;
-  }
-  const output = payload.output as Array<Record<string, unknown>> | undefined;
-  if (Array.isArray(output)) {
-    for (const item of output) {
-      const content = item.content as Array<Record<string, unknown>> | undefined;
-      if (Array.isArray(content)) {
-        for (const c of content) {
-          if (c.type === "output_text" && typeof c.text === "string") {
-            return c.text;
-          }
-        }
-      }
-    }
-  }
-  return "";
 }
 
 serve(async (req: Request) => {
@@ -135,67 +200,68 @@ serve(async (req: Request) => {
     const intake = trial.intake as { proposal: string; audience: string; whyNow: string; tradeoff: string };
     const charge = trial.charge as string;
     const case_title = trial.case_title as string;
-    const prosecution = trial.prosecution as { opening?: string; character?: { name: string } } | null;
-    const defense = trial.defense as { opening?: string; character?: { name: string } } | null;
+    const prosecution = trial.prosecution as { opening?: string } | null;
+    const defense = trial.defense as { opening?: string } | null;
     const previousConversationId = trial.conversation_id as string | undefined;
 
-    const body: Record<string, unknown> = {
-      model: "gpt-5.4",
-      reasoning: { effort: "low" },
-      max_output_tokens: 6000,
-      input: `Case: ${case_title}
-Charge: "${charge}"
-Proposal: "${intake.proposal}"
-Ruling: ${ruling.toUpperCase()}
+    const input = `<trial_context>
+case_title: ${case_title}
+charge: ${charge}
+proposal: ${intake.proposal}
+audience: ${intake.audience}
+whyNow: ${intake.whyNow}
+tradeoff: ${intake.tradeoff}
+ruling: ${ruling}
+prosecutor_name: ${PROSECUTOR_NAME}
+defense_name: ${DEFENSE_NAME}
+prosecution_opening: ${prosecution?.opening ?? ""}
+defense_opening: ${defense?.opening ?? ""}
+</trial_context>
 
-Prosecutor: "${prosecution?.character?.name || "Prosecutor"}" argued: "${(prosecution?.opening || "").slice(0, 200)}"
-Defense: "${defense?.character?.name || "Defense"}" argued: "${(defense?.opening || "").slice(0, 200)}"
+<task>
+Generate a docket summary for the Hall of Verdicts page.
+</task>
 
-Generate a 2-3 sentence DOCKET SUMMARY for this trial. This appears on the Hall of Verdicts page. Write it as a brief, theatrical docket entry summarizing the case, the arguments, and the ruling.`,
-      text: {
-        format: {
-          type: "json_schema",
-          name: "docket_summary",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              summary: { type: "string" },
-            },
-            required: ["summary"],
-            additionalProperties: false,
-          },
+<critical_rule>
+summary must be 2-3 sentences.
+Must reference the case, the arguments from both sides, and the ruling.
+Use the fixed prosecutor_name and defense_name from trial_context; do not invent alternate names.
+</critical_rule>
+
+<execution_order>
+1. Write summary as a brief theatrical docket entry: case identification, counsel positions, and final ruling.
+</execution_order>
+
+<edge_cases>
+- If openings are empty, summarize from charge and ruling only.
+- Do not output placeholder or template prose; summary must be unique to this trial.
+- If prior conversation context exists via previous_response_id, continue the same trial grounding.
+</edge_cases>
+
+<output_format>
+JSON matching the docket_summary schema only. No prose outside JSON.
+</output_format>`;
+
+    const { outputText } = await callOpenAIResponses({
+      apiKey,
+      instructions: SYSTEM_PROMPT,
+      input,
+      schemaName: "docket_summary",
+      previousResponseId: previousConversationId,
+      maxOutputTokens: 6000,
+      schema: {
+        type: "object",
+        properties: {
+          summary: { type: "string" },
         },
+        required: ["summary"],
+        additionalProperties: false,
       },
-    };
-
-    if (previousConversationId) {
-      body.previous_response_id = previousConversationId;
-    } else {
-      body.instructions = "You are the Feature Court AI. Write a brief, theatrical docket summary for the Hall of Verdicts.";
-    }
-
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
     });
 
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`OpenAI API error ${response.status}: ${errBody}`);
-    }
-
-    const data = await response.json();
-    if (data.status === "incomplete") {
-      throw new Error(`OpenAI response incomplete: ${data.incomplete_details?.reason ?? "unknown"}`);
-    }
-
-    const contentText = extractOutputText(data);
-    if (!contentText) throw new Error("No content in OpenAI response");
-
-    const parsed = JSON.parse(contentText);
+    const parsed = JSON.parse(outputText);
     const summary = parsed.summary as string;
+    if (!summary?.trim()) throw new Error("summary is required");
 
     const { error: updateError } = await supabase.from("trials").update({ summary }).eq("id", trial_id);
     if (updateError) throw new Error(`Supabase update error: ${updateError.message}`);

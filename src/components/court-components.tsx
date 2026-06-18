@@ -961,9 +961,9 @@ export function BailiffPortrait({ reaction = "neutral", size = "full" }: { react
   );
 }
 
-export function JudgePortrait({ reaction = "neutral" }: { reaction?: PortraitReaction }) {
+export function JudgePortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: PortraitSize }) {
   const color = "#6b7280";
-  const { w, h } = PORTRAIT_DIMS.full;
+  const { w, h } = PORTRAIT_DIMS[size];
   return (
     <CharacterImage src="/images/judge.png" alt="Judge" width={w} height={h}>
       <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
@@ -1046,7 +1046,7 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
       <div className="dialogue-box-inner">
         <div className="dialogue-box-top">
           <div
-            className="w-24 h-24 rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
+            className="w-[72px] h-[72px] rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
             style={{ borderColor: `${color}40` }}
           >
             {portrait}

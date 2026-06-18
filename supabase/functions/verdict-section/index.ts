@@ -1,5 +1,103 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { callOpenAIResponses } from "../_shared/openai-responses.ts";
+
+const VERDICT_LABELS = {
+  ship: "Ship It",
+  kill: "Kill It",
+  revise: "Send Back",
+  mistrial: "Mistrial",
+} as const;
+
+/** Full GPT-5.4 system prompt — sent to OpenAI as `instructions` on every call. */
+const SYSTEM_PROMPT = `<instruction_priority>
+- User message task instructions override default style, tone, formatting, and initiative preferences unless they conflict with schema or safety.
+- Safety, honesty, privacy, and permission constraints do not yield.
+- If a newer user instruction conflicts with an earlier one, follow the newer instruction.
+- Preserve earlier instructions that do not conflict.
+</instruction_priority>
+
+<default_follow_through_policy>
+- If the task is clear and the next step is reversible and low-risk, proceed without asking.
+- Produce the required JSON output in one response; do not ask clarifying questions.
+- Do not omit required fields.
+</default_follow_through_policy>
+
+<personality>
+Feature Court verdict engine — neutral judicial framing for all four possible rulings.
+- Role: generate the four verdict options the presiding judge may choose after hearing prosecution and defense.
+- Tone: theatrical but substantive; each verdict reflects the specific arguments from this trial.
+- Decision style: ship rewards conviction, kill punishes fatal flaws, revise sends back for rework, mistrial acknowledges insufficient clarity.
+- Substance: every verdict field must reference this trial's intake and charge; never generic product advice.
+</personality>
+
+<personality_and_writing_controls>
+- Persona: neutral verdict engine writing four distinct ruling outcomes for this case.
+- Channel: verdict cards displayed in-app for judge selection.
+- Emotional register: theatrical but substantive, not campy, not melodramatic.
+- Formatting: plain prose inside JSON string values; no markdown, no bullets, no stage directions inside values.
+- Length: label short display text; description one-line tagline; other fields substantive but concise.
+- Default follow-through: produce all required fields in one response without asking permission.
+</personality_and_writing_controls>
+
+<dependency_checks>
+- This is step 5 of a multi-step Feature Court trial. Prior charge and intake are provided in the user message.
+- Ground every verdict in the specific arguments and evidence from this trial.
+- Do not skip dependency on intake and charge context.
+</dependency_checks>
+
+<grounding_rules>
+- Base every claim only on intake fields and charge provided in the user message.
+- Do not invent companies, metrics, user counts, or market events not supported by intake or charge.
+- Each verdict must reflect tensions raised in this specific trial, not generic product dilemmas.
+- If context is insufficient for a field, keep output narrow rather than guessing.
+</grounding_rules>
+
+<output_contract>
+- Return exactly the JSON fields required by the schema, in valid JSON only.
+- Do not add prose, markdown fences, or fields outside the schema.
+- Apply length limits only to the fields they are intended for.
+- Output only JSON matching the verdicts schema.
+</output_contract>
+
+<structured_output_contract>
+- Output only the requested JSON format.
+- Do not add prose or markdown fences unless they were requested.
+- Validate that parentheses and brackets are balanced.
+- Do not invent schema fields.
+</structured_output_contract>
+
+<verbosity_controls>
+- Prefer concise, information-dense writing.
+- Avoid repeating the user's request.
+- Description: one-line tagline per verdict.
+</verbosity_controls>
+
+<completeness_contract>
+- Treat the task as incomplete until verdicts contains ship, kill, revise, and mistrial, each with all required fields.
+- Keep an internal checklist: all four verdict keys and their six fields each.
+- Confirm coverage before finalizing.
+</completeness_contract>
+
+<verification_loop>
+Before finalizing:
+- Check correctness: does the output satisfy every requirement?
+- Check grounding: does each verdict reflect this trial's intake and charge?
+- Check formatting: does the output match the verdicts schema?
+- Confirm all four verdict keys are present with label, description, sentence, real_risk, strongest_ignored_argument, test_first.
+</verification_loop>
+
+<missing_context_gating>
+- Required intake and charge are always provided in the user message.
+- Do not ask clarifying questions; produce the schema output.
+- Do not guess missing intake fields.
+</missing_context_gating>
+
+<dig_deeper_nudge>
+- Do not stop at the first plausible answer.
+- Look for second-order risks and ignored arguments unique to each verdict path.
+- Perform at least one verification step before finalizing.
+</dig_deeper_nudge>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,10 +112,6 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// Lightweight per-IP rate limit held in isolate memory. Fail-open: any error or
-// missing IP allows the request. Caps abusive bursts against the public,
-// no-auth function URL (each call spends a gpt-5.4 generation) without adding
-// auth infrastructure. Not a global limit, but real friction for scripted abuse.
 const RL_WINDOW_MS = 60_000;
 const RL_MAX_PER_WINDOW = 10;
 const rlBuckets = new Map<string, number[]>();
@@ -50,7 +144,7 @@ function getPublishableKey(): string {
       const first = Object.values(parsed)[0];
       if (typeof first === "string") return first;
     } catch {
-      // fall through to single-key fallbacks
+      // fall through
     }
   }
   return (
@@ -63,26 +157,6 @@ function getPublishableKey(): string {
 function getSupabaseClient() {
   const url = Deno.env.get("SUPABASE_URL") ?? "";
   return createClient(url, getPublishableKey());
-}
-
-function extractOutputText(payload: Record<string, unknown>): string {
-  if (typeof payload.output_text === "string" && payload.output_text) {
-    return payload.output_text;
-  }
-  const output = payload.output as Array<Record<string, unknown>> | undefined;
-  if (Array.isArray(output)) {
-    for (const item of output) {
-      const content = item.content as Array<Record<string, unknown>> | undefined;
-      if (Array.isArray(content)) {
-        for (const c of content) {
-          if (c.type === "output_text" && typeof c.text === "string") {
-            return c.text;
-          }
-        }
-      }
-    }
-  }
-  return "";
 }
 
 function verdictSchema() {
@@ -145,81 +219,82 @@ serve(async (req: Request) => {
     const intake = trial.intake as { proposal: string; audience: string; whyNow: string; tradeoff: string };
     const previousConversationId = trial.conversation_id as string | undefined;
     const charge = trial.charge as string;
+    const case_title = (trial.case_title as string) ?? "";
 
-    const body: Record<string, unknown> = {
-      model: "gpt-5.4",
-      reasoning: { effort: "low" },
-      max_output_tokens: 14000,
-      input: `Product Proposal: "${intake.proposal}"
-Target Audience: "${intake.audience}"
-Timing/Rationale: "${intake.whyNow}"
-Tradeoff: "${intake.tradeoff}"
+    const input = `<trial_context>
+proposal: ${intake.proposal}
+audience: ${intake.audience}
+whyNow: ${intake.whyNow}
+tradeoff: ${intake.tradeoff}
+charge: ${charge}
+case_title: ${case_title}
+</trial_context>
 
-The charge: "${charge}"
+<task>
+Generate all four verdicts for this Feature Court trial.
+</task>
 
-Generate all 4 verdicts for this trial. Each verdict has:
-- label: short display label (ship="Ship It", kill="Kill It", revise="Send Back", mistrial="Mistrial")
-- description: a one-line tagline
-- sentence: the sentence text
-- real_risk: the real risk
-- strongest_ignored_argument: the strongest ignored argument
-- test_first: how to test first
-Reflect the specific arguments and evidence from THIS trial. Not generic.`,
-      text: {
-        format: {
-          type: "json_schema",
-          name: "verdicts",
-          strict: true,
-          schema: {
+<critical_rule>
+verdicts must contain exactly four keys: ship, kill, revise, mistrial.
+Each verdict must have label, description, sentence, real_risk, strongest_ignored_argument, and test_first.
+Each verdict must reflect the specific arguments and evidence from this trial, not generic advice.
+</critical_rule>
+
+<execution_order>
+1. Write verdicts.ship: ruling to ship the feature; label is short display text for shipping.
+2. Write verdicts.kill: ruling to kill the feature; label is short display text for killing.
+3. Write verdicts.revise: ruling to send the feature back for revision; label is short display text for revision.
+4. Write verdicts.mistrial: ruling that the case lacks sufficient clarity; label is short display text for mistrial.
+</execution_order>
+
+<edge_cases>
+- If intake fields are sparse, still produce all four verdicts grounded on what is provided and the charge.
+- Do not output placeholder or template prose; each field must be unique to this trial.
+- If prior conversation context exists via previous_response_id, continue the same trial voice and grounding.
+</edge_cases>
+
+<output_format>
+JSON matching the verdicts schema only. No prose outside JSON.
+</output_format>`;
+
+    const { id: conversation_id, outputText } = await callOpenAIResponses({
+      apiKey,
+      instructions: SYSTEM_PROMPT,
+      input,
+      schemaName: "verdicts",
+      previousResponseId: previousConversationId,
+      maxOutputTokens: 14000,
+      schema: {
+        type: "object",
+        properties: {
+          verdicts: {
             type: "object",
             properties: {
-              verdicts: {
-                type: "object",
-                properties: {
-                  ship: verdictSchema(),
-                  kill: verdictSchema(),
-                  revise: verdictSchema(),
-                  mistrial: verdictSchema(),
-                },
-                required: ["ship", "kill", "revise", "mistrial"],
-                additionalProperties: false,
-              },
+              ship: verdictSchema(),
+              kill: verdictSchema(),
+              revise: verdictSchema(),
+              mistrial: verdictSchema(),
             },
-            required: ["verdicts"],
+            required: ["ship", "kill", "revise", "mistrial"],
             additionalProperties: false,
           },
         },
+        required: ["verdicts"],
+        additionalProperties: false,
       },
-    };
-
-    if (previousConversationId) {
-      body.previous_response_id = previousConversationId;
-    } else {
-      body.instructions = "You are the Feature Court AI. Generate all 4 verdicts for this trial. Each must reflect the specific arguments and evidence from the trial. Be specific to THIS proposal, not generic.";
-    }
-
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
     });
 
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`OpenAI API error ${response.status}: ${errBody}`);
+    const parsed = JSON.parse(outputText);
+    const verdicts = parsed.verdicts as Record<string, Record<string, string>>;
+
+    for (const key of ["ship", "kill", "revise", "mistrial"] as const) {
+      const v = verdicts[key];
+      if (!v) throw new Error(`Missing verdict: ${key}`);
+      for (const field of ["label", "description", "sentence", "real_risk", "strongest_ignored_argument", "test_first"]) {
+        if (!v[field]?.trim()) throw new Error(`Missing ${field} for verdict ${key}`);
+      }
+      v.label = VERDICT_LABELS[key];
     }
-
-    const data = await response.json();
-    if (data.status === "incomplete") {
-      throw new Error(`OpenAI response incomplete: ${data.incomplete_details?.reason ?? "unknown"}`);
-    }
-
-    const contentText = extractOutputText(data);
-    if (!contentText) throw new Error("No content in OpenAI response");
-
-    const parsed = JSON.parse(contentText);
-    const verdicts = parsed.verdicts as Record<string, unknown>;
-    const conversation_id = data.id as string;
 
     const { error: updateError } = await supabase.from("trials").update({
       verdicts,
