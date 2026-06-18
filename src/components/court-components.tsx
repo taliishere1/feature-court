@@ -1183,13 +1183,17 @@ export function BailiffDialoguePortrait({ reaction = "neutral" }: { reaction?: P
 function BailiffDialoguePortraitFrame({
   children,
   color,
+  compact = false,
 }: {
   children: React.ReactNode;
   color?: string;
+  compact?: boolean;
 }) {
   return (
     <div
-      className="dialogue-box-portrait shrink-0 rounded-lg border border-court-600"
+      className={`dialogue-box-portrait shrink-0 rounded-lg border border-court-600 ${
+        compact ? "w-[100px]" : "w-[100px] lg:w-[140px]"
+      }`}
       style={color ? { borderColor: `${color}40` } : undefined}
     >
       {children}
@@ -1207,7 +1211,7 @@ export function BailiffInlineDialogue({
 }) {
   return (
     <div className="bailiff-inline-dialogue">
-      <BailiffDialoguePortraitFrame color={CAST.bailiff.color}>
+      <BailiffDialoguePortraitFrame color={CAST.bailiff.color} compact>
         <BailiffPortrait size="thumb" reaction={reaction} />
       </BailiffDialoguePortraitFrame>
       <div className="bailiff-inline-dialogue-content">

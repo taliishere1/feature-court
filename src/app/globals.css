@@ -485,14 +485,16 @@ body {
 
 .dialogue-box-portrait {
   line-height: 0;
+  overflow: visible;
 }
 
 .dialogue-box-portrait img,
 .dialogue-box-portrait svg {
   display: block;
-  width: auto;
-  height: auto;
-  max-width: none;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  object-fit: contain;
 }
 
 .bailiff-inline-dialogue {
