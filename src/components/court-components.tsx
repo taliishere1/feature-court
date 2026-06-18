@@ -159,6 +159,39 @@ const STAGES = [
 export const trialStageShellClass = "w-full max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto";
 export const trialStageHeaderClass = "w-full max-w-4xl lg:max-w-6xl mx-auto";
 
+/** Fixed height for counsel two-column stage (profile + scrollable content). */
+export const counselStagePanelHeightClass = "h-[calc(100vh-13rem)] min-h-[28rem]";
+
+function CounselProfileCard({
+  portrait,
+  portraitLarge,
+  name,
+  title,
+  tall = false,
+}: {
+  portrait: React.ReactNode;
+  portraitLarge: React.ReactNode;
+  name: string;
+  title: string;
+  tall?: boolean;
+}) {
+  return (
+    <div
+      className={`flex flex-col items-center gap-4 border border-court-700 rounded-sm px-5 py-5 bg-court-900/60 w-full text-center ${
+        tall ? `${counselStagePanelHeightClass} justify-between` : ""
+      }`}
+    >
+      <div className={`w-full ${tall ? "flex-1 flex items-center justify-center min-h-0 py-2 [&_img]:max-h-full [&_img]:w-auto [&_img]:mx-auto" : ""}`}>
+        {tall ? portraitLarge : portrait}
+      </div>
+      <div className="shrink-0 w-full">
+        <h2 className="font-serif text-base lg:text-lg text-court-100 leading-snug">{name}</h2>
+        <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em] mt-1">{title}</p>
+      </div>
+    </div>
+  );
+}
+
 export function CounselStageLayout({
   portrait,
   portraitLarge,
@@ -173,18 +206,28 @@ export function CounselStageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(11rem,14rem)_1fr] xl:grid-cols-[minmax(13rem,16rem)_1fr] lg:gap-8 xl:gap-12 lg:items-start animate-fade-in-up">
-      <div className="text-center lg:sticky lg:top-8 mb-5 lg:mb-0">
-        <div className="inline-flex flex-col items-center gap-3 border border-court-700 rounded-sm px-5 py-4 bg-court-900/60 lg:w-full">
-          <div className="lg:hidden">{portrait}</div>
-          <div className="hidden lg:block">{portraitLarge}</div>
-          <div>
-            <h2 className="font-serif text-base lg:text-lg text-court-100">{name}</h2>
-            <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em] mt-0.5">{title}</p>
-          </div>
+    <div className="animate-fade-in-up">
+      {/* Mobile: stacked, page scrolls normally */}
+      <div className="lg:hidden">
+        <CounselProfileCard portrait={portrait} portraitLarge={portraitLarge} name={name} title={title} />
+        <div className="space-y-4 mt-5 w-full">{children}</div>
+      </div>
+
+      {/* Desktop: 1/3 profile (fixed) + 2/3 content (scrolls) */}
+      <div className={`hidden lg:grid lg:grid-cols-3 lg:gap-8 xl:gap-10 ${counselStagePanelHeightClass}`}>
+        <div className="col-span-1 min-h-0">
+          <CounselProfileCard
+            portrait={portrait}
+            portraitLarge={portraitLarge}
+            name={name}
+            title={title}
+            tall
+          />
+        </div>
+        <div className={`col-span-2 min-h-0 overflow-y-auto overscroll-contain pr-1 counsel-stage-scroll`}>
+          <div className="space-y-4 pb-6">{children}</div>
         </div>
       </div>
-      <div className="space-y-4 w-full max-w-lg lg:max-w-none mx-auto">{children}</div>
     </div>
   );
 }

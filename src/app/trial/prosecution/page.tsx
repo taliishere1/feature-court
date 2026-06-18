@@ -146,22 +146,25 @@ function ProsecutionContent() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 pt-4 pb-48 relative z-10">
-        <div className={`${trialStageShellClass} animate-page-enter`}>
-          <div className="text-center mb-2">
+      <main className="flex-1 flex flex-col min-h-0 px-6 pt-4 pb-8 lg:pb-6 relative z-10">
+        <div className={`${trialStageShellClass} flex-1 flex flex-col min-h-0 animate-page-enter`}>
+          <div className="text-center mb-2 shrink-0">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 2 of 5</span>
           </div>
 
-          <StageProgress current={2} />
+          <div className="shrink-0">
+            <StageProgress current={2} />
+          </div>
 
           {revealed && (
+            <div className="flex-1 min-h-0 mt-2">
             <CounselStageLayout
               portrait={<ProsecutorPortrait size="medium" />}
               portraitLarge={<ProsecutorPortrait size="full" />}
               name={prosecutorName}
               title={prosecutorTitle}
             >
-              <div className="parchment-ruled p-4 mb-4 animate-fade-in-up w-full">
+              <div className="parchment-ruled p-4 animate-fade-in-up w-full">
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
                 <p className="text-court-200 text-xs leading-relaxed font-legal italic relative z-10">
                   &ldquo;{trial.prosecution.opening}&rdquo;
@@ -182,16 +185,15 @@ function ProsecutionContent() {
                   </EvidenceCard>
                 ))}
               </ExhibitListFrame>
-            </CounselStageLayout>
-          )}
 
-          {revealed && (
-            <div className="text-center mt-6 animate-fade-in-up">
-              <StageProceedLink
-                engaged={exhibitEngaged}
-                href={`/trial/defense?id=${trial.id}`}
-                label="Hear the defense"
-              />
+              <div className="text-center pt-2 animate-fade-in-up">
+                <StageProceedLink
+                  engaged={exhibitEngaged}
+                  href={`/trial/defense?id=${trial.id}`}
+                  label="Hear the defense"
+                />
+              </div>
+            </CounselStageLayout>
             </div>
           )}
         </div>
