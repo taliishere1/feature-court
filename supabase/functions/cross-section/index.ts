@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { callOpenAIResponses } from "../_shared/openai-responses.ts";
+import { isValidUuid } from "../_shared/edge-http.ts";
 
 /** Full GPT-5.4 system prompt — sent to OpenAI as `instructions` on every call. */
 const SYSTEM_PROMPT = `<instruction_priority>
@@ -189,11 +190,29 @@ serve(async (req: Request) => {
   if (!trial_id) {
     return json({ error: "Missing trial_id" }, 400);
   }
+  if (!isValidUuid(trial_id)) {
+    return json({ error: "Invalid trial_id" }, 400);
+  }
 
   try {
     const { data: trial, error: loadError } = await supabase.from("trials").select("*").eq("id", trial_id).single();
     if (loadError || !trial) {
       return json({ error: "Trial not found" }, 404);
+    }
+
+    const existingCross = trial.cross_examination as Array<{ question?: string; choices?: unknown[] }> | null;
+    if (
+      Array.isArray(existingCross) &&
+      existingCross.length >= 2 &&
+      existingCross.every(
+        (q) => Boolean(q.question?.trim()) && Array.isArray(q.choices) && q.choices.length === 3,
+      )
+    ) {
+      return json({
+        cross_examination: trial.cross_examination,
+        cross_bailiff_dialogue: trial.cross_bailiff_dialogue,
+        conversation_id: trial.conversation_id,
+      });
     }
 
     const intake = trial.intake as { proposal: string; audience: string; whyNow: string; tradeoff: string };

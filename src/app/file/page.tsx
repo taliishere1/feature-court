@@ -86,6 +86,7 @@ export default function FileCasePage() {
                 <input
                   type="text"
                   required
+                  maxLength={500}
                   value={form.proposal}
                   onChange={(e) => { setForm({ ...form, proposal: e.target.value }); }}
                   placeholder='e.g. "Build a mobile app", "Cut the comments feature"'
@@ -102,6 +103,7 @@ export default function FileCasePage() {
                 <input
                   type="text"
                   required
+                  maxLength={500}
                   value={form.audience}
                   onChange={(e) => setForm({ ...form, audience: e.target.value })}
                   placeholder="e.g. Power users, new signups, enterprise accounts"
@@ -118,6 +120,7 @@ export default function FileCasePage() {
                 <input
                   type="text"
                   required
+                  maxLength={500}
                   value={form.whyNow}
                   onChange={(e) => setForm({ ...form, whyNow: e.target.value })}
                   placeholder="e.g. Competitors are moving, user feedback is loud"
@@ -134,6 +137,7 @@ export default function FileCasePage() {
                 <input
                   type="text"
                   required
+                  maxLength={500}
                   value={form.tradeoff}
                   onChange={(e) => setForm({ ...form, tradeoff: e.target.value })}
                   placeholder="e.g. 6 months of engineering, delay the roadmap"

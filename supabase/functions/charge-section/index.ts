@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { callOpenAIResponses } from "../_shared/openai-responses.ts";
+import { normalizeVisitorId, validateIntake } from "../_shared/edge-http.ts";
 
 const PROSECUTOR_CHARACTER = {
   name: "Prosecutor Mary T. Bug",
@@ -215,6 +216,12 @@ serve(async (req: Request) => {
   if (!intake?.proposal || !intake?.audience || !intake?.whyNow || !intake?.tradeoff) {
     return json({ error: "Missing required fields" }, 400);
   }
+
+  const intakeError = validateIntake(intake);
+  if (intakeError) {
+    return json({ error: intakeError }, 400);
+  }
+  visitorId = normalizeVisitorId(visitorId);
 
   try {
     const trial_id = crypto.randomUUID();

@@ -1,4 +1,4 @@
-import { TrialData, Ruling, CrossExaminationQuestion } from "./types";
+import { TrialData, CrossExaminationQuestion } from "./types";
 import { supabase, isSupabaseConfigured } from "./supabase";
 
 export function migrateCrossExamination(data: unknown): CrossExaminationQuestion[] {
@@ -31,28 +31,13 @@ export function rowToTrialData(row: Record<string, unknown>): TrialData {
   };
 }
 
-function trialDataToRow(data: TrialData): Record<string, unknown> {
-  return {
-    id: data.id,
-    intake: data.intake,
-    charge: data.charge,
-    case_title: data.case_title,
-    prosecution: data.prosecution,
-    defense: data.defense,
-    cross_examination: data.cross_examination,
-    verdicts: data.verdicts,
-    created_at: new Date(data.createdAt).toISOString(),
-    is_sample: data.isSample || false,
-    ruling: data.ruling || null,
-    generation_step: data.generationStep ?? null,
-  };
-}
-
 function requireSupabase() {
   if (!isSupabaseConfigured()) {
     throw new Error("Supabase is not configured. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.");
   }
 }
+
+const GALLERY_TRIAL_LIMIT = 200;
 
 export async function getTrial(id: string): Promise<TrialData | undefined> {
   requireSupabase();
@@ -67,25 +52,6 @@ export async function getTrial(id: string): Promise<TrialData | undefined> {
   return rowToTrialData(data as Record<string, unknown>);
 }
 
-export async function setTrial(id: string, data: TrialData): Promise<void> {
-  requireSupabase();
-
-  const row = trialDataToRow(data);
-  const { error } = await supabase!.from("trials").upsert(row, {
-    onConflict: "id",
-  });
-
-  if (error) {
-    console.error("Supabase insert error:", error);
-  }
-}
-
-export async function updateTrial(id: string, partial: Partial<TrialData>): Promise<void> {
-  const existing = await getTrial(id);
-  if (!existing) return;
-  await setTrial(id, { ...existing, ...partial });
-}
-
 export async function getAllTrials(): Promise<TrialData[]> {
   requireSupabase();
 
@@ -93,7 +59,8 @@ export async function getAllTrials(): Promise<TrialData[]> {
     .from("trials")
     .select("*")
     .eq("is_sample", false)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(GALLERY_TRIAL_LIMIT);
 
   if (error) {
     console.error("Supabase query error:", error);
@@ -113,7 +80,8 @@ export async function getMyTrials(visitorId: string): Promise<TrialData[]> {
     .select("*")
     .eq("is_sample", false)
     .eq("visitor_id", visitorId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(GALLERY_TRIAL_LIMIT);
 
   if (error) {
     console.error("Supabase query error:", error);
@@ -123,37 +91,6 @@ export async function getMyTrials(visitorId: string): Promise<TrialData[]> {
   return (data || []).map((row) =>
     rowToTrialData(row as Record<string, unknown>)
   );
-}
-
-export async function getPublicTrials(): Promise<TrialData[]> {
-  requireSupabase();
-
-  const { data, error } = await supabase!
-    .from("trials")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Supabase query error:", error);
-    return [];
-  }
-
-  return (data || []).map((row) =>
-    rowToTrialData(row as Record<string, unknown>)
-  );
-}
-
-export async function recordRuling(id: string, ruling: Ruling): Promise<void> {
-  requireSupabase();
-
-  const { error } = await supabase!
-    .from("trials")
-    .update({ ruling })
-    .eq("id", id);
-
-  if (error) {
-    console.error("Supabase update error:", error);
-  }
 }
 
 export async function refetchTrialRow(trialId: string): Promise<Record<string, unknown>> {

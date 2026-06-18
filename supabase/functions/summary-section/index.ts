@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { callOpenAIResponses } from "../_shared/openai-responses.ts";
+import { isValidUuid } from "../_shared/edge-http.ts";
 
 const PROSECUTOR_NAME = "Prosecutor Mary T. Bug";
 const DEFENSE_NAME = 'Defense Attorney Edward "Edge" Case';
@@ -187,6 +188,9 @@ serve(async (req: Request) => {
   if (!trial_id || !ruling) {
     return json({ error: "Missing trial_id or ruling" }, 400);
   }
+  if (!isValidUuid(trial_id)) {
+    return json({ error: "Invalid trial_id" }, 400);
+  }
   if (!["ship", "kill", "revise", "mistrial"].includes(ruling)) {
     return json({ error: "Invalid ruling" }, 400);
   }
@@ -195,6 +199,11 @@ serve(async (req: Request) => {
     const { data: trial, error: loadError } = await supabase.from("trials").select("*").eq("id", trial_id).single();
     if (loadError || !trial) {
       return json({ error: "Trial not found" }, 404);
+    }
+
+    const existingSummary = trial.summary as string | null;
+    if (existingSummary?.trim()) {
+      return json({ summary: existingSummary });
     }
 
     const intake = trial.intake as { proposal: string; audience: string; whyNow: string; tradeoff: string };

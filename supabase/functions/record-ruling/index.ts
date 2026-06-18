@@ -1,42 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import {
+  corsHeaders,
+  getPublishableKey,
+  getSupabaseClient,
+  isRateLimited,
+  isValidUuid,
+  json,
+} from "../_shared/edge-http.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-function getPublishableKey(): string {
-  const raw = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed?.default) return parsed.default as string;
-      const first = Object.values(parsed)[0];
-      if (typeof first === "string") return first;
-    } catch {
-      // fall through to single-key fallbacks
-    }
-  }
-  return (
-    Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ||
-    Deno.env.get("SUPABASE_ANON_KEY") ||
-    ""
-  );
-}
-
-function getSupabaseClient() {
-  const url = Deno.env.get("SUPABASE_URL") ?? "";
-  return createClient(url, getPublishableKey());
-}
+const VALID_RULINGS = ["ship", "kill", "revise", "mistrial"] as const;
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -44,6 +16,10 @@ serve(async (req: Request) => {
   }
   if (req.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
+  }
+
+  if (isRateLimited(req)) {
+    return json({ error: "Too many requests. Please wait a moment and try again." }, 429);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -66,12 +42,42 @@ serve(async (req: Request) => {
   if (!trial_id || !ruling) {
     return json({ error: "Missing trial_id or ruling" }, 400);
   }
-  if (!["ship", "kill", "revise", "mistrial"].includes(ruling)) {
+  if (!isValidUuid(trial_id)) {
+    return json({ error: "Invalid trial_id" }, 400);
+  }
+  if (!VALID_RULINGS.includes(ruling as (typeof VALID_RULINGS)[number])) {
     return json({ error: "Invalid ruling" }, 400);
   }
 
   try {
-    const { error: updateError } = await supabase.from("trials").update({ ruling }).eq("id", trial_id);
+    const { data: trial, error: loadError } = await supabase
+      .from("trials")
+      .select("ruling, verdicts")
+      .eq("id", trial_id)
+      .single();
+
+    if (loadError || !trial) {
+      return json({ error: "Trial not found" }, 404);
+    }
+
+    const verdicts = trial.verdicts as { ship?: { sentence?: string } } | null;
+    if (!verdicts?.ship?.sentence?.trim()) {
+      return json({ error: "Trial is not ready for a ruling" }, 400);
+    }
+
+    const existingRuling = trial.ruling as string | null;
+    if (existingRuling) {
+      if (existingRuling === ruling) {
+        return json({ success: true });
+      }
+      return json({ error: "Ruling already recorded" }, 409);
+    }
+
+    const { error: updateError } = await supabase
+      .from("trials")
+      .update({ ruling })
+      .eq("id", trial_id);
+
     if (updateError) throw new Error(`Supabase update error: ${updateError.message}`);
     return json({ success: true });
   } catch (error) {
