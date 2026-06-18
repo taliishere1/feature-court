@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useReducer } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { playGavelClunk } from "@/lib/gavel-sound";
 
 // ─── Ornate Court Seal ───
@@ -1140,6 +1141,82 @@ export function ObjectionOverlay({
 }
 
 // ─── Evidence Card ───
+
+export function ExhibitEngagementPrompt({ engaged }: { engaged: boolean }) {
+  if (engaged) return null;
+  return (
+    <div
+      className="mb-3 rounded-sm border border-gold-500/70 bg-gold-500/15 px-4 py-3 text-center shadow-[0_0_20px_rgba(245,158,11,0.15)]"
+      role="status"
+    >
+      <p className="text-gold-300 text-sm font-semibold">Object to an exhibit to continue</p>
+      <p className="text-court-300 text-xs mt-1 font-legal italic">
+        Tap a card below — opposing counsel will object, then you can proceed.
+      </p>
+    </div>
+  );
+}
+
+export function ExhibitListFrame({
+  engaged,
+  children,
+}: {
+  engaged: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`space-y-2 transition-all duration-300 ${
+        engaged ? "" : "rounded-sm ring-2 ring-gold-500/45 ring-offset-2 ring-offset-court-950 p-1"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function StageProceedLink({
+  engaged,
+  href,
+  label,
+}: {
+  engaged: boolean;
+  href: string;
+  label: string;
+}) {
+  const lockedMessage = "Object to an exhibit above to unlock";
+
+  if (engaged) {
+    return (
+      <Link
+        href={href}
+        className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+      >
+        {label}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
+          <path d="M5 12h14M12 5l7 7-7 7" />
+        </svg>
+      </Link>
+    );
+  }
+
+  return (
+    <div className="inline-flex flex-col items-center gap-2 max-w-sm mx-auto">
+      <span
+        aria-disabled="true"
+        title={lockedMessage}
+        className="inline-flex items-center gap-2 px-8 py-3 bg-court-800/90 border border-court-600 text-court-500 font-semibold rounded-sm text-base cursor-not-allowed select-none"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-70" aria-hidden>
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+        {label}
+      </span>
+      <p className="text-gold-400 text-sm font-medium text-center leading-snug">{lockedMessage}</p>
+    </div>
+  );
+}
 
 interface EvidenceCardProps {
   exhibit: string;

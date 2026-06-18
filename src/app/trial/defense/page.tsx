@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay, ExhibitEngagementPrompt, ExhibitListFrame, StageProceedLink } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasDefense } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -173,44 +173,31 @@ function DefenseContent() {
           )}
 
           {revealed && (
-            <div className="space-y-2 max-w-lg mx-auto w-full">
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 text-center mb-3">Click an exhibit to object</p>
-              {trial.defense.arguments.map((arg, i) => (
-                <EvidenceCard
-                  key={i}
-                  exhibit={String(i + 1)}
-                  side="defense"
-                  index={i}
-                  onClick={handleEvidenceClick}
-                >
-                  {arg}
-                </EvidenceCard>
-              ))}
+            <div className="max-w-lg mx-auto w-full">
+              <ExhibitEngagementPrompt engaged={exhibitEngaged} />
+              <ExhibitListFrame engaged={exhibitEngaged}>
+                {trial.defense.arguments.map((arg, i) => (
+                  <EvidenceCard
+                    key={i}
+                    exhibit={String(i + 1)}
+                    side="defense"
+                    index={i}
+                    onClick={handleEvidenceClick}
+                  >
+                    {arg}
+                  </EvidenceCard>
+                ))}
+              </ExhibitListFrame>
             </div>
           )}
 
           {revealed && (
             <div className="text-center mt-6 animate-fade-in-up">
-              {!exhibitEngaged && (
-                <p className="text-court-500 text-sm font-legal italic mb-3">
-                  Click at least one exhibit to continue.
-                </p>
-              )}
-              {exhibitEngaged ? (
-                <Link
-                  href={`/trial/cross?id=${trial.id}`}
-                  className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
-                >
-                  Cross-examination
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              ) : (
-                <span className="inline-flex items-center gap-2.5 px-8 py-3 bg-court-800 text-court-500 font-semibold rounded-sm text-base cursor-not-allowed">
-                  Cross-examination
-                </span>
-              )}
+              <StageProceedLink
+                engaged={exhibitEngaged}
+                href={`/trial/cross?id=${trial.id}`}
+                label="Cross-examination"
+              />
             </div>
           )}
         </div>
