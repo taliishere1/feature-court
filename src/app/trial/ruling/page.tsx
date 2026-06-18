@@ -289,12 +289,13 @@ function RulingContent() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-2.5 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:gap-2.5 items-stretch">
               {RULING_OPTIONS.map((option, i) => {
                 const isSelected = selected === option.key;
                 const verdict = trial.verdicts?.[option.key];
                 const label = verdict?.label ?? option.label;
                 const description = verdict?.description ?? option.description;
+                const sentence = verdict?.sentence ?? option.sentence;
                 return (
                   <ScrollworkBorder key={option.key} className="h-full">
                     <button
@@ -323,7 +324,14 @@ function RulingContent() {
                             {label}
                           </span>
                         </div>
-                        <p className="text-court-500 text-[10px] lg:text-[11px] ml-5 leading-snug line-clamp-3">{description}</p>
+                        <p className="text-court-500 text-[10px] lg:text-[11px] ml-5 leading-snug line-clamp-2">{description}</p>
+                        <div className={`ml-5 mt-1 pt-1 border-t min-h-[2.5rem] ${isSelected ? "border-gold-500/20" : "border-transparent"}`}>
+                          {isSelected && (
+                            <p className="font-legal text-court-400 text-[10px] lg:text-[11px] italic line-clamp-2">
+                              &ldquo;{sentence}&rdquo;
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </button>
                   </ScrollworkBorder>
