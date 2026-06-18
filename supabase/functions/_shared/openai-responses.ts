@@ -2,7 +2,7 @@
  * OpenAI Responses API HTTP client for Supabase Edge Functions.
  *
  * Per OpenAI prompt engineering guide:
- * - `instructions` = developer message: # Identity → # Instructions → # Examples (paired input/output patterns, static)
+ * - `instructions` = developer message: # Identity → # Instructions (static rules and contracts; no paired examples)
  * - `input` = user message: trial context (dynamic) → task → critical_rule → execution_order → edge_cases → output_format → output_shape
  * - Dynamic case data lives only in `input`, never in `instructions`
  * - Do NOT chain retries via previous_response_id when instructions must govern the retry;

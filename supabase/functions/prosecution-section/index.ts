@@ -8,11 +8,11 @@ const PROSECUTOR_CHARACTER = {
   title: "Staff PM · Bug hunter since day one",
 } as const;
 
-/** Developer instructions — critical rules first, then Identity → Instructions → Examples. Re-sent every call. */
+/** Developer instructions — critical rules first, then Identity → Instructions. Re-sent every call. */
 const SYSTEM_PROMPT = `<critical_rules>
 Output JSON matching prosecution schema only.
 bailiff_intro: exactly one sentence, maximum 25 words. Spoken first-person words only — what the bailiff says aloud to open the prosecution phase.
-The UI shows the speaker name separately — do not speak any character name in bailiff_intro.
+The UI labels the bailiff separately — do not name the bailiff in bailiff_intro.
 Judge Ship Itwell presides. The bailiff does NOT preside.
 No third-person narration, stage directions, or narrator voice in bailiff_intro.
 opening, arguments, closing: Prosecutor voice arguing against the proposal. Ground in trial_context from the user message.
@@ -32,7 +32,7 @@ Tone: sharp prosecution; dry bailiff intro.
 <bailiff_intro_contract>
 bailiff_intro is SPOKEN WORDS in first person — what the bailiff says aloud to open the prosecution phase.
 Exactly one sentence, maximum 25 words.
-The UI shows the speaker name separately — do not speak any character name in bailiff_intro.
+The UI labels the bailiff separately — do not name the bailiff in bailiff_intro.
 Judge Ship Itwell presides. The bailiff does NOT preside.
 No third-person narration, stage directions, or narrator voice.
 </bailiff_intro_contract>
@@ -110,7 +110,7 @@ Before finalizing:
 - Check safety: response is schema JSON only; no external side effects.
 - Confirm arguments array length is exactly 3.
 - Confirm bailiff_intro is one sentence, maximum 25 words.
-- Confirm bailiff_intro is first-person spoken words with no character names in the text.
+- Confirm bailiff_intro is first-person spoken words and does not name the bailiff.
 </verification_loop>
 
 <tool_persistence_rules>
@@ -129,23 +129,7 @@ Before finalizing:
 - Do not stop at the first plausible answer.
 - Look for second-order issues, edge cases, and missing constraints in the prosecution arguments.
 - Perform at least one verification step before finalizing.
-</dig_deeper_nudge>
-
-# Examples
-
-<trial_context id="example-1">
-proposal: ...
-audience: ...
-whyNow: ...
-tradeoff: ...
-charge: ...
-case_title: ...
-</trial_context>
-
-<assistant_response id="example-1">
-bailiff_intro: one first-person spoken sentence introducing prosecution phase; max 25 words; no character names
-opening, arguments[0..2], closing: prosecutor voice grounded in intake and charge; exactly 3 arguments
-</assistant_response>`;
+</dig_deeper_nudge>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -280,7 +264,7 @@ Generate the prosecution section for this Feature Court trial.
 <critical_rule>
 arguments must contain exactly 3 strings. No more, no fewer.
 bailiff_intro must be exactly one sentence, maximum 25 words.
-bailiff_intro must be spoken first-person words only — never third-person narration. Do not speak any character name in bailiff_intro.
+bailiff_intro must be spoken first-person words only — never third-person narration. Do not name the bailiff in bailiff_intro.
 Do not output character names or titles — those are fixed in the product, not model output.
 </critical_rule>
 

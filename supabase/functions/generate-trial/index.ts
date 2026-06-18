@@ -7,11 +7,11 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-/** Developer instructions — critical rules first, then Identity → Instructions → Examples. Re-sent every chained call. */
+/** Developer instructions — critical rules first, then Identity → Instructions. Re-sent every chained call. */
 const SYSTEM_PROMPT = `<critical_rules>
 Output only the JSON fields required by the current step schema named in the user message.
 Every bailiff_reaction: one sentence, first-person spoken words only.
-The UI shows the speaker name separately — do not speak any character name in bailiff_reaction.
+The UI labels the bailiff separately — do not name the bailiff in bailiff_reaction.
 Judge Ship Itwell presides. The bailiff does NOT preside.
 No third-person narration, stage directions, or narrator voice in bailiff fields.
 Prosecution arguments: exactly 3 strings. Defense arguments: exactly 3 strings.
@@ -114,17 +114,7 @@ Before finalizing:
 - Do not stop at the first plausible answer.
 - Look for second-order issues, edge cases, and missing constraints.
 - Perform at least one verification step before finalizing.
-</dig_deeper_nudge>
-
-# Examples
-
-<user_message id="example-1">
-trial_intake and step task with output_format naming the step schema
-</user_message>
-
-<assistant_response id="example-1">
-JSON matching only the named step schema; all fields grounded in user message context; spoken fields first person with no character names
-</assistant_response>`;
+</dig_deeper_nudge>`;
 
 const RL_WINDOW_MS = 60_000;
 const RL_MAX_PER_WINDOW = 10;
@@ -444,7 +434,7 @@ Generate cross-examination questions for this Feature Court trial.
 <critical_rule>
 cross_examination must contain exactly 2 questions.
 Each question must have exactly 3 choices with label, text, and bailiff_reaction.
-bailiff_reaction: spoken first-person words only — never third-person narration. Do not speak any character name in bailiff_reaction values.
+bailiff_reaction: spoken first-person words only — never third-person narration. Do not name the bailiff in bailiff_reaction values.
 Questions must probe the judge's conviction on this specific case.
 </critical_rule>
 
