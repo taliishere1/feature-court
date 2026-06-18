@@ -5,13 +5,14 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
-import { StageProgress, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, SiteBrand, SiteHomeLink } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { pendoTrack } from "@/lib/pendo-track";
 import { registerVisitor } from "@/lib/visitor";
 import { StageGenerationError } from "@/components/stage-generation-error";
+import { CAST } from "@/lib/cast";
 
 const PROGRESS_STEPS = [
   { message: "The court is assembling...", sub: "Preparing the docket" },
@@ -20,11 +21,6 @@ const PROGRESS_STEPS = [
   { message: "Preparing the defense...", sub: "Defense Attorney Edward \"Edge\" Case is building a response" },
   { message: "Drafting cross-examination...", sub: "Preparing questions for the witness" },
   { message: "Weighing the verdicts...", sub: "The bench is considering possible outcomes" },
-];
-
-const FALLBACK_ARRAIGNMENT_DIALOGUES = [
-  "All rise for the Honorable Judge Ship Itwell...",
-  "The court is now in session. The Honorable Judge Ship Itwell presiding.",
 ];
 
 function ArraignmentContent() {
@@ -50,10 +46,9 @@ function ArraignmentContent() {
     setRetryKey((k) => k + 1);
   }, []);
 
-  const bailiffDialogues =
-    trial?.charge_data?.bailiff_dialogue?.filter(Boolean).length
-      ? trial.charge_data.bailiff_dialogue!.filter(Boolean)
-      : FALLBACK_ARRAIGNMENT_DIALOGUES;
+  const bailiffDialogues = trial?.charge_data?.bailiff_dialogue?.filter((line) => line?.trim()) ?? [];
+  const hasDialogue = bailiffDialogues.length > 0;
+  const showCharge = revealed && (!hasDialogue || dialogueDismissed);
 
   const handleDialogueComplete = useCallback(() => {
     if (dialogueIndex < bailiffDialogues.length - 1) {
@@ -122,8 +117,9 @@ function ArraignmentContent() {
           const step = converted.generationStep ?? 0;
           const isReady = step >= 5 || (converted.charge && converted.charge.length > 0 && converted.case_title && converted.case_title.length > 0);
           if (isReady) {
+            const dialogues = converted.charge_data?.bailiff_dialogue?.filter((line) => line?.trim()) ?? [];
             setDialogueIndex(0);
-            setDialogueDismissed(false);
+            setDialogueDismissed(dialogues.length === 0);
             setShowContinue(false);
             setRevealed(true);
             setLoading(false);
@@ -267,13 +263,13 @@ function ArraignmentContent() {
 
       <header className="border-b border-court-800 relative z-40">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-display text-base text-gold-500">
-            <CourtSeal className="w-5 h-5 text-gold-500" />
-            FEATURE COURT
-          </Link>
-          <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em]">
-            Docket No. {trial.id.slice(0, 8).toUpperCase()}
-          </span>
+          <SiteBrand />
+          <div className="flex items-center gap-4">
+            <SiteHomeLink />
+            <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em] hidden sm:inline">
+              Docket No. {trial.id.slice(0, 8).toUpperCase()}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -285,8 +281,8 @@ function ArraignmentContent() {
 
           <StageProgress current={1} />
 
-          {/* Charge — visible as soon as data loads; bailiff plays as bottom overlay */}
-          <div className={`text-center mb-6 transition-all duration-300 ${revealed ? "opacity-100" : "opacity-0"}`}>
+          {/* Charge — after bailiff opening dialogue completes */}
+          <div className={`text-center mb-6 transition-all duration-300 ${showCharge ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
             <div className="animate-dramatic-zoom">
               <div className="parchment p-6 max-w-2xl mx-auto">
                 <div className="flex items-center justify-center gap-2 mb-3">
@@ -334,12 +330,12 @@ function ArraignmentContent() {
         </div>
       </main>
 
-      {revealed && !dialogueDismissed && (
+      {revealed && hasDialogue && !dialogueDismissed && (
         <DialogueBox
-          portrait={<BailiffPortrait size="medium" reaction="neutral" />}
-          name="Bailiff Sprint"
+          portrait={<BailiffPortrait size="thumb" reaction="neutral" />}
+          name={CAST.bailiff.name}
           text={bailiffDialogues[dialogueIndex] ?? ""}
-          color="#a67c00"
+          color={CAST.bailiff.color}
           typingSpeed={25}
           onComplete={handleDialogueComplete}
           showContinue={showContinue}

@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, useReducer } from "react";
+import { useEffect, useState, useRef, useCallback, useReducer, useId } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { SITE } from "@/lib/site";
+import { playGavelClunk } from "@/lib/gavel-sound";
 
 // ─── Ornate Court Seal ───
 
@@ -18,6 +21,70 @@ export function CourtSeal({ className = "w-12 h-12", animated = false }: { class
         priority
       />
     </div>
+  );
+}
+
+// ─── Site chrome ───
+
+export function SiteBrand() {
+  return (
+    <Link href="/" className="flex items-center gap-2 group">
+      <CourtSeal className="w-5 h-5 text-gold-500" />
+      <span className="font-display text-sm font-black text-gold-500 tracking-tight uppercase">
+        FEATURE COURT
+      </span>
+    </Link>
+  );
+}
+
+export function SiteNavLinks() {
+  return (
+    <nav className="flex items-center gap-4 sm:gap-6" aria-label="Site navigation">
+      <Link href="/" className="text-sm text-court-400 hover:text-court-200 transition-colors">
+        Home
+      </Link>
+      <Link href="/guide" className="text-sm text-court-400 hover:text-court-200 transition-colors">
+        Guide
+      </Link>
+      <Link href="/gallery" className="text-sm text-court-400 hover:text-court-200 transition-colors">
+        Verdicts
+      </Link>
+    </nav>
+  );
+}
+
+export function SiteHomeLink() {
+  return (
+    <Link
+      href="/"
+      className="text-[10px] text-court-400 hover:text-court-200 font-mono uppercase tracking-[0.15em] transition-colors"
+    >
+      Home
+    </Link>
+  );
+}
+
+export function SiteFooter({ end }: { end?: React.ReactNode }) {
+  return (
+    <footer className="border-t border-court-800 px-6 sm:px-8 py-4 relative z-10">
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap text-court-600 text-xs">
+        <span className="font-mono uppercase tracking-[0.15em]">Feature Court</span>
+        <div className="flex items-center gap-4 flex-wrap">
+          <span>
+            Built by{" "}
+            <a
+              href={SITE.creatorUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-court-400 hover:text-court-200 transition-colors"
+            >
+              {SITE.creatorName}
+            </a>
+          </span>
+          {end}
+        </div>
+      </div>
+    </footer>
   );
 }
 
@@ -145,6 +212,7 @@ export function InteractiveGavel({ onStrike, className = "", width = 72, height 
 
   const handleClick = () => {
     setStriking(true);
+    playGavelClunk();
     onStrike?.();
     setTimeout(() => setStriking(false), 600);
   };
@@ -262,12 +330,12 @@ export function SignatureBlock({
   date,
   interactive = false,
   onSign,
-  judgeName = "Judge Ship Itwell",
+  printedName = "Hon. Ship Itwell",
 }: {
   date?: string;
   interactive?: boolean;
   onSign?: () => void;
-  judgeName?: string;
+  printedName?: string;
 }) {
   const today = date || new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -282,40 +350,47 @@ export function SignatureBlock({
     onSign?.();
   };
 
+  const signatureMark = (
+    <p className="font-signature text-[2.75rem] text-gold-400 leading-none tracking-normal pt-1">
+      Ship Itwell
+    </p>
+  );
+
   return (
     <div className="mt-6 pt-4 border-t border-court-700">
       <p className="font-legal text-court-500 text-xs italic mb-4">
         So ordered this day, {today}.
       </p>
-      <div className="flex items-end gap-4">
-        <div className="flex-1 min-h-[2.5rem]">
-          {interactive ? (
-            <button
-              onClick={handleSign}
-              disabled={signed}
-              className={`block text-left w-full cursor-pointer ${signed ? "" : "group"}`}
-            >
-              {signed ? (
-                <p className="font-serif italic text-2xl text-gold-400 leading-none tracking-wide">
-                  Ship Itwell
-                </p>
-              ) : (
-                <div className="border border-dashed border-court-600 rounded-sm px-4 py-2 group-hover:border-gold-500/50 group-hover:bg-gold-500/5 transition-all duration-200">
-                  <span className="font-mono text-[10px] text-court-500 group-hover:text-gold-500 uppercase tracking-[0.15em] transition-colors">
-                    Click to sign
-                  </span>
-                </div>
-              )}
-            </button>
-          ) : (
-            <p className="font-serif italic text-2xl text-gold-400 leading-none tracking-wide">
-              Ship Itwell
-            </p>
-          )}
+      <div className="flex items-center gap-4">
+        <div className="flex-[3] min-w-0">
+          <div className="min-h-[2.5rem]">
+            {interactive ? (
+              <button
+                onClick={handleSign}
+                disabled={signed}
+                className={`block text-left w-full cursor-pointer ${signed ? "" : "group"}`}
+              >
+                {signed ? (
+                  signatureMark
+                ) : (
+                  <div className="border border-dashed border-court-600 rounded-sm px-4 py-2 group-hover:border-gold-500/50 group-hover:bg-gold-500/5 transition-all duration-200">
+                    <span className="font-mono text-[10px] text-court-500 group-hover:text-gold-500 uppercase tracking-[0.15em] transition-colors">
+                      Click to sign
+                    </span>
+                  </div>
+                )}
+              </button>
+            ) : (
+              signatureMark
+            )}
+          </div>
+          <p className="font-serif text-court-200 text-sm mt-3">{printedName}</p>
+          <p className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em] mt-0.5">
+            Presiding Judge
+          </p>
         </div>
-        <div className="text-right shrink-0">
-          <p className="font-serif text-court-200 text-sm">{judgeName}</p>
-          <p className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em]">Presiding Judge</p>
+        <div className="flex-[1] flex justify-center items-center shrink-0">
+          <JudgePortrait size="thumb" reaction="neutral" />
         </div>
       </div>
     </div>
@@ -884,12 +959,13 @@ function PortraitHead({ expression = "neutral", color }: { expression: PortraitR
   );
 }
 
-type PortraitSize = "full" | "medium" | "thumb";
+type PortraitSize = "full" | "medium" | "thumb" | "mini";
 
 const PORTRAIT_DIMS: Record<PortraitSize, { w: number; h: number }> = {
   full: { w: 220, h: 244 },
   medium: { w: 140, h: 155 },
   thumb: { w: 100, h: 110 },
+  mini: { w: 52, h: 58 },
 };
 
 export function ProsecutorPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: PortraitSize }) {
@@ -961,9 +1037,9 @@ export function BailiffPortrait({ reaction = "neutral", size = "full" }: { react
   );
 }
 
-export function JudgePortrait({ reaction = "neutral" }: { reaction?: PortraitReaction }) {
+export function JudgePortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: PortraitSize }) {
   const color = "#6b7280";
-  const { w, h } = PORTRAIT_DIMS.full;
+  const { w, h } = PORTRAIT_DIMS[size];
   return (
     <CharacterImage src="/images/judge.png" alt="Judge" width={w} height={h}>
       <svg width={w} height={h} viewBox="0 0 84 96" className="shrink-0">
@@ -1046,7 +1122,7 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
       <div className="dialogue-box-inner">
         <div className="dialogue-box-top">
           <div
-            className="w-24 h-24 rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
+            className="w-[72px] h-[72px] rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
             style={{ borderColor: `${color}40` }}
           >
             {portrait}
@@ -1089,26 +1165,27 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
 // ─── Objection Overlay (Full-Screen) ───
 
 export function ObjectionOverlay({
-  active,
+  trigger,
   side = "prosecution",
+  duration = 1000,
   onComplete,
 }: {
-  active: boolean;
+  trigger: number;
   side?: "prosecution" | "defense";
+  duration?: number;
   onComplete?: () => void;
 }) {
   const [showing, dispatchOverlay] = useReducer(stampReducer, false);
 
   useEffect(() => {
-    if (active) {
-      dispatchOverlay({ type: 'SHOW' });
-      const timer = setTimeout(() => {
-        dispatchOverlay({ type: 'HIDE' });
-        onComplete?.();
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [active, onComplete]);
+    if (trigger === 0) return;
+    dispatchOverlay({ type: "SHOW" });
+    const timer = setTimeout(() => {
+      dispatchOverlay({ type: "HIDE" });
+      onComplete?.();
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [trigger, duration, onComplete]);
 
   if (!showing) return null;
 
@@ -1127,7 +1204,7 @@ export function ObjectionOverlay({
           <div className={`border-4 ${borderColor} px-8 py-4`}
             style={{ background: side === "prosecution" ? "rgba(185,28,28,0.1)" : "rgba(37,99,235,0.1)" }}>
             <p className="font-serif text-5xl sm:text-6xl font-black tracking-[0.2em]">
-              {side === "prosecution" ? "OBJECTION!" : "HOLD IT!"}
+              OBJECTION!
             </p>
           </div>
         </div>
@@ -1137,6 +1214,96 @@ export function ObjectionOverlay({
 }
 
 // ─── Evidence Card ───
+
+export function ExhibitEngagementPrompt({
+  engaged,
+  side,
+}: {
+  engaged: boolean;
+  side: "prosecution" | "defense";
+}) {
+  if (engaged) return null;
+
+  const subcopy =
+    side === "prosecution"
+      ? "Tap a card below — the defense will object, then you can proceed."
+      : "Tap a card below to interact with the evidence, then you can proceed.";
+
+  return (
+    <div
+      className="mb-3 rounded-sm border border-gold-500/70 bg-gold-500/15 px-4 py-3 text-center shadow-[0_0_20px_rgba(245,158,11,0.15)]"
+      role="status"
+    >
+      <p className="text-gold-400 text-xs font-bold uppercase tracking-wide">Object to an exhibit to continue</p>
+      <p className="text-court-400 text-xs mt-1.5 font-legal leading-snug">{subcopy}</p>
+    </div>
+  );
+}
+
+export function ExhibitListFrame({
+  engaged,
+  children,
+}: {
+  engaged: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`space-y-2 transition-all duration-300 ${
+        engaged ? "" : "rounded-sm ring-2 ring-gold-500/45 ring-offset-2 ring-offset-court-950 p-1"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function StageProceedLink({
+  engaged,
+  href,
+  label,
+}: {
+  engaged: boolean;
+  href: string;
+  label: string;
+}) {
+  const lockedMessage = "Object to an exhibit above to unlock";
+  const lockedHintId = useId();
+
+  if (engaged) {
+    return (
+      <Link
+        href={href}
+        className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+      >
+        {label}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
+          <path d="M5 12h14M12 5l7 7-7 7" />
+        </svg>
+      </Link>
+    );
+  }
+
+  return (
+    <div className="inline-flex flex-col items-center gap-2 max-w-sm mx-auto">
+      <button
+        type="button"
+        disabled
+        aria-describedby={lockedHintId}
+        className="inline-flex items-center gap-2 px-8 py-3 bg-court-800/90 border border-court-600 text-court-500 font-semibold rounded-sm text-base cursor-not-allowed select-none disabled:opacity-100"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-70" aria-hidden>
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+        {label}
+      </button>
+      <p id={lockedHintId} className="text-gold-400 text-sm font-medium text-center leading-snug">
+        {lockedMessage}
+      </p>
+    </div>
+  );
+}
 
 interface EvidenceCardProps {
   exhibit: string;

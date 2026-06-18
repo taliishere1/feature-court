@@ -1,5 +1,170 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { callOpenAIResponses } from "../_shared/openai-responses.ts";
+import { normalizeVisitorId, validateIntake } from "../_shared/edge-http.ts";
+
+const PROSECUTOR_CHARACTER = {
+  name: "Prosecutor Mary T. Bug",
+  title: "Staff PM · Bug hunter since day one",
+} as const;
+
+const DEFENSE_CHARACTER = {
+  name: 'Defense Attorney Edward "Edge" Case',
+  title: "Principal PM · Edge case specialist",
+} as const;
+
+/** Developer `instructions` — identity, rules, few-shot examples (static, cache-friendly). */
+const SYSTEM_PROMPT = `# Identity
+
+You generate the arraignment opening for Feature Court — a theatrical product-decision trial.
+Bailiff Sprint speaks bailiff_dialogue aloud to the courtroom. Judge Ship Itwell presides but never speaks in bailiff_dialogue.
+Tone: dry, theatrical, rushing the docket. Procedural, no sentiment.
+
+<instruction_priority>
+- User message task instructions override default style unless they conflict with schema or safety.
+- Safety, honesty, and privacy constraints do not yield.
+- Newer user instructions override older ones; preserve non-conflicting earlier instructions.
+</instruction_priority>
+
+<default_follow_through_policy>
+- Produce the required JSON in one response. Do not ask clarifying questions. Do not omit fields.
+</default_follow_through_policy>
+
+# Instructions
+
+<bailiff_dialogue_contract>
+The UI renders bailiff_dialogue as TWO sequential dialogue boxes. Each string is SPOKEN WORDS in first person.
+NEVER put "Bailiff Sprint" inside bailiff_dialogue text — the UI shows the speaker name.
+
+BOX 1 — bailiff_dialogue[0] (court intro ONLY):
+- Call the court to order. Feature Court is in session. Name Judge Ship Itwell as presiding judge.
+- One sentence, max 25 words.
+- FORBIDDEN in box 1: case facts, proposal details, prosecution, defense, cross-examination, or any case summary.
+
+BOX 2 — bailiff_dialogue[1] (short case summary ONLY):
+- One-sentence preview of what this trial is about, grounded in intake (proposal, audience, whyNow, tradeoff).
+- One sentence, max 25 words.
+- FORBIDDEN in box 2: introducing the prosecution, introducing the defense, trial phase announcements, "hear the prosecution", or anything about what happens next in the trial.
+
+FORBIDDEN everywhere: third-person narration, stage directions, narrator voice.
+</bailiff_dialogue_contract>
+
+<grounding_rules>
+- Base case_title, charge, and bailiff_dialogue only on intake in the user message.
+- Do not invent companies, metrics, or market events not in intake.
+</grounding_rules>
+
+<output_contract>
+- Return valid JSON matching charge_scene schema only. No markdown fences or extra fields.
+</output_contract>
+
+<structured_output_contract>
+- Output only the requested JSON. Balanced brackets. No invented schema fields.
+</structured_output_contract>
+
+<verbosity_controls>
+- Concise, information-dense. Do not repeat the user's request.
+</verbosity_controls>
+
+<completeness_contract>
+- Incomplete until bailiff_dialogue has exactly 2 strings, plus case_title and charge.
+</completeness_contract>
+
+<verification_loop>
+Before finalizing: bailiff_dialogue length 2; no "Bailiff Sprint" in dialogue; line 0 calls order + Judge Ship Itwell; line 1 uses intake specifics; charge references proposal, audience, whyNow, tradeoff.
+</verification_loop>
+
+# Examples
+
+Few-shot pattern only — generate NEW dialogue unique to the actual intake in the user message.
+
+<example intake="Launch a mobile app / power users / competitors moving / six months of eng">
+<bailiff_dialogue good="true">
+["All rise — Feature Court is in session, the Honorable Judge Ship Itwell presiding.", "The docket calls a mobile app for power users while competitors move — let's move this along."]
+</bailiff_dialogue>
+</example>
+
+<example intake="Cut the comments feature / new signups / support costs rising / roadmap delay">
+<bailiff_dialogue good="true">
+["Court is now in session — Judge Ship Itwell presides.", "Before us: killing comments for new signups while support costs climb and the roadmap bends."]
+</bailiff_dialogue>
+</example>
+
+<example>
+<bailiff_dialogue good="false">
+["Bailiff Sprint opening Feature Court under Judge Ship Itwell.", "The bailiff announces a pricing overhaul case."]
+</bailiff_dialogue>
+<why_bad>Third-person narration and character name inside spoken dialogue — NEVER output like this.</why_bad>
+</example>`;
+
+const CHARGE_SCENE_SCHEMA = {
+  type: "object",
+  properties: {
+    bailiff_dialogue: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 2,
+      maxItems: 2,
+    },
+    case_title: { type: "string" },
+    charge: { type: "string" },
+  },
+  required: ["bailiff_dialogue", "case_title", "charge"],
+  additionalProperties: false,
+};
+
+function buildChargeInput(intakeContext: string): string {
+  return `${intakeContext}
+
+<task>
+Generate the arraignment opening: bailiff_dialogue (2 spoken lines), case_title, and charge.
+</task>
+
+<critical_rule>
+bailiff_dialogue: exactly 2 strings. Spoken first-person words only — not narration about the bailiff.
+Never put "Bailiff Sprint" inside bailiff_dialogue values.
+</critical_rule>
+
+<execution_order>
+1. bailiff_dialogue[0]: Call court to order; Judge Ship Itwell presiding. One sentence, max 25 words.
+2. bailiff_dialogue[1]: Introduce this case using proposal, audience, whyNow, tradeoff from trial_intake. One sentence, max 25 words.
+3. case_title: Theatrical name from the proposal.
+4. charge: One dramatic sentence referencing proposal, audience, whyNow, and tradeoff.
+</execution_order>
+
+<edge_cases>
+- Sparse intake: ground all outputs on what is provided.
+- Every bailiff line must be unique to this intake — not copied from examples.
+</edge_cases>
+
+<output_format>
+JSON matching charge_scene schema only.
+</output_format>`;
+}
+
+async function generateChargeScene(apiKey: string, intakeContext: string) {
+  return callOpenAIResponses({
+    apiKey,
+    instructions: SYSTEM_PROMPT,
+    input: buildChargeInput(intakeContext),
+    schemaName: "charge_scene",
+    schema: CHARGE_SCENE_SCHEMA,
+  });
+}
+
+function parseChargeScene(outputText: string) {
+  const parsed = JSON.parse(outputText);
+  const charge = parsed.charge as string;
+  const case_title = parsed.case_title as string;
+  const bailiff_dialogue = parsed.bailiff_dialogue as string[];
+  if (!charge?.trim() || !case_title?.trim()) {
+    throw new Error("case_title and charge are required");
+  }
+  if (!Array.isArray(bailiff_dialogue) || bailiff_dialogue.length !== 2) {
+    throw new Error("bailiff_dialogue must contain exactly 2 lines");
+  }
+  return { charge, case_title, bailiff_dialogue };
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,7 +181,7 @@ function json(body: unknown, status = 200): Response {
 
 // Lightweight per-IP rate limit held in isolate memory. Fail-open: any error or
 // missing IP allows the request. Caps abusive bursts against the public,
-// no-auth function URL (each call spends a gpt-5.4 generation) without adding
+// no-auth function URL (each call spends a gpt-5.4-mini generation) without adding
 // auth infrastructure. Not a global limit, but real friction for scripted abuse.
 const RL_WINDOW_MS = 60_000;
 const RL_MAX_PER_WINDOW = 10;
@@ -63,26 +228,6 @@ function getPublishableKey(): string {
 function getSupabaseClient() {
   const url = Deno.env.get("SUPABASE_URL") ?? "";
   return createClient(url, getPublishableKey());
-}
-
-function extractOutputText(payload: Record<string, unknown>): string {
-  if (typeof payload.output_text === "string" && payload.output_text) {
-    return payload.output_text;
-  }
-  const output = payload.output as Array<Record<string, unknown>> | undefined;
-  if (Array.isArray(output)) {
-    for (const item of output) {
-      const content = item.content as Array<Record<string, unknown>> | undefined;
-      if (Array.isArray(content)) {
-        for (const c of content) {
-          if (c.type === "output_text" && typeof c.text === "string") {
-            return c.text;
-          }
-        }
-      }
-    }
-  }
-  return "";
 }
 
 interface IntakeForm {
@@ -133,73 +278,24 @@ serve(async (req: Request) => {
     return json({ error: "Missing required fields" }, 400);
   }
 
+  const intakeError = validateIntake(intake);
+  if (intakeError) {
+    return json({ error: intakeError }, 400);
+  }
+  visitorId = normalizeVisitorId(visitorId);
+
   try {
     const trial_id = crypto.randomUUID();
 
-    const intakeContext = `Product Proposal: "${intake.proposal}"
-Target Audience: "${intake.audience}"
-Timing/Rationale: "${intake.whyNow}"
-Tradeoff: "${intake.tradeoff}"`;
+    const intakeContext = `<trial_intake>
+proposal: ${intake.proposal}
+audience: ${intake.audience}
+whyNow: ${intake.whyNow}
+tradeoff: ${intake.tradeoff}
+</trial_intake>`;
 
-    const body = {
-      model: "gpt-5.4",
-      reasoning: { effort: "low" },
-      max_output_tokens: 8000,
-      instructions: `You are the Feature Court AI — a theatrical courtroom drama generator for product decisions. You write the BAILIFF "Bailiff Sprint" — dry, theatrical, always rushing the docket. Every response must reference the actual proposal, audience, timing, and tradeoff provided. Be specific, not generic.`,
-      input: `${intakeContext}
-
-You are generating the OPENING SCENE of a Feature Court trial.
-
-1. "bailiff_dialogue" — exactly 4 strings. Bailiff Sprint announces the court opening, calls the case, presents the charge, passes the floor. Each line theatrical and specific to THIS proposal.
-2. "case_title" — a theatrical court case name like "The People v. [short description of proposal]".
-3. "charge" — a single dramatic sentence describing what this proposal "stands charged" with, referencing the specific proposal, audience, timing, and tradeoff.`,
-      text: {
-        format: {
-          type: "json_schema",
-          name: "charge_scene",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              bailiff_dialogue: { type: "array", items: { type: "string" } },
-              case_title: { type: "string" },
-              charge: { type: "string" },
-            },
-            required: ["bailiff_dialogue", "case_title", "charge"],
-            additionalProperties: false,
-          },
-        },
-      },
-    };
-
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`OpenAI API error ${response.status}: ${errBody}`);
-    }
-
-    const data = await response.json();
-    if (data.status === "incomplete") {
-      throw new Error(`OpenAI response incomplete: ${data.incomplete_details?.reason ?? "unknown"}`);
-    }
-
-    const contentText = extractOutputText(data);
-    if (!contentText) throw new Error("No content in OpenAI response");
-
-    const parsed = JSON.parse(contentText);
-    const charge = parsed.charge as string;
-    const case_title = parsed.case_title as string;
-    const bailiff_dialogue = (parsed.bailiff_dialogue as string[]) || [];
-    const conversation_id = data.id as string;
-
+    const { id: conversation_id, outputText } = await generateChargeScene(apiKey, intakeContext);
+    const { charge, case_title, bailiff_dialogue } = parseChargeScene(outputText);
     // Register visitor if provided
     if (visitorId) {
       await supabase.from("visitors").upsert({ id: visitorId }, { onConflict: "id", ignoreDuplicates: true });
@@ -216,8 +312,8 @@ You are generating the OPENING SCENE of a Feature Court trial.
       created_at: new Date().toISOString(),
       is_sample: isSample,
       visitor_id: visitorId,
-      prosecution: { opening: "", arguments: [], closing: "", character: { name: "", title: "" }, bailiff_intro: "" },
-      defense: { opening: "", arguments: [], closing: "", character: { name: "", title: "" }, bailiff_intro: "" },
+      prosecution: { opening: "", arguments: [], closing: "", character: PROSECUTOR_CHARACTER, bailiff_intro: "" },
+      defense: { opening: "", arguments: [], closing: "", character: DEFENSE_CHARACTER, bailiff_intro: "" },
       cross_examination: [],
       verdicts: {
         ship: { sentence: "", real_risk: "", strongest_ignored_argument: "", test_first: "" },

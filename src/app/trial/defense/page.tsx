@@ -4,11 +4,12 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay, ExhibitEngagementPrompt, ExhibitListFrame, StageProceedLink, SiteHomeLink } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasDefense } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { StageGenerationError } from "@/components/stage-generation-error";
+import { CAST } from "@/lib/cast";
 
 function DefenseContent() {
   const searchParams = useSearchParams();
@@ -16,13 +17,16 @@ function DefenseContent() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [objectionActive, setObjectionActive] = useState(false);
+  const [exhibitEngaged, setExhibitEngaged] = useState(false);
+  const [objectionTrigger, setObjectionTrigger] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
 
   const handleRetry = useCallback(() => {
     setLoadError(null);
     setLoading(true);
+    setExhibitEngaged(false);
+    setObjectionTrigger(0);
     setRetryKey((k) => k + 1);
   }, []);
 
@@ -95,10 +99,9 @@ function DefenseContent() {
   }, [searchParams, retryKey]);
 
   const handleEvidenceClick = useCallback(() => {
-    if (objectionActive) return;
-    setObjectionActive(true);
-    setTimeout(() => setObjectionActive(false), 900);
-  }, [objectionActive]);
+    setExhibitEngaged(true);
+    setObjectionTrigger((n) => n + 1);
+  }, []);
 
   if (loadError) {
     const id = searchParams.get("id");
@@ -120,13 +123,13 @@ function DefenseContent() {
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
-  const defenseName = trial.defense.character?.name || "Defense Attorney Edward \"Edge\" Case";
-  const defenseTitle = trial.defense.character?.title || "Principal PM · Edge case specialist";
+  const defenseName = trial.defense.character?.name ?? CAST.defense.name;
+  const defenseTitle = trial.defense.character?.title ?? CAST.defense.title;
 
   return (
     <div className="min-h-screen flex flex-col wood-panel relative">
       <CourtroomBackground opacity={0.1} />
-      <ObjectionOverlay active={objectionActive} side="defense" />
+      <ObjectionOverlay trigger={objectionTrigger} side="defense" />
 
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -136,7 +139,10 @@ function DefenseContent() {
             </svg>
             <span className="text-[10px] text-court-400 group-hover:text-court-200 font-mono uppercase tracking-[0.15em] transition-colors">Back</span>
           </Link>
-          <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">The Defense</span>
+          <div className="flex items-center gap-4">
+            <SiteHomeLink />
+            <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">The Defense</span>
+          </div>
         </div>
       </header>
 
@@ -161,42 +167,40 @@ function DefenseContent() {
           )}
 
           {revealed && (
-            <div className="parchment-ruled p-4 mb-4 animate-fade-in-up max-w-lg mx-auto">
-              <span className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 block mb-1 relative z-10">Opening Statement</span>
-              <p className="text-court-200 text-base leading-relaxed font-legal italic relative z-10">
+            <div className="parchment-ruled p-4 mb-4 animate-fade-in-up max-w-lg mx-auto w-full">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
+              <p className="text-court-200 text-xs leading-relaxed font-legal italic relative z-10">
                 &ldquo;{trial.defense.opening}&rdquo;
               </p>
             </div>
           )}
 
           {revealed && (
-            <div className="space-y-2 max-w-2xl mx-auto">
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-court-500 text-center mb-3">Click an exhibit to hold it</p>
-              {trial.defense.arguments.map((arg, i) => (
-                <EvidenceCard
-                  key={i}
-                  exhibit={String(i + 1)}
-                  side="defense"
-                  index={i}
-                  onClick={handleEvidenceClick}
-                >
-                  {arg}
-                </EvidenceCard>
-              ))}
+            <div className="max-w-lg mx-auto w-full">
+              <ExhibitEngagementPrompt engaged={exhibitEngaged} side="defense" />
+              <ExhibitListFrame engaged={exhibitEngaged}>
+                {trial.defense.arguments.map((arg, i) => (
+                  <EvidenceCard
+                    key={i}
+                    exhibit={String(i + 1)}
+                    side="defense"
+                    index={i}
+                    onClick={handleEvidenceClick}
+                  >
+                    {arg}
+                  </EvidenceCard>
+                ))}
+              </ExhibitListFrame>
             </div>
           )}
 
           {revealed && (
             <div className="text-center mt-6 animate-fade-in-up">
-              <Link
+              <StageProceedLink
+                engaged={exhibitEngaged}
                 href={`/trial/cross?id=${trial.id}`}
-                className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
-              >
-                Cross-examination
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </Link>
+                label="Cross-examination"
+              />
             </div>
           )}
         </div>
