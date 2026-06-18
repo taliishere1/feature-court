@@ -251,13 +251,13 @@ export function CounselStageLayout({
   );
 }
 
-export function StageProgress({ current }: { current: number }) {
+export function StageProgress({ current, className = "" }: { current: number; className?: string }) {
   return (
-    <div className="w-full max-w-xl lg:max-w-4xl xl:max-w-5xl mx-auto mb-10">
-      <div className="flex items-center justify-between">
+    <div className={`w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto mb-10 ${className}`}>
+      <div className="flex items-center justify-between gap-1 sm:gap-2">
         {STAGES.map((stage, i) => (
-          <div key={stage.num} className="flex items-center">
-            <div className="flex flex-col items-center">
+          <div key={stage.num} className="flex items-center flex-1 min-w-0 last:flex-none">
+            <div className="flex flex-col items-center w-full min-w-0">
               <div
                 className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-mono transition-all duration-700 ${
                   stage.num <= current
@@ -274,7 +274,7 @@ export function StageProgress({ current }: { current: number }) {
                 )}
               </div>
               <span
-                className={`text-[9px] font-mono uppercase tracking-wider mt-1.5 transition-all duration-500 ${
+                className={`text-[8px] sm:text-[9px] font-mono uppercase tracking-wide sm:tracking-wider mt-1.5 transition-all duration-500 text-center leading-tight ${
                   stage.num === current ? "text-gold-500" : "text-court-600"
                 }`}
               >
@@ -282,14 +282,14 @@ export function StageProgress({ current }: { current: number }) {
               </span>
             </div>
             {i < STAGES.length - 1 && (
-              <div className="flex items-center mx-2">
+              <div className="flex items-center flex-1 min-w-[0.5rem] mx-1 sm:mx-2">
                 {stage.num < current ? (
-                  <svg width="20" height="12" viewBox="0 0 20 12" className="text-gold-500/40">
+                  <svg width="20" height="12" viewBox="0 0 20 12" className="text-gold-500/40 w-full max-w-[4rem] mx-auto">
                     <rect x="0" y="5" width="12" height="2" rx="1" fill="currentColor" />
                     <path d="M14 2 L18 6 L14 10" stroke="currentColor" strokeWidth="1.5" fill="none" />
                   </svg>
                 ) : (
-                  <div className="w-14 sm:w-16 lg:w-20 xl:w-28 h-px bg-court-700" />
+                  <div className="w-full h-px bg-court-700" />
                 )}
               </div>
             )}

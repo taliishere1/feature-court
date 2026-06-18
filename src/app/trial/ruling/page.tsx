@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { StageProgress, ScrollworkBorder, CourtroomBackground, JudgePortrait, SiteHomeLink, CounselStageLayout, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
+import { StageProgress, ScrollworkBorder, CourtroomBackground, JudgePortrait, SiteHomeLink, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasVerdicts } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -217,24 +217,109 @@ function RulingContent() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col min-h-0 px-6 py-4 pb-8 relative z-10">
-        <div className={`${trialStageShellClass} flex-1 flex flex-col min-h-0 animate-page-enter`}>
-          <div className="text-center mb-2 shrink-0">
+      <main className="flex-1 flex flex-col px-4 sm:px-6 py-5 sm:py-8 pb-10 relative z-10">
+        <div className={`${trialStageShellClass} flex-1 flex flex-col animate-page-enter`}>
+          <div className="text-center mb-3 shrink-0">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-gold-500">Stage 5 of 5</span>
           </div>
 
-          <div className="shrink-0">
-            <StageProgress current={5} />
+          <div className="shrink-0 mb-6 sm:mb-8">
+            <StageProgress current={5} className="mb-0" />
           </div>
 
-          <div className="flex-1 min-h-0 mt-2">
-          <CounselStageLayout
-            portrait={<JudgePortrait size="medium" reaction="neutral" />}
-            portraitLarge={<JudgePortrait size="full" reaction="neutral" />}
-            name={CAST.judge.name}
-            title="Presiding Judge"
-            footer={
-              <div className="animate-fade-in-up flex flex-col items-center justify-center gap-3 w-full">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:gap-10 xl:gap-14 flex-1 min-h-0">
+            {/* Judge — compact sidebar, not competing for vertical space with options */}
+            <aside className="shrink-0 mx-auto lg:mx-0 lg:w-52 xl:w-60">
+              <div className="flex flex-col items-center gap-3 border border-court-700 rounded-sm px-4 py-4 bg-court-900/60 text-center">
+                <JudgePortrait size="medium" reaction="neutral" />
+                <div>
+                  <h2 className="font-serif text-sm lg:text-base text-court-100 leading-snug">{CAST.judge.name}</h2>
+                  <p className="text-court-600 text-[10px] font-mono uppercase tracking-[0.15em] mt-1">Presiding Judge</p>
+                </div>
+              </div>
+            </aside>
+
+            {/* Ruling options — full width, vertical stack with room to breathe */}
+            <div className="flex-1 min-w-0 flex flex-col mt-6 lg:mt-0 w-full">
+              <div className="text-center lg:text-left animate-fade-in-up mb-5 sm:mb-6">
+                <h1 className="font-display text-xl sm:text-2xl lg:text-[1.65rem] font-bold text-gold-500 mb-2">
+                  How do you rule, Your Honor?
+                </h1>
+                <p className="text-court-400 text-sm font-legal">
+                  Case: <span className="text-court-200">{trial.case_title}</span>
+                </p>
+                {!rulingLocked && selected && (
+                  <p className="text-court-500 text-xs mt-2 font-legal italic">
+                    Select a different ruling anytime before you read the verdict.
+                  </p>
+                )}
+              </div>
+
+              {rulingLocked && (
+                <div
+                  className="rounded-sm border border-gold-500/60 bg-gold-500/10 px-4 py-3 text-center lg:text-left mb-5"
+                  role="status"
+                >
+                  <p className="text-gold-300 text-sm font-semibold">
+                    Ruling recorded: {lockedLabel}
+                  </p>
+                  <p className="text-court-300 text-xs mt-1 font-legal italic">
+                    The court&apos;s verdict is final for this case.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 sm:gap-4 flex-1">
+                {RULING_OPTIONS.map((option, i) => {
+                  const isSelected = selected === option.key;
+                  const verdict = trial.verdicts?.[option.key];
+                  const label = verdict?.label ?? option.label;
+                  const description = verdict?.description ?? option.description;
+                  const sentence = verdict?.sentence ?? option.sentence;
+                  return (
+                    <ScrollworkBorder key={option.key}>
+                      <button
+                        type="button"
+                        onClick={() => { if (!rulingLocked) setSelected(option.key); }}
+                        disabled={rulingLocked}
+                        className={`w-full border rounded-sm text-left transition-all duration-200 animate-fade-in-up ${
+                          rulingLocked ? "cursor-default" : "cursor-pointer"
+                        } ${
+                          isSelected
+                            ? "border-gold-500 bg-gold-500/10 shadow-[0_0_20px_rgba(212,175,55,0.12)]"
+                            : `border-court-700 bg-court-900/50 ${rulingLocked ? "opacity-60" : option.bgClass + " hover:border-court-500 hover:bg-court-800/30"}`
+                        }`}
+                        style={{ animationDelay: `${i * 0.05}s` }}
+                      >
+                        <div className="p-4 sm:p-5">
+                          <div className="flex items-start gap-3">
+                            <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                              isSelected ? "border-gold-500" : "border-court-500"
+                            }`}>
+                              {isSelected && <div className="w-2 h-2 rounded-full bg-gold-500" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className={`font-serif text-base sm:text-lg font-bold block transition-colors ${
+                                isSelected ? "gold-foil" : "text-court-200"
+                              }`}>
+                                {label}
+                              </span>
+                              <p className="text-court-500 text-xs sm:text-sm mt-1 leading-relaxed">{description}</p>
+                              {isSelected && (
+                                <p className="font-legal text-court-300 text-xs sm:text-sm italic mt-3 pt-3 border-t border-gold-500/20 leading-relaxed">
+                                  &ldquo;{sentence}&rdquo;
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    </ScrollworkBorder>
+                  );
+                })}
+              </div>
+
+              <div className="mt-8 sm:mt-10 pt-6 border-t border-court-800/80 flex flex-col items-center gap-3 shrink-0">
                 {submitError && (
                   <p className="text-sm text-red-400/90 font-legal text-center" role="alert">
                     {submitError}
@@ -243,7 +328,7 @@ function RulingContent() {
                 {rulingLocked && recordedRuling ? (
                   <Link
                     href={`/verdict/${trial.id}?ruling=${recordedRuling}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : "")}
-                    className="group inline-flex items-center justify-center gap-2.5 min-w-[12rem] px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-colors duration-200 text-base"
+                    className="group inline-flex items-center justify-center gap-2.5 w-full sm:w-auto min-w-[14rem] px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-colors duration-200 text-base"
                   >
                     View your verdict
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
@@ -255,7 +340,7 @@ function RulingContent() {
                     type="button"
                     onClick={handleSubmit}
                     disabled={!selected || submitting}
-                    className="inline-flex items-center justify-center gap-2.5 min-w-[12rem] px-8 py-3 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-colors duration-200 text-base"
+                    className="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto min-w-[14rem] px-8 py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-colors duration-200 text-base"
                   >
                     {submitting ? "Recording ruling..." : "Read the verdict"}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
@@ -264,87 +349,7 @@ function RulingContent() {
                   </button>
                 )}
               </div>
-            }
-          >
-            <div className="text-center animate-fade-in-up">
-              <h1 className="font-display text-lg lg:text-xl font-bold text-gold-500 mb-1">
-                How do you rule, Your Honor?
-              </h1>
-              <p className="text-court-400 text-xs lg:text-sm font-legal">
-                Case: <span className="text-court-200">{trial.case_title}</span>
-              </p>
-              {!rulingLocked && selected && (
-                <p className="text-court-500 text-[11px] mt-1 font-legal italic">
-                  Select a different ruling anytime before you read the verdict.
-                </p>
-              )}
             </div>
-
-            {rulingLocked && (
-              <div
-                className="rounded-sm border border-gold-500/60 bg-gold-500/10 px-3 py-2.5 text-center"
-                role="status"
-              >
-                <p className="text-gold-300 text-xs lg:text-sm font-semibold">
-                  Ruling recorded: {lockedLabel}
-                </p>
-                <p className="text-court-300 text-[11px] mt-1 font-legal italic">
-                  The court&apos;s verdict is final for this case.
-                </p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:gap-2.5 items-stretch">
-              {RULING_OPTIONS.map((option, i) => {
-                const isSelected = selected === option.key;
-                const verdict = trial.verdicts?.[option.key];
-                const label = verdict?.label ?? option.label;
-                const description = verdict?.description ?? option.description;
-                const sentence = verdict?.sentence ?? option.sentence;
-                return (
-                  <ScrollworkBorder key={option.key} className="h-full">
-                    <button
-                      type="button"
-                      onClick={() => { if (!rulingLocked) setSelected(option.key); }}
-                      disabled={rulingLocked}
-                      className={`w-full h-full min-h-[4.75rem] border rounded-sm text-left transition-colors duration-200 animate-fade-in-up ${
-                        rulingLocked ? "cursor-default" : "cursor-pointer"
-                      } ${
-                        isSelected
-                          ? "border-gold-500 bg-gold-500/10 shadow-[0_0_16px_rgba(212,175,55,0.1)]"
-                          : `border-court-700 bg-court-900/50 ${rulingLocked ? "opacity-60" : option.bgClass + " hover:border-court-500"}`
-                      }`}
-                      style={{ animationDelay: `${i * 0.05}s` }}
-                    >
-                      <div className="p-2.5 lg:p-3 h-full flex flex-col">
-                        <div className="flex items-center gap-2 mb-0.5 shrink-0">
-                          <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                            isSelected ? "border-gold-500" : "border-court-500"
-                          }`}>
-                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-gold-500" />}
-                          </div>
-                          <span className={`font-serif text-xs lg:text-sm font-bold transition-colors ${
-                            isSelected ? "gold-foil" : "text-court-200"
-                          }`}>
-                            {label}
-                          </span>
-                        </div>
-                        <p className="text-court-500 text-[10px] lg:text-[11px] ml-5 leading-snug line-clamp-2">{description}</p>
-                        <div className={`ml-5 mt-1 pt-1 border-t min-h-[2.5rem] ${isSelected ? "border-gold-500/20" : "border-transparent"}`}>
-                          {isSelected && (
-                            <p className="font-legal text-court-400 text-[10px] lg:text-[11px] italic line-clamp-2">
-                              &ldquo;{sentence}&rdquo;
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  </ScrollworkBorder>
-                );
-              })}
-            </div>
-
-          </CounselStageLayout>
           </div>
         </div>
       </main>
