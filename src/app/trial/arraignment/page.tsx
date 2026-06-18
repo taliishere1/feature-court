@@ -71,12 +71,8 @@ function ArraignmentContent() {
   }, [trial?.id]);
 
   const handleDialogueComplete = useCallback(() => {
-    if (dialogueIndex < bailiffDialogues.length - 1) {
-      setShowContinue(true);
-    } else {
-      setDialogueDismissed(true);
-    }
-  }, [dialogueIndex, bailiffDialogues.length]);
+    setShowContinue(true);
+  }, []);
 
   const advanceDialogue = useCallback(() => {
     setShowContinue(false);
@@ -370,6 +366,7 @@ function ArraignmentContent() {
           text={bailiffDialogues[dialogueIndex] ?? ""}
           color={CAST.bailiff.color}
           typingSpeed={25}
+          instant={dialogueIndex === 1}
           onComplete={handleDialogueComplete}
           showContinue={showContinue}
           onAdvance={advanceDialogue}

@@ -175,7 +175,7 @@ function DefenseContent() {
             >
               <div className="parchment-ruled p-4 animate-fade-in-up w-full">
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
-                <p className="text-court-200 text-sm leading-relaxed font-legal italic relative z-10">
+                <p className="text-court-200 text-base leading-relaxed font-legal italic relative z-10">
                   &ldquo;{trial.defense.opening}&rdquo;
                 </p>
               </div>
