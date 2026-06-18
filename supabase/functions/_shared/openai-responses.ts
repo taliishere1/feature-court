@@ -8,7 +8,7 @@
  * - Do NOT chain retries via previous_response_id when instructions must govern the retry;
  *   instructions from prior turns are not present in chained context.
  * - `store: true` for conversation_id chaining across trial stages
- * - Model: gpt-5.4-mini with reasoning.effort "none" for structured JSON stages
+ * - Model: gpt-5.4-nano with reasoning.effort "none" for structured JSON stages
  *
  * @see https://developers.openai.com/api/docs/guides/prompt-engineering
  */
@@ -51,10 +51,10 @@ export interface ResponsesCallResult {
   outputText: string;
 }
 
-/** POST /v1/responses with GPT-5.4-mini production defaults. */
+/** POST /v1/responses with GPT-5.4-nano production defaults. */
 export async function callOpenAIResponses(params: ResponsesCallParams): Promise<ResponsesCallResult> {
   const body: Record<string, unknown> = {
-    model: "gpt-5.4-mini",
+    model: "gpt-5.4-nano",
     instructions: params.instructions,
     input: params.input,
     store: true,
