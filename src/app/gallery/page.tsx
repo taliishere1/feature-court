@@ -204,7 +204,7 @@ export default function GalleryPage() {
                       <path d="M12 3L14 7L18 8L15 11L16 15L12 13L8 15L9 11L6 8L10 7L12 3Z" fill="currentColor" />
                     </svg>
                     <span className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em]">
-                      {trial.ruling ? "Replay trial" : "View case"}
+                      View case
                     </span>
                   </div>
                 </Link>
