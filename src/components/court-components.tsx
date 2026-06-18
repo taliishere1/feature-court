@@ -155,9 +155,43 @@ const STAGES = [
   { num: 5, label: "Ruling" },
 ];
 
+/** Shared width tokens for trial stage pages — widen on large viewports. */
+export const trialStageShellClass = "w-full max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto";
+export const trialStageHeaderClass = "w-full max-w-4xl lg:max-w-6xl mx-auto";
+
+export function CounselStageLayout({
+  portrait,
+  portraitLarge,
+  name,
+  title,
+  children,
+}: {
+  portrait: React.ReactNode;
+  portraitLarge: React.ReactNode;
+  name: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="lg:grid lg:grid-cols-[minmax(11rem,14rem)_1fr] xl:grid-cols-[minmax(13rem,16rem)_1fr] lg:gap-8 xl:gap-12 lg:items-start animate-fade-in-up">
+      <div className="text-center lg:sticky lg:top-8 mb-5 lg:mb-0">
+        <div className="inline-flex flex-col items-center gap-3 border border-court-700 rounded-sm px-5 py-4 bg-court-900/60 lg:w-full">
+          <div className="lg:hidden">{portrait}</div>
+          <div className="hidden lg:block">{portraitLarge}</div>
+          <div>
+            <h2 className="font-serif text-base lg:text-lg text-court-100">{name}</h2>
+            <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em] mt-0.5">{title}</p>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-4 w-full max-w-lg lg:max-w-none mx-auto">{children}</div>
+    </div>
+  );
+}
+
 export function StageProgress({ current }: { current: number }) {
   return (
-    <div className="w-full max-w-xl mx-auto mb-10">
+    <div className="w-full max-w-xl lg:max-w-4xl xl:max-w-5xl mx-auto mb-10">
       <div className="flex items-center justify-between">
         {STAGES.map((stage, i) => (
           <div key={stage.num} className="flex items-center">
@@ -193,7 +227,7 @@ export function StageProgress({ current }: { current: number }) {
                     <path d="M14 2 L18 6 L14 10" stroke="currentColor" strokeWidth="1.5" fill="none" />
                   </svg>
                 ) : (
-                  <div className="w-14 sm:w-16 h-px bg-court-700" />
+                  <div className="w-14 sm:w-16 lg:w-20 xl:w-28 h-px bg-court-700" />
                 )}
               </div>
             )}
@@ -351,7 +385,7 @@ export function SignatureBlock({
   };
 
   const signatureMark = (
-    <p className="font-signature text-[2.75rem] text-gold-400 leading-none tracking-normal pt-1">
+    <p className="judge-signature text-[2.75rem] text-gold-400 leading-none tracking-normal pt-1">
       Ship Itwell
     </p>
   );
@@ -1095,22 +1129,12 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
   }
 }
 
-  const [{ typing, typingDone }, tbDispatch] = useReducer(tbReducer, { typing: false, typingDone: false });
+  const [{ typing, typingDone }, tbDispatch] = useReducer(tbReducer, { typing: true, typingDone: false });
 
   useEffect(() => {
-    if (text) {
-      tbDispatch({ type: 'START_TYPING' });
-    }
+    if (!text) return;
+    tbDispatch({ type: 'START_TYPING' });
   }, [text]);
-
-  // If typing is false but text exists and we're not done, mark as done
-  // (covers the static <span> branch when TypewriterText doesn't run)
-  useEffect(() => {
-    if (text && !typing && !typingDone) {
-      tbDispatch({ type: 'FINISH_TYPING' });
-      onComplete?.();
-    }
-  }, [text, typing, typingDone, onComplete]);
 
   const handleTypeComplete = useCallback(() => {
     tbDispatch({ type: 'FINISH_TYPING' });
@@ -1122,7 +1146,7 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
       <div className="dialogue-box-inner">
         <div className="dialogue-box-top">
           <div
-            className="w-[72px] h-[72px] rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
+            className="dialogue-box-portrait w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] lg:w-[100px] lg:h-[100px] rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
             style={{ borderColor: `${color}40` }}
           >
             {portrait}

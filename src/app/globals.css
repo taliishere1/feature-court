@@ -272,6 +272,10 @@ body {
   box-shadow: 0 0 30px rgba(0,0,0,0.4), inset 0 0 20px rgba(124, 58, 237, 0.04);
 }
 
+.judge-signature {
+  font-family: var(--font-judge-signature), 'Great Vibes', cursive;
+}
+
 /* ─── Keyframes ─── */
 
 @keyframes seal-appear {
@@ -449,7 +453,7 @@ body {
 }
 
 .dialogue-box-inner {
-  max-width: 40rem;
+  max-width: min(42rem, calc(100vw - 2rem));
   margin: 0 auto;
   background: rgba(15, 22, 41, 0.92);
   backdrop-filter: blur(16px);
@@ -458,6 +462,20 @@ body {
   border-radius: 10px;
   padding: 1rem 1.25rem;
   pointer-events: auto;
+}
+
+@media (min-width: 768px) {
+  .dialogue-box-inner {
+    max-width: min(52rem, calc(100vw - 3rem));
+    padding: 1.25rem 1.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dialogue-box-inner {
+    max-width: min(64rem, calc(100vw - 4rem));
+    padding: 1.5rem 2rem;
+  }
 }
 
 .dialogue-box-top {
@@ -484,6 +502,18 @@ body {
 
 .dialogue-box-body-with-portrait {
   padding-left: 5rem;
+}
+
+@media (min-width: 768px) {
+  .dialogue-box-body-with-portrait {
+    padding-left: 6.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dialogue-box-body-with-portrait {
+    padding-left: 7.5rem;
+  }
 }
 
 .dialogue-box-continue {

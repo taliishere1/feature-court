@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, SiteHomeLink } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, SiteHomeLink, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasCrossExamination } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -196,7 +196,7 @@ function CrossContent() {
       <CourtroomBackground opacity={0.1} />
 
       <header className="border-b border-court-800 relative z-40">
-        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className={`${trialStageHeaderClass} px-6 py-3 flex items-center justify-between`}>
           <Link href={`/trial/defense?id=${trial.id}`} className="flex items-center gap-2 group">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -211,7 +211,7 @@ function CrossContent() {
       </header>
 
       <main className="flex-1 px-6 pt-8 pb-48 relative z-10">
-        <div className="max-w-3xl mx-auto animate-page-enter">
+        <div className={`${trialStageShellClass} animate-page-enter`}>
           <div className="text-center mb-4">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 4 of 5</span>
           </div>
@@ -235,7 +235,7 @@ function CrossContent() {
                 >
                   {introComplete && (
                     <div className="animate-dramatic-zoom text-center">
-                      <div className="parchment p-6 max-w-xl mx-auto">
+                      <div className="parchment p-6 lg:p-8 max-w-xl lg:max-w-3xl xl:max-w-4xl mx-auto">
                         <span className="font-mono text-[9px] text-gold-500 uppercase tracking-[0.25em] block mb-3">Question {i + 1}</span>
                         <p className="text-court-200 font-serif text-lg mb-5 leading-relaxed">{cq.question}</p>
                         {choices && (
@@ -304,7 +304,12 @@ function CrossContent() {
 
       {revealed && hasIntro && !introComplete && (
         <DialogueBox
-          portrait={<BailiffPortrait size="thumb" />}
+          portrait={
+            <>
+              <span className="lg:hidden"><BailiffPortrait size="thumb" /></span>
+              <span className="hidden lg:inline-flex"><BailiffPortrait size="medium" /></span>
+            </>
+          }
           name={CAST.bailiff.name}
           text={introText}
           color={CAST.bailiff.color}

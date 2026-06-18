@@ -28,6 +28,15 @@ const RULING_BG: Record<Ruling, string> = {
   mistrial: "bg-stamp-mistrial/10 border-stamp-mistrial/30",
 };
 
+function trialCardHref(trial: TrialData): string {
+  if (trial.ruling) {
+    const params = new URLSearchParams({ ruling: trial.ruling });
+    if (trial.intake.gutCall) params.set("gut", trial.intake.gutCall);
+    return `/verdict/${trial.id}?${params.toString()}`;
+  }
+  return `/trial/arraignment?id=${trial.id}`;
+}
+
 export default function GalleryPage() {
   const [trials, setTrials] = useState<TrialData[]>([]);
   const [myRuledTrials, setMyRuledTrials] = useState<TrialData[]>([]);
@@ -171,7 +180,7 @@ export default function GalleryPage() {
               {trials.map((trial, i) => (
                 <Link
                   key={trial.id}
-                  href={`/trial/arraignment?id=${trial.id}`}
+                  href={trialCardHref(trial)}
                   className="group block parchment-ruled p-5 hover:border-court-500 transition-all duration-300 animate-fade-in-up animate-card-lift"
                   style={{ animationDelay: `${i * 0.08}s` }}
                 >
@@ -180,6 +189,11 @@ export default function GalleryPage() {
                     <span className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em]">
                       Case No. {trial.id.slice(0, 8).toUpperCase()}
                     </span>
+                    {trial.ruling && (
+                      <span className={`font-mono text-[9px] uppercase tracking-[0.1em] ml-auto px-1.5 py-0.5 rounded-sm border ${RULING_BG[trial.ruling]} ${RULING_COLORS[trial.ruling]}`}>
+                        {RULING_LABELS[trial.ruling]}
+                      </span>
+                    )}
                     {trial.isSample && (
                       <span className="font-mono text-[9px] text-gold-500 uppercase tracking-[0.15em] ml-auto">Sample</span>
                     )}
@@ -194,7 +208,9 @@ export default function GalleryPage() {
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-court-600">
                       <path d="M12 3L14 7L18 8L15 11L16 15L12 13L8 15L9 11L6 8L10 7L12 3Z" fill="currentColor" />
                     </svg>
-                    <span className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em]">View case</span>
+                    <span className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em]">
+                      {trial.ruling ? "View verdict" : "View case"}
+                    </span>
                   </div>
                 </Link>
               ))}

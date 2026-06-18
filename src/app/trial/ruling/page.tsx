@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { StageProgress, ScrollworkBorder, CourtroomBackground, JudgePortrait, SiteHomeLink } from "@/components/court-components";
+import { StageProgress, ScrollworkBorder, CourtroomBackground, JudgePortrait, SiteHomeLink, trialStageHeaderClass } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasVerdicts } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -203,7 +203,7 @@ function RulingContent() {
       <CourtroomBackground opacity={0.1} />
 
       <header className="border-b border-court-800 relative z-10">
-        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className={`${trialStageHeaderClass} px-6 py-3 flex items-center justify-between`}>
           <Link href={`/trial/cross?id=${trial.id}`} className="flex items-center gap-2 group">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -218,7 +218,7 @@ function RulingContent() {
       </header>
 
       <main className="flex-1 px-6 py-4 pb-8 relative z-10">
-        <div className="max-w-2xl mx-auto animate-page-enter">
+        <div className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto animate-page-enter">
           <div className="text-center mb-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-gold-500">Stage 5 of 5</span>
           </div>
@@ -226,8 +226,9 @@ function RulingContent() {
           <StageProgress current={5} />
 
           <div className="text-center mb-4 animate-fade-in-up">
-            <div className="inline-flex items-center gap-3 border border-court-700 rounded-sm px-4 py-2.5 bg-court-900/60 mb-4">
-              <JudgePortrait size="thumb" reaction="neutral" />
+            <div className="inline-flex items-center gap-3 lg:gap-5 border border-court-700 rounded-sm px-4 py-2.5 lg:px-6 lg:py-4 bg-court-900/60 mb-4">
+              <span className="lg:hidden"><JudgePortrait size="thumb" reaction="neutral" /></span>
+              <span className="hidden lg:inline-flex"><JudgePortrait size="medium" reaction="neutral" /></span>
               <div className="text-left">
                 <h2 className="font-serif text-sm text-court-100">{CAST.judge.name}</h2>
                 <p className="text-court-600 text-[10px] font-mono uppercase tracking-[0.15em]">Presiding Judge</p>
@@ -255,7 +256,7 @@ function RulingContent() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 lg:gap-4 mb-5">
             {RULING_OPTIONS.map((option, i) => {
               const isSelected = selected === option.key;
               const verdict = trial.verdicts?.[option.key];

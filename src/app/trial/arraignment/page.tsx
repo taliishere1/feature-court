@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
-import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, SiteBrand, SiteHomeLink } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, SiteBrand, SiteHomeLink, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -22,6 +22,12 @@ const PROGRESS_STEPS = [
   { message: "Drafting cross-examination...", sub: "Preparing questions for the witness" },
   { message: "Weighing the verdicts...", sub: "The bench is considering possible outcomes" },
 ];
+
+const ARRAIGNMENT_BAILIFF_LINE_COUNT = 2;
+
+function normalizeArraignmentDialogue(lines: string[] | undefined): string[] {
+  return (lines ?? []).map((line) => line?.trim()).filter(Boolean).slice(0, ARRAIGNMENT_BAILIFF_LINE_COUNT);
+}
 
 function ArraignmentContent() {
   const searchParams = useSearchParams();
@@ -46,7 +52,7 @@ function ArraignmentContent() {
     setRetryKey((k) => k + 1);
   }, []);
 
-  const bailiffDialogues = trial?.charge_data?.bailiff_dialogue?.filter((line) => line?.trim()) ?? [];
+  const bailiffDialogues = normalizeArraignmentDialogue(trial?.charge_data?.bailiff_dialogue);
   const hasDialogue = bailiffDialogues.length > 0;
   const showCharge = revealed && (!hasDialogue || dialogueDismissed);
 
@@ -117,7 +123,7 @@ function ArraignmentContent() {
           const step = converted.generationStep ?? 0;
           const isReady = step >= 5 || (converted.charge && converted.charge.length > 0 && converted.case_title && converted.case_title.length > 0);
           if (isReady) {
-            const dialogues = converted.charge_data?.bailiff_dialogue?.filter((line) => line?.trim()) ?? [];
+            const dialogues = normalizeArraignmentDialogue(converted.charge_data?.bailiff_dialogue);
             setDialogueIndex(0);
             setDialogueDismissed(dialogues.length === 0);
             setShowContinue(false);
@@ -262,7 +268,7 @@ function ArraignmentContent() {
       <CourtroomBackground opacity={0.1} />
 
       <header className="border-b border-court-800 relative z-40">
-        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className={`${trialStageHeaderClass} px-6 py-3 flex items-center justify-between`}>
           <SiteBrand />
           <div className="flex items-center gap-4">
             <SiteHomeLink />
@@ -274,7 +280,7 @@ function ArraignmentContent() {
       </header>
 
       <main className="flex-1 px-6 pt-4 pb-48 relative z-10">
-        <div className="max-w-3xl mx-auto animate-page-enter">
+        <div className={`${trialStageShellClass} animate-page-enter`}>
           <div className="text-center mb-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 1 of 5</span>
           </div>
@@ -284,7 +290,7 @@ function ArraignmentContent() {
           {/* Charge — after bailiff opening dialogue completes */}
           <div className={`text-center mb-6 transition-all duration-300 ${showCharge ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
             <div className="animate-dramatic-zoom">
-              <div className="parchment p-6 max-w-2xl mx-auto">
+              <div className="parchment p-6 lg:p-8 max-w-2xl lg:max-w-4xl mx-auto">
                 <div className="flex items-center justify-center gap-2 mb-3">
                   <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-gold-500">The Charge</span>
                 </div>
@@ -298,7 +304,7 @@ function ArraignmentContent() {
               </div>
 
               {/* Case summary */}
-              <div className="parchment-ruled p-6 mt-6 text-left max-w-lg mx-auto">
+              <div className="parchment-ruled p-6 lg:p-8 mt-6 text-left max-w-lg lg:max-w-3xl mx-auto">
                 <div className="flex items-center gap-2 mb-4 relative z-10">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-gold-500">
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -332,7 +338,12 @@ function ArraignmentContent() {
 
       {revealed && hasDialogue && !dialogueDismissed && (
         <DialogueBox
-          portrait={<BailiffPortrait size="thumb" reaction="neutral" />}
+          portrait={
+            <>
+              <span className="lg:hidden"><BailiffPortrait size="thumb" reaction="neutral" /></span>
+              <span className="hidden lg:inline-flex"><BailiffPortrait size="medium" reaction="neutral" /></span>
+            </>
+          }
           name={CAST.bailiff.name}
           text={bailiffDialogues[dialogueIndex] ?? ""}
           color={CAST.bailiff.color}

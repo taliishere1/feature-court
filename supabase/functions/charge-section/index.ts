@@ -156,11 +156,14 @@ function parseChargeScene(outputText: string) {
   const parsed = JSON.parse(outputText);
   const charge = parsed.charge as string;
   const case_title = parsed.case_title as string;
-  const bailiff_dialogue = parsed.bailiff_dialogue as string[];
+  const bailiff_dialogue = (parsed.bailiff_dialogue as string[])
+    .map((line) => line?.trim())
+    .filter(Boolean)
+    .slice(0, 2);
   if (!charge?.trim() || !case_title?.trim()) {
     throw new Error("case_title and charge are required");
   }
-  if (!Array.isArray(bailiff_dialogue) || bailiff_dialogue.length !== 2) {
+  if (bailiff_dialogue.length !== 2) {
     throw new Error("bailiff_dialogue must contain exactly 2 lines");
   }
   return { charge, case_title, bailiff_dialogue };
