@@ -1210,7 +1210,7 @@ export function ExhibitEngagementPrompt({
       role="status"
     >
       <p className="text-gold-400 text-xs font-bold uppercase tracking-wide">Object to an exhibit to continue</p>
-      <p className="text-court-400 text-xs mt-1.5 font-legal italic leading-snug">{subcopy}</p>
+      <p className="text-court-400 text-xs mt-1.5 font-legal leading-snug">{subcopy}</p>
     </div>
   );
 }
@@ -1317,7 +1317,7 @@ export function EvidenceCard({ exhibit, children, side = "prosecution", index = 
         </span>
       </div>
       <div className="p-4">
-        <p className="text-court-200 text-xs leading-relaxed font-legal">{children}</p>
+        <p className="text-court-200 text-sm leading-relaxed font-legal">{children}</p>
       </div>
     </div>
   );
