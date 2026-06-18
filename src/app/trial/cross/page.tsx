@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, SiteHomeLink, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, BailiffDialoguePortrait, BailiffInlineDialogue, DialogueBox, SiteHomeLink, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasCrossExamination } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -259,10 +259,7 @@ function CrossContent() {
                         )}
                         {selected !== undefined && bailiffMessages[i] && (
                           <div className="mt-4 pt-3 border-t border-court-700 animate-fade-in-up">
-                            <div className="flex items-center gap-2 justify-center">
-                              <BailiffPortrait size="thumb" />
-                              <p className="text-court-500 text-xs italic font-legal">{bailiffMessages[i]}</p>
-                            </div>
+                            <BailiffInlineDialogue text={bailiffMessages[i]!} />
                           </div>
                         )}
                       </div>
@@ -304,12 +301,7 @@ function CrossContent() {
 
       {revealed && hasIntro && !introComplete && (
         <DialogueBox
-          portrait={
-            <>
-              <span className="lg:hidden"><BailiffPortrait size="thumb" /></span>
-              <span className="hidden lg:inline-flex"><BailiffPortrait size="medium" /></span>
-            </>
-          }
+          portrait={<BailiffDialoguePortrait />}
           name={CAST.bailiff.name}
           text={introText}
           color={CAST.bailiff.color}

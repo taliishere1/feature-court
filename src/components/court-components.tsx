@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback, useReducer, useId } from "rea
 import Image from "next/image";
 import Link from "next/link";
 import { SITE } from "@/lib/site";
+import { CAST } from "@/lib/cast";
 import { playGavelClunk } from "@/lib/gavel-sound";
 
 // ─── Ornate Court Seal ───
@@ -208,7 +209,9 @@ export function CounselStageLayout({
   footer?: React.ReactNode;
 }) {
   const footerBlock = footer ? (
-    <div className="pt-4 mt-4 border-t border-court-800/80 shrink-0">{footer}</div>
+    <div className="pt-4 mt-4 border-t border-court-800/80 shrink-0 w-full flex flex-col items-center justify-center text-center gap-3">
+      {footer}
+    </div>
   ) : null;
 
   return (
@@ -1151,10 +1154,76 @@ export function JudgePortrait({ reaction = "neutral", size = "full" }: { reactio
   );
 }
 
-// ─── Dialogue Box ───
+type PortraitComponent = React.ComponentType<{ reaction?: PortraitReaction; size?: PortraitSize }>;
+
+function DialoguePortraitPair({
+  Portrait,
+  reaction = "neutral",
+}: {
+  Portrait: PortraitComponent;
+  reaction?: PortraitReaction;
+}) {
+  return (
+    <>
+      <span className="inline-flex lg:hidden">
+        <Portrait size="thumb" reaction={reaction} />
+      </span>
+      <span className="hidden lg:inline-flex">
+        <Portrait size="medium" reaction={reaction} />
+      </span>
+    </>
+  );
+}
+
+/** Bailiff-only: uncropped portrait sizes for DialogueBox and inline cross reactions. */
+export function BailiffDialoguePortrait({ reaction = "neutral" }: { reaction?: PortraitReaction }) {
+  return <DialoguePortraitPair Portrait={BailiffPortrait} reaction={reaction} />;
+}
+
+function BailiffDialoguePortraitFrame({
+  children,
+  color,
+}: {
+  children: React.ReactNode;
+  color?: string;
+}) {
+  return (
+    <div
+      className="dialogue-box-portrait shrink-0 rounded-lg border border-court-600"
+      style={color ? { borderColor: `${color}40` } : undefined}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Bailiff-only inline quip on cross-examination — same layout as DialogueBox. */
+export function BailiffInlineDialogue({
+  text,
+  reaction = "neutral",
+}: {
+  text: string;
+  reaction?: PortraitReaction;
+}) {
+  return (
+    <div className="bailiff-inline-dialogue">
+      <BailiffDialoguePortraitFrame color={CAST.bailiff.color}>
+        <BailiffPortrait size="thumb" reaction={reaction} />
+      </BailiffDialoguePortraitFrame>
+      <div className="bailiff-inline-dialogue-content">
+        <span className="dialogue-box-name block mb-1" style={{ color: CAST.bailiff.color }}>
+          {CAST.bailiff.name}
+        </span>
+        <p className="text-court-500 text-xs italic font-legal leading-relaxed">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Dialogue Box (Bailiff) ───
 
 interface DialogueBoxProps {
-  portrait: React.ReactNode;
+  portrait?: React.ReactNode;
   name: string;
   text: string;
   color?: string;
@@ -1200,46 +1269,45 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
     onComplete?.();
   }, [onComplete]);
 
+  const portraitNode = portrait ?? <BailiffDialoguePortrait />;
+
   return (
     <div className="dialogue-box">
       <div className="dialogue-box-inner">
-        <div className="dialogue-box-top">
-          <div
-            className="dialogue-box-portrait w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] lg:w-[100px] lg:h-[100px] rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
-            style={{ borderColor: `${color}40` }}
-          >
-            {portrait}
+        <BailiffDialoguePortraitFrame color={color}>{portraitNode}</BailiffDialoguePortraitFrame>
+        <div className="dialogue-box-content">
+          <div className="dialogue-box-top">
+            <span className="dialogue-box-name" style={{ color }}>{name}</span>
+            {showSkip && onSkip && (
+              <button
+                type="button"
+                onClick={onSkip}
+                className="ml-auto shrink-0 text-xs font-mono uppercase tracking-wider text-court-300 hover:text-gold-400 py-2 px-3 -mr-1 rounded-sm transition-colors"
+              >
+                Skip
+              </button>
+            )}
           </div>
-          <span className="dialogue-box-name" style={{ color }}>{name}</span>
-          {showSkip && onSkip && (
+          <div className="dialogue-box-body">
+            {typing ? (
+              <TypewriterText text={text} speed={typingSpeed} tag="span" onComplete={handleTypeComplete} />
+            ) : (
+              <span>{text}</span>
+            )}
+          </div>
+          {showContinue && typingDone && onAdvance && (
             <button
               type="button"
-              onClick={onSkip}
-              className="ml-auto shrink-0 text-xs font-mono uppercase tracking-wider text-court-300 hover:text-gold-400 py-2 px-3 -mr-1 rounded-sm transition-colors"
+              onClick={onAdvance}
+              className="dialogue-box-continue dialogue-box-continue-btn"
             >
-              Skip
+              ▼ Continue
             </button>
           )}
-        </div>
-        <div className="dialogue-box-body dialogue-box-body-with-portrait">
-          {typing ? (
-            <TypewriterText text={text} speed={typingSpeed} tag="span" onComplete={handleTypeComplete} />
-          ) : (
-            <span>{text}</span>
+          {showContinue && typingDone && !onAdvance && (
+            <div className="dialogue-box-continue">▼ Continue</div>
           )}
         </div>
-        {showContinue && typingDone && onAdvance && (
-          <button
-            type="button"
-            onClick={onAdvance}
-            className="dialogue-box-continue dialogue-box-continue-btn"
-          >
-            ▼ Continue
-          </button>
-        )}
-        {showContinue && typingDone && !onAdvance && (
-          <div className="dialogue-box-continue">▼ Continue</div>
-        )}
       </div>
     </div>
   );

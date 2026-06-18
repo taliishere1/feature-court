@@ -164,7 +164,7 @@ function ProsecutionContent() {
               name={prosecutorName}
               title={prosecutorTitle}
               footer={
-                <div className="text-center animate-fade-in-up">
+                <div className="animate-fade-in-up w-full">
                   <StageProceedLink
                     engaged={exhibitEngaged}
                     href={`/trial/defense?id=${trial.id}`}

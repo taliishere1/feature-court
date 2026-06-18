@@ -453,6 +453,9 @@ body {
 }
 
 .dialogue-box-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
   max-width: min(42rem, calc(100vw - 2rem));
   margin: 0 auto;
   background: rgba(15, 22, 41, 0.92);
@@ -466,6 +469,7 @@ body {
 
 @media (min-width: 768px) {
   .dialogue-box-inner {
+    gap: 1.25rem;
     max-width: min(52rem, calc(100vw - 3rem));
     padding: 1.25rem 1.5rem;
   }
@@ -473,9 +477,39 @@ body {
 
 @media (min-width: 1280px) {
   .dialogue-box-inner {
+    gap: 1.5rem;
     max-width: min(64rem, calc(100vw - 4rem));
     padding: 1.5rem 2rem;
   }
+}
+
+.dialogue-box-portrait {
+  line-height: 0;
+}
+
+.dialogue-box-portrait img,
+.dialogue-box-portrait svg {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: none;
+}
+
+.bailiff-inline-dialogue {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.bailiff-inline-dialogue-content {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0.125rem;
+}
+
+.dialogue-box-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .dialogue-box-top {
@@ -497,23 +531,7 @@ body {
   font-size: 1rem;
   line-height: 1.6;
   color: var(--color-court-200);
-  padding-left: 2.75rem;
-}
-
-.dialogue-box-body-with-portrait {
-  padding-left: 5rem;
-}
-
-@media (min-width: 768px) {
-  .dialogue-box-body-with-portrait {
-    padding-left: 6.5rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .dialogue-box-body-with-portrait {
-    padding-left: 7.5rem;
-  }
+  padding-left: 0;
 }
 
 .dialogue-box-continue {
