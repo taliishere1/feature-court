@@ -1161,8 +1161,8 @@ export function ExhibitEngagementPrompt({
       className="mb-3 rounded-sm border border-gold-500/70 bg-gold-500/15 px-4 py-3 text-center shadow-[0_0_20px_rgba(245,158,11,0.15)]"
       role="status"
     >
-      <p className="text-gold-300 text-sm font-semibold">Object to an exhibit to continue</p>
-      <p className="text-court-300 text-xs mt-1 font-legal italic">{subcopy}</p>
+      <p className="text-gold-400 text-xs font-medium">Object to an exhibit to continue</p>
+      <p className="text-court-400 text-[10px] mt-1 font-legal italic leading-snug">{subcopy}</p>
     </div>
   );
 }
@@ -1269,7 +1269,7 @@ export function EvidenceCard({ exhibit, children, side = "prosecution", index = 
         </span>
       </div>
       <div className="p-4">
-        <p className="text-court-200 text-sm leading-relaxed font-legal">{children}</p>
+        <p className="text-court-200 text-xs leading-relaxed font-legal">{children}</p>
       </div>
     </div>
   );

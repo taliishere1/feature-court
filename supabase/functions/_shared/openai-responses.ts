@@ -1,19 +1,15 @@
 /**
  * OpenAI Responses API HTTP client for Supabase Edge Functions.
  *
- * GPT-5.4 integration contract (per OpenAI prompting guide):
- * - `instructions` = per-function SYSTEM_PROMPT with all contract blocks
- *   (instruction_priority, default_follow_through_policy, personality,
- *   personality_and_writing_controls, dependency_checks, grounding_rules,
- *   output_contract, structured_output_contract, verbosity_controls,
- *   completeness_contract, verification_loop, missing_context_gating,
- *   dig_deeper_nudge)
- * - `input` = trial context + task scaffolding
- *   (task, critical_rule, execution_order, edge_cases, output_format)
- * - `store: true` required for previous_response_id chaining
- * - `text.verbosity: "low"` nested inside `text`, not top-level
+ * Per OpenAI prompt engineering guide:
+ * - `instructions` = developer message (identity, rules, few-shot examples) — reapplied every call
+ * - `input` = user message (trial context, task, execution order)
+ * - Do NOT chain retries via previous_response_id when instructions must govern the retry;
+ *   instructions from prior turns are not present in chained context.
+ * - `store: true` for conversation_id chaining across trial stages
+ * - Model: gpt-5.4-mini with reasoning.effort "none" for structured JSON stages
  *
- * @see https://developers.openai.com/api/docs/guides/migrate-to-responses
+ * @see https://developers.openai.com/api/docs/guides/prompt-engineering
  */
 
 export function extractOutputText(payload: Record<string, unknown>): string {
@@ -54,14 +50,14 @@ export interface ResponsesCallResult {
   outputText: string;
 }
 
-/** POST /v1/responses with GPT-5.4 production defaults. */
+/** POST /v1/responses with GPT-5.4-mini production defaults. */
 export async function callOpenAIResponses(params: ResponsesCallParams): Promise<ResponsesCallResult> {
   const body: Record<string, unknown> = {
-    model: "gpt-5.4",
+    model: "gpt-5.4-mini",
     instructions: params.instructions,
     input: params.input,
     store: true,
-    reasoning: { effort: "low" },
+    reasoning: { effort: "none" },
     max_output_tokens: params.maxOutputTokens ?? 8000,
     text: {
       verbosity: "low",

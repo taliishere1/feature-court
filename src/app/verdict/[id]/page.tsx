@@ -50,7 +50,6 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
       const { id } = await params;
       const urlParams = new URLSearchParams(window.location.search);
       const r = urlParams.get("ruling") as Ruling;
-      setRuling(r);
       setGutCall(urlParams.get("gut"));
 
       try {
@@ -60,14 +59,26 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
           .eq("id", id)
           .single();
         if (!readError && trialData) {
-          setTrial(rowToTrialData(trialData));
-          // Generate summary for docket
-          if (r) {
+          const converted = rowToTrialData(trialData);
+          setTrial(converted);
+          const storedRuling = converted.ruling ?? null;
+          const displayRuling = storedRuling ?? r;
+          setRuling(displayRuling);
+          if (storedRuling && r && storedRuling !== r) {
+            const search = new URLSearchParams(window.location.search);
+            search.set("ruling", storedRuling);
+            window.history.replaceState(null, "", `${window.location.pathname}?${search.toString()}`);
+          }
+          if (displayRuling) {
             supabase!.functions.invoke("summary-section", {
-              body: { trial_id: id, ruling: r },
+              body: { trial_id: id, ruling: displayRuling },
             }).catch(() => {});
           }
+          setLoading(false);
+          if (displayRuling === "ship") setShowConfetti(true);
+          return;
         }
+        if (r) setRuling(r);
       } catch (e) {
         console.error("Failed to load trial:", e);
       }

@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-/** Full GPT-5.4 system prompt — sent to OpenAI as `instructions` on every chained call. */
+/** Full GPT-5.4-mini system prompt — sent to OpenAI as `instructions` on every chained call. */
 const SYSTEM_PROMPT = `<instruction_priority>
 - User message task instructions override default style, tone, formatting, and initiative preferences unless they conflict with schema or safety.
 - Safety, honesty, privacy, and permission constraints do not yield.

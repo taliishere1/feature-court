@@ -8,6 +8,24 @@ import { supabase } from "@/lib/supabase";
 import { parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { pendoTrack } from "@/lib/pendo-track";
 import { registerVisitor } from "@/lib/visitor";
+
+const INTAKE_MAX_LENGTH = 500;
+
+function CharCounter({ value }: { value: string }) {
+  const count = value.length;
+  const nearLimit = count >= INTAKE_MAX_LENGTH * 0.9;
+  return (
+    <p
+      className={`text-right text-[10px] font-mono mt-1 tracking-wide ${
+        nearLimit ? "text-gold-400" : "text-court-600"
+      }`}
+      aria-live="polite"
+    >
+      {count} / {INTAKE_MAX_LENGTH}
+    </p>
+  );
+}
+
 export default function FileCasePage() {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -86,12 +104,13 @@ export default function FileCasePage() {
                 <input
                   type="text"
                   required
-                  maxLength={500}
+                  maxLength={INTAKE_MAX_LENGTH}
                   value={form.proposal}
                   onChange={(e) => { setForm({ ...form, proposal: e.target.value }); }}
                   placeholder='e.g. "Build a mobile app", "Cut the comments feature"'
                   className="w-full bg-transparent border border-court-700 rounded-sm px-4 py-3 text-court-100 placeholder:text-court-600/40 focus:outline-none focus:border-gold-500/60 transition-colors text-sm font-legal tracking-wide"
                 />
+                <CharCounter value={form.proposal} />
               </div>
 
               <div className="animate-fade-in-up stagger-2">
@@ -103,12 +122,13 @@ export default function FileCasePage() {
                 <input
                   type="text"
                   required
-                  maxLength={500}
+                  maxLength={INTAKE_MAX_LENGTH}
                   value={form.audience}
                   onChange={(e) => setForm({ ...form, audience: e.target.value })}
                   placeholder="e.g. Power users, new signups, enterprise accounts"
                   className="w-full bg-transparent border border-court-700 rounded-sm px-4 py-3 text-court-100 placeholder:text-court-600/40 focus:outline-none focus:border-gold-500/60 transition-colors text-sm font-legal tracking-wide"
                 />
+                <CharCounter value={form.audience} />
               </div>
 
               <div className="animate-fade-in-up stagger-3">
@@ -120,12 +140,13 @@ export default function FileCasePage() {
                 <input
                   type="text"
                   required
-                  maxLength={500}
+                  maxLength={INTAKE_MAX_LENGTH}
                   value={form.whyNow}
                   onChange={(e) => setForm({ ...form, whyNow: e.target.value })}
                   placeholder="e.g. Competitors are moving, user feedback is loud"
                   className="w-full bg-transparent border border-court-700 rounded-sm px-4 py-3 text-court-100 placeholder:text-court-600/40 focus:outline-none focus:border-gold-500/60 transition-colors text-sm font-legal tracking-wide"
                 />
+                <CharCounter value={form.whyNow} />
               </div>
 
               <div className="animate-fade-in-up stagger-4">
@@ -137,12 +158,13 @@ export default function FileCasePage() {
                 <input
                   type="text"
                   required
-                  maxLength={500}
+                  maxLength={INTAKE_MAX_LENGTH}
                   value={form.tradeoff}
                   onChange={(e) => setForm({ ...form, tradeoff: e.target.value })}
                   placeholder="e.g. 6 months of engineering, delay the roadmap"
                   className="w-full bg-transparent border border-court-700 rounded-sm px-4 py-3 text-court-100 placeholder:text-court-600/40 focus:outline-none focus:border-gold-500/60 transition-colors text-sm font-legal tracking-wide"
                 />
+                <CharCounter value={form.tradeoff} />
               </div>
 
               <div className="animate-fade-in-up stagger-5 pt-2">

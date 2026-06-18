@@ -166,7 +166,7 @@ function ProsecutionContent() {
           {revealed && (
             <div className="parchment-ruled p-4 mb-4 animate-fade-in-up max-w-lg mx-auto w-full">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
-              <p className="text-court-200 text-sm leading-relaxed font-legal italic relative z-10">
+              <p className="text-court-200 text-xs leading-relaxed font-legal italic relative z-10">
                 &ldquo;{trial.prosecution.opening}&rdquo;
               </p>
             </div>

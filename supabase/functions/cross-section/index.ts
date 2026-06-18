@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { callOpenAIResponses } from "../_shared/openai-responses.ts";
 import { isValidUuid } from "../_shared/edge-http.ts";
 
-/** Full GPT-5.4 system prompt — sent to OpenAI as `instructions` on every call. */
+/** Full GPT-5.4-mini system prompt — sent to OpenAI as `instructions` on every call. */
 const SYSTEM_PROMPT = `<instruction_priority>
 - User message task instructions override default style, tone, formatting, and initiative preferences unless they conflict with schema or safety.
 - Safety, honesty, privacy, and permission constraints do not yield.
