@@ -224,11 +224,6 @@ function CrossContent() {
                 Answer both questions before you rule.
               </p>
             )}
-            {introComplete && allAnswered && (
-              <p className="text-center text-court-500 text-sm font-legal italic animate-fade-in-up">
-                Tap a different answer anytime before you deliver your ruling.
-              </p>
-            )}
 
             {trial.cross_examination.slice(0, 2).map((cq, i) => {
               const choices = cq.choices;
@@ -267,6 +262,11 @@ function CrossContent() {
                           <div className="mt-4 pt-3 border-t border-court-700 animate-fade-in-up">
                             <BailiffInlineDialogue text={bailiffMessages[i]!} />
                           </div>
+                        )}
+                        {selected !== undefined && (
+                          <p className="text-court-500 text-xs font-legal italic mt-3 text-center animate-fade-in-up">
+                            Tap a different answer to change your response.
+                          </p>
                         )}
                       </div>
                     </div>
