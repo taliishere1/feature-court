@@ -92,7 +92,7 @@ export default function LandingPage() {
               Guide
             </Link>
             <Link href="/gallery" className="text-sm text-court-400 hover:text-court-200 transition-colors">
-              Record
+              Verdicts
             </Link>
           </div>
         </div>

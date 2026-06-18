@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CourtroomBackground, SiteBrand, SiteNavLinks } from "@/components/court-components";
+import { CourtroomBackground, SiteBrand } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { pendoTrack } from "@/lib/pendo-track";
@@ -79,10 +79,7 @@ export default function FileCasePage() {
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
           <SiteBrand />
-          <div className="flex items-center gap-4 sm:gap-6">
-            <SiteNavLinks />
-            <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em] hidden sm:inline">Form No. FC-001</span>
-          </div>
+          <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em] hidden sm:inline">Form No. FC-001</span>
         </div>
       </header>
 
