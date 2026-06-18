@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
-import { SignatureBlock, ToastNotification, CourtroomBackground, CourtSeal } from "@/components/court-components";
+import { SignatureBlock, ToastNotification, CourtroomBackground, CourtSeal, SiteBrand, SiteNavLinks } from "@/components/court-components";
+import { CAST } from "@/lib/cast";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { pendoTrack } from "@/lib/pendo-track";
@@ -120,11 +121,11 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
 
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <CourtSeal className="w-5 h-5 text-gold-500" />
-            <span className="font-display text-base text-gold-500">FEATURE COURT</span>
-          </Link>
-          <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">Final Verdict</span>
+          <SiteBrand />
+          <div className="flex items-center gap-4 sm:gap-6">
+            <SiteNavLinks />
+            <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em] hidden sm:inline">Final Verdict</span>
+          </div>
         </div>
       </header>
 
@@ -201,7 +202,7 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
 
               {/* Signature block — interactive, click to sign */}
               <div className="relative z-10">
-                <SignatureBlock interactive />
+                <SignatureBlock interactive printedName={CAST.judge.printedName} />
               </div>
 
               {/* Footer */}

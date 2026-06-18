@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
-import { StageProgress, CourtroomBackground, CourtSeal, BailiffPortrait, DialogueBox } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, SiteBrand, SiteNavLinks } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -263,13 +263,13 @@ function ArraignmentContent() {
 
       <header className="border-b border-court-800 relative z-40">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-display text-base text-gold-500">
-            <CourtSeal className="w-5 h-5 text-gold-500" />
-            FEATURE COURT
-          </Link>
-          <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em]">
-            Docket No. {trial.id.slice(0, 8).toUpperCase()}
-          </span>
+          <SiteBrand />
+          <div className="flex items-center gap-4 sm:gap-6">
+            <SiteNavLinks />
+            <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.25em] hidden sm:inline">
+              Docket No. {trial.id.slice(0, 8).toUpperCase()}
+            </span>
+          </div>
         </div>
       </header>
 

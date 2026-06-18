@@ -23,6 +23,46 @@ export function CourtSeal({ className = "w-12 h-12", animated = false }: { class
   );
 }
 
+// ─── Site chrome ───
+
+export function SiteBrand() {
+  return (
+    <Link href="/" className="flex items-center gap-2 group">
+      <CourtSeal className="w-5 h-5 text-gold-500" />
+      <span className="font-display text-sm font-black text-gold-500 tracking-tight uppercase">
+        FEATURE COURT
+      </span>
+    </Link>
+  );
+}
+
+export function SiteNavLinks() {
+  return (
+    <nav className="flex items-center gap-4 sm:gap-6" aria-label="Site navigation">
+      <Link href="/" className="text-sm text-court-400 hover:text-court-200 transition-colors">
+        Home
+      </Link>
+      <Link href="/guide" className="text-sm text-court-400 hover:text-court-200 transition-colors">
+        Guide
+      </Link>
+      <Link href="/gallery" className="text-sm text-court-400 hover:text-court-200 transition-colors">
+        Record
+      </Link>
+    </nav>
+  );
+}
+
+export function SiteHomeLink() {
+  return (
+    <Link
+      href="/"
+      className="text-[10px] text-court-400 hover:text-court-200 font-mono uppercase tracking-[0.15em] transition-colors"
+    >
+      Home
+    </Link>
+  );
+}
+
 // ─── Wax Seal ───
 
 export function WaxSeal({ ruling, animated = true, size = 72 }: { ruling?: string; animated?: boolean; size?: number }) {
@@ -265,12 +305,12 @@ export function SignatureBlock({
   date,
   interactive = false,
   onSign,
-  judgeName = "Judge Ship Itwell",
+  printedName = "Hon. Ship Itwell",
 }: {
   date?: string;
   interactive?: boolean;
   onSign?: () => void;
-  judgeName?: string;
+  printedName?: string;
 }) {
   const today = date || new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -285,40 +325,47 @@ export function SignatureBlock({
     onSign?.();
   };
 
+  const signatureMark = (
+    <p className="font-signature text-[2.75rem] text-gold-400 leading-none tracking-normal pt-1">
+      Ship Itwell
+    </p>
+  );
+
   return (
     <div className="mt-6 pt-4 border-t border-court-700">
       <p className="font-legal text-court-500 text-xs italic mb-4">
         So ordered this day, {today}.
       </p>
-      <div className="flex items-end gap-4">
-        <div className="flex-1 min-h-[2.5rem]">
-          {interactive ? (
-            <button
-              onClick={handleSign}
-              disabled={signed}
-              className={`block text-left w-full cursor-pointer ${signed ? "" : "group"}`}
-            >
-              {signed ? (
-                <p className="font-serif italic text-2xl text-gold-400 leading-none tracking-wide">
-                  Ship Itwell
-                </p>
-              ) : (
-                <div className="border border-dashed border-court-600 rounded-sm px-4 py-2 group-hover:border-gold-500/50 group-hover:bg-gold-500/5 transition-all duration-200">
-                  <span className="font-mono text-[10px] text-court-500 group-hover:text-gold-500 uppercase tracking-[0.15em] transition-colors">
-                    Click to sign
-                  </span>
-                </div>
-              )}
-            </button>
-          ) : (
-            <p className="font-serif italic text-2xl text-gold-400 leading-none tracking-wide">
-              Ship Itwell
-            </p>
-          )}
+      <div className="flex items-center gap-4">
+        <div className="flex-[3] min-w-0">
+          <div className="min-h-[2.5rem]">
+            {interactive ? (
+              <button
+                onClick={handleSign}
+                disabled={signed}
+                className={`block text-left w-full cursor-pointer ${signed ? "" : "group"}`}
+              >
+                {signed ? (
+                  signatureMark
+                ) : (
+                  <div className="border border-dashed border-court-600 rounded-sm px-4 py-2 group-hover:border-gold-500/50 group-hover:bg-gold-500/5 transition-all duration-200">
+                    <span className="font-mono text-[10px] text-court-500 group-hover:text-gold-500 uppercase tracking-[0.15em] transition-colors">
+                      Click to sign
+                    </span>
+                  </div>
+                )}
+              </button>
+            ) : (
+              signatureMark
+            )}
+          </div>
+          <p className="font-serif text-court-200 text-sm mt-3">{printedName}</p>
+          <p className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em] mt-0.5">
+            Presiding Judge
+          </p>
         </div>
-        <div className="text-right shrink-0">
-          <p className="font-serif text-court-200 text-sm">{judgeName}</p>
-          <p className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em]">Presiding Judge</p>
+        <div className="flex-[1] flex justify-center items-center shrink-0">
+          <JudgePortrait size="thumb" reaction="neutral" />
         </div>
       </div>
     </div>
@@ -887,12 +934,13 @@ function PortraitHead({ expression = "neutral", color }: { expression: PortraitR
   );
 }
 
-type PortraitSize = "full" | "medium" | "thumb";
+type PortraitSize = "full" | "medium" | "thumb" | "mini";
 
 const PORTRAIT_DIMS: Record<PortraitSize, { w: number; h: number }> = {
   full: { w: 220, h: 244 },
   medium: { w: 140, h: 155 },
   thumb: { w: 100, h: 110 },
+  mini: { w: 52, h: 58 },
 };
 
 export function ProsecutorPortrait({ reaction = "neutral", size = "full" }: { reaction?: PortraitReaction; size?: PortraitSize }) {
@@ -1161,8 +1209,8 @@ export function ExhibitEngagementPrompt({
       className="mb-3 rounded-sm border border-gold-500/70 bg-gold-500/15 px-4 py-3 text-center shadow-[0_0_20px_rgba(245,158,11,0.15)]"
       role="status"
     >
-      <p className="text-gold-400 text-xs font-medium">Object to an exhibit to continue</p>
-      <p className="text-court-400 text-[10px] mt-1 font-legal italic leading-snug">{subcopy}</p>
+      <p className="text-gold-400 text-xs font-bold uppercase tracking-wide">Object to an exhibit to continue</p>
+      <p className="text-court-400 text-xs mt-1.5 font-legal italic leading-snug">{subcopy}</p>
     </div>
   );
 }

@@ -6,6 +6,7 @@ export const CAST = {
   },
   judge: {
     name: "Judge Ship Itwell",
+    printedName: "Hon. Ship Itwell",
     color: "#6b7280",
   },
   prosecutor: {

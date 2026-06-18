@@ -5,7 +5,7 @@ import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
 import { getAllTrials, getMyTrials } from "@/lib/store";
 import { getVisitorId } from "@/lib/visitor";
-import { CourtroomBackground, CourtSeal, JudgePortrait } from "@/components/court-components";
+import { CourtroomBackground, JudgePortrait, SiteBrand, SiteNavLinks } from "@/components/court-components";
 
 const RULING_LABELS: Record<Ruling, string> = {
   ship: "Ship It",
@@ -76,28 +76,14 @@ export default function GalleryPage() {
       <CourtroomBackground opacity={0.08} />
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <CourtSeal className="w-5 h-5 text-gold-500" />
-            <span className="font-display text-base text-gold-500">FEATURE COURT</span>
-          </Link>
-          <div className="flex items-center gap-4">
+          <SiteBrand />
+          <div className="flex items-center gap-4 sm:gap-6">
             {!loading && trials.length > 0 && (
               <span className="text-[10px] font-mono text-court-500 uppercase tracking-[0.15em] hidden sm:block">
                 <span className="text-gold-500">{trials.length}</span> case{trials.length !== 1 ? "s" : ""} on docket
               </span>
             )}
-            <Link href="/guide" className="text-[10px] text-court-400 hover:text-court-200 font-mono uppercase tracking-[0.15em] transition-colors">
-              Guide
-            </Link>
-            <div className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gold-500">
-                <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
-                <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
-                <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
-                <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.1" />
-              </svg>
-              <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">Hall of Verdicts</span>
-            </div>
+            <SiteNavLinks />
           </div>
         </div>
       </header>

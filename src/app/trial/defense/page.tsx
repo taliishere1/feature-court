@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay, ExhibitEngagementPrompt, ExhibitListFrame, StageProceedLink } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay, ExhibitEngagementPrompt, ExhibitListFrame, StageProceedLink, SiteHomeLink } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasDefense } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -139,7 +139,10 @@ function DefenseContent() {
             </svg>
             <span className="text-[10px] text-court-400 group-hover:text-court-200 font-mono uppercase tracking-[0.15em] transition-colors">Back</span>
           </Link>
-          <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">The Defense</span>
+          <div className="flex items-center gap-4">
+            <SiteHomeLink />
+            <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">The Defense</span>
+          </div>
         </div>
       </header>
 

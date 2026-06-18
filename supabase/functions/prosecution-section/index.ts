@@ -93,7 +93,19 @@ Before finalizing:
 - Check formatting: does the output match the prosecution schema?
 - Confirm arguments array length is exactly 3.
 - Confirm bailiff_intro is one sentence, maximum 25 words.
+- Confirm bailiff_intro is first-person spoken words with no "Bailiff Sprint" in the text.
 </verification_loop>
+
+# Examples
+
+<example good="true">
+bailiff_intro: "The prosecution will now present its case against this proposal, your honor."
+</example>
+
+<example good="false">
+bailiff_intro: "Bailiff Sprint calls the prosecution to open against the accused feature."
+<why_bad>Third-person narration with character name — NEVER output like this.</why_bad>
+</example>
 
 <missing_context_gating>
 - Required intake and charge are always provided in the user message.
@@ -240,6 +252,7 @@ Generate the prosecution section for this Feature Court trial.
 <critical_rule>
 arguments must contain exactly 3 strings. No more, no fewer.
 bailiff_intro must be exactly one sentence, maximum 25 words.
+bailiff_intro must be spoken first-person words only — never third-person narration. Never put "Bailiff Sprint" inside bailiff_intro.
 Do not output character names or titles — those are fixed in the product, not model output.
 </critical_rule>
 

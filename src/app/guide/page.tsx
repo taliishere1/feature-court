@@ -1,8 +1,9 @@
 import Link from "next/link";
 import {
   CourtroomBackground,
-  CourtSeal,
   ScrollworkBorder,
+  SiteBrand,
+  SiteNavLinks,
 } from "@/components/court-components";
 
 export default function GuidePage() {
@@ -13,18 +14,8 @@ export default function GuidePage() {
       {/* Header */}
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <CourtSeal className="w-5 h-5 text-gold-500" />
-            <span className="font-display text-base text-gold-500">FEATURE COURT</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gold-500">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-              <span className="font-mono text-[10px] text-court-600 uppercase tracking-[0.2em]">Guide</span>
-            </div>
-          </div>
+          <SiteBrand />
+          <SiteNavLinks />
         </div>
       </header>
 

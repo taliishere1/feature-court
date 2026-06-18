@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CourtroomBackground, CourtSeal, InteractiveGavel } from "@/components/court-components";
+import { CourtroomBackground, InteractiveGavel, SiteBrand } from "@/components/court-components";
 import { Ruling } from "@/lib/types";
 import { getMyTrials } from "@/lib/store";
 import { getVisitorId } from "@/lib/visitor";
@@ -81,12 +81,7 @@ export default function LandingPage() {
       {/* Clean header */}
       <header className={`relative z-10 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0 -translate-y-4"}`}>
         <div className="max-w-6xl mx-auto px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CourtSeal className="w-5 h-5 text-gold-500" />
-            <span className="font-display text-lg text-gold-500 tracking-tight">
-              FEATURE COURT
-            </span>
-          </div>
+          <SiteBrand />
           <div className="flex items-center gap-6">
             {casesTried > 0 && (
               <span className="text-xs text-court-500">
