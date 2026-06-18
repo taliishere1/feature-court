@@ -23,6 +23,9 @@ function buildContentSecurityPolicy(): string {
     "https://data.pendo.io",
     "https://cdn.pendo.io",
     "https://*.pendo.io",
+    "https://*.static.pendo.io",
+    "https://pendo-static-6679533350748160.storage.googleapis.com",
+    "https://content-6679533350748160.static.pendo.io",
     "https://*.storage.googleapis.com",
     "wss://*.supabase.co",
   ];
@@ -36,7 +39,7 @@ function buildContentSecurityPolicy(): string {
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://cdn.pendo.io https://data.pendo.io https://*.pendo.io https://*.storage.googleapis.com",
     `connect-src ${connectSrc.join(" ")}`,
-    "worker-src 'self' blob:",
+    "worker-src blob:",
     "frame-ancestors 'none'",
   ].join("; ");
 }
