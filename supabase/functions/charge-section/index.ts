@@ -16,15 +16,14 @@ const DEFENSE_CHARACTER = {
 const BAILIFF_DIALOGUE_BOX_1 =
   "All rise — Feature Court is in session, the Honorable Judge Ship Itwell presiding.";
 
-/** Developer instructions — critical rules first, then Identity → Instructions → Examples. Re-sent every call. */
+/** Developer instructions — critical rules first, then Identity → Instructions. Re-sent every call. */
 const SYSTEM_PROMPT = `<critical_rules>
 Output JSON matching charge_scene schema only.
 bailiff_dialogue: exactly 2 strings — two sequential dialogue boxes in the UI.
 bailiff_dialogue[0]: copy this line exactly, character for character, with no additions:
 ${BAILIFF_DIALOGUE_BOX_1}
 bailiff_dialogue[1]: one spoken first-person sentence summarizing this case from trial_intake (proposal, audience, whyNow, tradeoff). Max 25 words. Unique to this intake.
-The UI shows the speaker name separately — do not speak any character name in bailiff_dialogue.
-The bailiff does not preside — only Judge Ship Itwell presides (already stated in box 1).
+The bailiff does not preside — only Judge Ship Itwell presides (stated in box 1).
 case_title and charge must ground in trial_intake from the user message.
 Do not ask clarifying questions. Do not omit required schema fields.
 </critical_rules>
@@ -129,23 +128,7 @@ Before finalizing:
 - Do not stop at the first plausible answer.
 - Look for second-order issues, edge cases, and missing constraints.
 - Perform at least one verification step before finalizing.
-</dig_deeper_nudge>
-
-# Examples
-
-<trial_intake id="example-1">
-proposal: ...
-audience: ...
-whyNow: ...
-tradeoff: ...
-</trial_intake>
-
-<assistant_response id="example-1">
-bailiff_dialogue[0]: ${BAILIFF_DIALOGUE_BOX_1}
-bailiff_dialogue[1]: one unique first-person sentence from all four intake fields
-case_title: theatrical title from proposal
-charge: one sentence referencing proposal, audience, whyNow, tradeoff
-</assistant_response>`;
+</dig_deeper_nudge>`;
 
 const CHARGE_SCENE_SCHEMA = {
   type: "object",

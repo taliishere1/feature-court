@@ -6,7 +6,7 @@ import { isValidUuid } from "../_shared/edge-http.ts";
 const PROSECUTOR_NAME = "Prosecutor Mary T. Bug";
 const DEFENSE_NAME = 'Defense Attorney Edward "Edge" Case';
 
-/** Developer instructions — critical rules first, then Identity → Instructions → Examples. Re-sent every call. */
+/** Developer instructions — critical rules first, then Identity → Instructions. Re-sent every call. */
 const SYSTEM_PROMPT = `<critical_rules>
 Output JSON matching docket_summary schema only.
 summary: exactly 2-3 sentences.
@@ -109,21 +109,7 @@ Before finalizing:
 - Do not stop at the first plausible answer.
 - Ensure the summary captures the tension between prosecution and defense and the final ruling.
 - Perform at least one verification step before finalizing.
-</dig_deeper_nudge>
-
-# Examples
-
-<trial_context id="example-1">
-case_title: ...
-charge: ...
-ruling: ...
-prosecutor_name: ...
-defense_name: ...
-</trial_context>
-
-<assistant_response id="example-1">
-summary: 2-3 sentences referencing this case, prosecutor_name position, defense_name position, and ruling
-</assistant_response>`;
+</dig_deeper_nudge>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

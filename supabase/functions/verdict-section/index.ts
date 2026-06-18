@@ -10,7 +10,7 @@ const VERDICT_LABELS = {
   mistrial: "Mistrial",
 } as const;
 
-/** Developer instructions — critical rules first, then Identity → Instructions → Examples. Re-sent every call. */
+/** Developer instructions — critical rules first, then Identity → Instructions. Re-sent every call. */
 const SYSTEM_PROMPT = `<critical_rules>
 Output JSON matching verdicts schema only.
 verdicts: exactly four keys — ship, kill, revise, mistrial.
@@ -117,20 +117,7 @@ Before finalizing:
 - Do not stop at the first plausible answer.
 - Look for second-order risks and ignored arguments unique to each verdict path.
 - Perform at least one verification step before finalizing.
-</dig_deeper_nudge>
-
-# Examples
-
-<trial_context id="example-1">
-proposal: ...
-charge: ...
-prosecution_arguments: ...
-defense_arguments: ...
-</trial_context>
-
-<assistant_response id="example-1">
-verdicts.ship, verdicts.kill, verdicts.revise, verdicts.mistrial: each with label, description, sentence, real_risk, strongest_ignored_argument, test_first — all grounded in this trial
-</assistant_response>`;
+</dig_deeper_nudge>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

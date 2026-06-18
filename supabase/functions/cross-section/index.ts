@@ -3,12 +3,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { callOpenAIResponses } from "../_shared/openai-responses.ts";
 import { isValidUuid } from "../_shared/edge-http.ts";
 
-/** Developer instructions — critical rules first, then Identity → Instructions → Examples. Re-sent every call. */
+/** Developer instructions — critical rules first, then Identity → Instructions. Re-sent every call. */
 const SYSTEM_PROMPT = `<critical_rules>
 Output JSON matching cross_examination schema only.
 bailiff_dialogue: exactly 1 string. One sentence, max 25 words. Spoken first-person words only.
 Every bailiff_reaction: one sentence, first-person spoken words only.
-The UI shows the speaker name separately — do not speak any character name in bailiff_dialogue or bailiff_reaction.
+The UI labels the bailiff separately — do not name the bailiff in bailiff_dialogue or bailiff_reaction.
 Judge Ship Itwell presides. The bailiff does NOT preside.
 No third-person narration, stage directions, or narrator voice in bailiff fields.
 questions: exactly 2 entries. Each question has exactly 3 choices with label, text, and bailiff_reaction.
@@ -26,7 +26,7 @@ Tone: dry and procedural; probes conviction without hostility.
 
 <bailiff_spoken_contract>
 bailiff_dialogue and every bailiff_reaction are SPOKEN WORDS in first person — what the bailiff says aloud.
-The UI shows the speaker name separately — do not speak any character name in bailiff fields.
+The UI labels the bailiff separately — do not name the bailiff in spoken bailiff fields.
 No third-person narration, stage directions, or narrator voice.
 </bailiff_spoken_contract>
 
@@ -104,7 +104,7 @@ Before finalizing:
 - Confirm questions array length is exactly 2.
 - Confirm each question has exactly 3 choices with label, text, and bailiff_reaction.
 - Confirm bailiff_dialogue array length is exactly 1.
-- Confirm bailiff_dialogue[0] and every bailiff_reaction are first-person spoken words with no character names in the text.
+- Confirm bailiff_dialogue[0] and every bailiff_reaction are first-person spoken words and do not name the bailiff.
 </verification_loop>
 
 <tool_persistence_rules>
@@ -123,21 +123,7 @@ Before finalizing:
 - Do not stop at the first plausible answer.
 - Look for second-order tensions between prosecution and defense arguments.
 - Perform at least one verification step before finalizing.
-</dig_deeper_nudge>
-
-# Examples
-
-<trial_context id="example-1">
-proposal: ...
-charge: ...
-prosecution_arguments: ...
-defense_arguments: ...
-</trial_context>
-
-<assistant_response id="example-1">
-bailiff_dialogue[0]: one first-person spoken sentence opening cross; max 25 words; tension from prosecution vs defense
-questions[0..1]: each with question text and exactly 3 choices (label, text, bailiff_reaction); all spoken fields first person; no character names
-</assistant_response>`;
+</dig_deeper_nudge>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -294,7 +280,7 @@ bailiff_dialogue must contain exactly 1 string. No more, no fewer.
 Each choice must have label, text, and bailiff_reaction.
 bailiff_dialogue must be exactly one sentence, maximum 25 words.
 bailiff_dialogue and every bailiff_reaction: spoken first-person words only — never third-person narration.
-Do not speak any character name in bailiff_dialogue or bailiff_reaction values.
+Do not name the bailiff in bailiff_dialogue or bailiff_reaction values.
 Questions probe the judge's conviction, honesty, and readiness to rule on this specific case.
 </critical_rule>
 
