@@ -533,6 +533,14 @@ body {
   line-height: 1.6;
   color: var(--color-court-200);
   padding-left: 0;
+  max-height: min(40vh, 12rem);
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .dialogue-box-body {
+    max-height: min(45vh, 14rem);
+  }
 }
 
 .dialogue-box-continue {

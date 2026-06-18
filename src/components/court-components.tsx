@@ -1232,6 +1232,8 @@ interface DialogueBoxProps {
   text: string;
   color?: string;
   typingSpeed?: number;
+  /** When true, show full text immediately instead of typewriter (for longer copy). */
+  instant?: boolean;
   onComplete?: () => void;
   showContinue?: boolean;
   onAdvance?: () => void;
@@ -1245,6 +1247,7 @@ export function DialogueBox({
   text,
   color = "#d4af37",
   typingSpeed = 25,
+  instant = false,
   onComplete,
   showContinue = true,
   onAdvance,
@@ -1265,8 +1268,13 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
 
   useEffect(() => {
     if (!text) return;
-    tbDispatch({ type: 'START_TYPING' });
-  }, [text]);
+    if (instant) {
+      tbDispatch({ type: 'FINISH_TYPING' });
+      onComplete?.();
+    } else {
+      tbDispatch({ type: 'START_TYPING' });
+    }
+  }, [text, instant, onComplete]);
 
   const handleTypeComplete = useCallback(() => {
     tbDispatch({ type: 'FINISH_TYPING' });
@@ -1293,7 +1301,9 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
             )}
           </div>
           <div className="dialogue-box-body">
-            {typing ? (
+            {instant ? (
+              <span className="animate-fade-in-up">{text}</span>
+            ) : typing ? (
               <TypewriterText text={text} speed={typingSpeed} tag="span" onComplete={handleTypeComplete} />
             ) : (
               <span>{text}</span>
