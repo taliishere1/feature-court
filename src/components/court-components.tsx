@@ -1343,16 +1343,15 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
               <span>{text}</span>
             )}
           </div>
-          {overflows && !atBottom && typingDone && (
-            <p className="dialogue-box-scroll-hint">Scroll to read</p>
-          )}
-          {showContinue && canContinue && onAdvance && (
+          {typingDone && onAdvance && (
             <button
               type="button"
               onClick={onAdvance}
-              className="dialogue-box-continue dialogue-box-continue-btn"
+              disabled={!canContinue}
+              aria-disabled={!canContinue}
+              className={`dialogue-box-continue dialogue-box-continue-btn${canContinue ? "" : " dialogue-box-continue-btn--blocked"}`}
             >
-              ▼ Continue
+              {canContinue ? "▼ Continue" : "Scroll to read more ↓"}
             </button>
           )}
           {showContinue && canContinue && !onAdvance && (

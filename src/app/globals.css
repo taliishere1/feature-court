@@ -543,17 +543,6 @@ body {
   mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent 100%);
 }
 
-.dialogue-box-scroll-hint {
-  margin-top: 0.35rem;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-court-500);
-  animation: glow-pulse 1.5s ease-in-out infinite;
-}
-
 @media (min-width: 768px) {
   .dialogue-box-body {
     max-height: min(45vh, 14rem);
@@ -580,8 +569,20 @@ body {
   transition: color 0.2s;
 }
 
-.dialogue-box-continue-btn:hover {
+.dialogue-box-continue-btn:hover:not(:disabled) {
   color: var(--color-gold-400);
+}
+
+.dialogue-box-continue-btn--blocked {
+  font-size: 0.8125rem;
+  color: var(--color-court-400);
+  animation: none;
+  cursor: default;
+  opacity: 1;
+}
+
+.dialogue-box-continue-btn:disabled {
+  cursor: default;
 }
 
 /* ─── Evidence Card ─── */
