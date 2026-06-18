@@ -128,21 +128,23 @@ Before finalizing:
 
 # Examples
 
-Illustrates structure and violations only. Never copy example wording — ground every field in trial_context from the user message.
+Paired input/output patterns only. Apply to trial_context in the user message — never copy example wording.
 
-<correct_flow>
-trial_context in user message →
-verdicts.ship: all six fields; reflects ship path for this trial →
-verdicts.kill: all six fields; reflects kill path for this trial →
-verdicts.revise: all six fields; reflects revise path for this trial →
-verdicts.mistrial: all six fields; reflects mistrial path for this trial
-</correct_flow>
+<trial_context id="example-1">
+intake, charge, prosecution, and defense from user message
+</trial_context>
 
-<incorrect_pattern>
-FORBIDDEN: missing any of ship, kill, revise, mistrial keys
-FORBIDDEN: missing any required field on a verdict
-FORBIDDEN: generic product advice not tied to this trial's intake and arguments
-</incorrect_pattern>`;
+<assistant_response id="example-1">
+verdicts.ship, verdicts.kill, verdicts.revise, verdicts.mistrial: each with label, description, sentence, real_risk, strongest_ignored_argument, test_first — all grounded in this trial
+</assistant_response>
+
+<trial_context id="example-2">
+intake, charge, prosecution, and defense from user message
+</trial_context>
+
+<assistant_response id="example-2">
+Anti-pattern — never output: missing verdict keys; missing required fields; generic product advice not tied to this trial
+</assistant_response>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -326,17 +328,9 @@ Each verdict must reflect the specific arguments and evidence from this trial, n
 JSON matching the verdicts schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — every value must come from trial_context above, not from this example:
-{
-  "verdicts": {
-    "ship": {"label": "<short>", "description": "<one line>", "sentence": "<grounded in this trial>", "real_risk": "<from this trial>", "strongest_ignored_argument": "<from this trial>", "test_first": "<from this trial>"},
-    "kill": {"label": "<short>", "description": "<one line>", "sentence": "<grounded in this trial>", "real_risk": "<from this trial>", "strongest_ignored_argument": "<from this trial>", "test_first": "<from this trial>"},
-    "revise": {"label": "<short>", "description": "<one line>", "sentence": "<grounded in this trial>", "real_risk": "<from this trial>", "strongest_ignored_argument": "<from this trial>", "test_first": "<from this trial>"},
-    "mistrial": {"label": "<short>", "description": "<one line>", "sentence": "<grounded in this trial>", "real_risk": "<from this trial>", "strongest_ignored_argument": "<from this trial>", "test_first": "<from this trial>"}
-  }
-}
-</example>`;
+<output_shape>
+Return verdicts schema JSON only. Ground every field in trial_context above.
+</output_shape>`;
 
     const { id: conversation_id, outputText } = await callOpenAIResponses({
       apiKey,

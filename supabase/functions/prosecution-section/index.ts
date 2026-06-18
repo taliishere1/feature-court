@@ -146,22 +146,24 @@ Before finalizing:
 
 # Examples
 
-Illustrates structure and violations only. Never copy example wording — ground every field in trial_context from the user message.
+Paired input/output patterns only. Apply to trial_context in the user message — never copy example wording.
 
-<correct_flow>
-trial_context in user message →
-bailiff_intro: first-person one sentence introducing prosecution phase; max 25 words; no "Bailiff Sprint" →
-opening: Prosecutor voice; grounded in intake and charge →
-arguments[0..2]: three distinct paragraphs; each tied to intake fields →
-closing: Prosecutor voice; ties to this case
-</correct_flow>
+<trial_context id="example-1">
+intake fields and charge from user message
+</trial_context>
 
-<incorrect_pattern>
-FORBIDDEN: "Bailiff Sprint" or bailiff presiding in bailiff_intro
-FORBIDDEN: third-person narration in bailiff_intro
-FORBIDDEN: arguments length other than exactly 3
-FORBIDDEN: generic product-management platitudes not tied to this trial
-</incorrect_pattern>`;
+<assistant_response id="example-1">
+bailiff_intro: one first-person spoken sentence introducing prosecution phase; max 25 words; no "Bailiff Sprint"
+opening, arguments[0..2], closing: Prosecutor voice grounded in intake and charge; exactly 3 arguments
+</assistant_response>
+
+<trial_context id="example-2">
+intake fields and charge from user message
+</trial_context>
+
+<assistant_response id="example-2">
+Anti-pattern — never output: Bailiff Sprint in bailiff_intro; third-person narration; arguments length other than 3; generic platitudes not tied to this trial
+</assistant_response>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -318,19 +320,9 @@ Do not output character names or titles — those are fixed in the product, not 
 JSON matching the prosecution schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — every value must come from trial_context above, not from this example:
-{
-  "bailiff_intro": "<one spoken sentence; prosecution phase; first person; max 25 words>",
-  "opening": "<Prosecutor opening grounded in intake and charge>",
-  "arguments": [
-    "<paragraph tied to intake/charge>",
-    "<paragraph tied to intake/charge>",
-    "<paragraph tied to intake/charge>"
-  ],
-  "closing": "<Prosecutor closing tied to this case>"
-}
-</example>`;
+<output_shape>
+Return prosecution schema JSON only. Ground every field in trial_context above.
+</output_shape>`;
 
     const { id: conversation_id, outputText } = await callOpenAIResponses({
       apiKey,

@@ -121,18 +121,23 @@ Before finalizing:
 
 # Examples
 
-Illustrates structure and violations only. Never copy example wording — ground summary in trial_context from the user message.
+Paired input/output patterns only. Apply to trial_context in the user message — never copy example wording.
 
-<correct_flow>
-trial_context in user message →
-summary: 2-3 sentences referencing case, prosecutor_name position, defense_name position, and ruling
-</correct_flow>
+<trial_context id="example-1">
+case, charge, ruling, prosecutor_name, defense_name, and counsel openings from user message
+</trial_context>
 
-<incorrect_pattern>
-FORBIDDEN: summary shorter than 2 or longer than 3 sentences
-FORBIDDEN: invented counsel names (use prosecutor_name and defense_name from trial_context)
-FORBIDDEN: generic summary not tied to this case and ruling
-</incorrect_pattern>`;
+<assistant_response id="example-1">
+summary: 2-3 sentences referencing this case, prosecutor_name position, defense_name position, and ruling
+</assistant_response>
+
+<trial_context id="example-2">
+case, charge, ruling, prosecutor_name, defense_name from user message
+</trial_context>
+
+<assistant_response id="example-2">
+Anti-pattern — never output: generic summary; invented counsel names; wrong sentence count
+</assistant_response>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -295,10 +300,9 @@ Use the fixed prosecutor_name and defense_name from trial_context; do not invent
 JSON matching the docket_summary schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — every value must come from trial_context above, not from this example:
-{"summary": "<2-3 sentences: case + prosecutor_name position + defense_name position + ruling>"}
-</example>`;
+<output_shape>
+Return docket_summary schema JSON only. Ground summary in trial_context above.
+</output_shape>`;
 
     const { outputText } = await callOpenAIResponses({
       apiKey,

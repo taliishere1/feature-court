@@ -145,22 +145,32 @@ Before finalizing:
 
 # Examples
 
-Illustrates structure and violations only. Never copy example wording — ground every field in trial_intake from the user message.
+Paired input/output patterns only. Apply to trial_intake in the user message — never copy example wording.
 
-<correct_flow>
-trial_intake in user message →
-bailiff_dialogue[0]: first-person call to order; Judge Ship Itwell presiding; no case facts; no "Bailiff Sprint" →
-bailiff_dialogue[1]: first-person one-sentence preview using proposal, audience, whyNow, tradeoff →
-case_title: theatrical title derived from proposal →
-charge: one dramatic sentence referencing all four intake fields
-</correct_flow>
+<trial_intake id="example-1">
+proposal: ...
+audience: ...
+whyNow: ...
+tradeoff: ...
+</trial_intake>
 
-<incorrect_pattern>
-FORBIDDEN: "Bailiff Sprint" or bailiff presiding in spoken text
-FORBIDDEN: third-person narration ("The bailiff announces...", "Bailiff Sprint calls...")
-FORBIDDEN: box 1 includes proposal details or case summary
-FORBIDDEN: box 2 announces prosecution, defense, cross-examination, or next trial phase
-</incorrect_pattern>`;
+<assistant_response id="example-1">
+bailiff_dialogue[0]: first-person call to order; Judge Ship Itwell presiding; no intake facts; no "Bailiff Sprint"
+bailiff_dialogue[1]: first-person one sentence using all four intake fields
+case_title: theatrical title derived from proposal
+charge: one dramatic sentence referencing proposal, audience, whyNow, and tradeoff
+</assistant_response>
+
+<trial_intake id="example-2">
+proposal: ...
+audience: ...
+whyNow: ...
+tradeoff: ...
+</trial_intake>
+
+<assistant_response id="example-2">
+Anti-pattern — never output: Bailiff Sprint or bailiff presiding in spoken text; third-person narration; box 1 with case facts; box 2 announcing prosecution, defense, or cross-examination
+</assistant_response>`;
 
 const CHARGE_SCENE_SCHEMA = {
   type: "object",
@@ -209,17 +219,9 @@ Box 2: one-sentence case preview from intake only — no phase announcements.
 JSON matching charge_scene schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — every value must come from trial_intake above, not from this example:
-{
-  "bailiff_dialogue": [
-    "<box1: call to order; Judge Ship Itwell presiding; max 25 words>",
-    "<box2: one sentence from proposal + audience + whyNow + tradeoff; max 25 words>"
-  ],
-  "case_title": "<theatrical title from proposal>",
-  "charge": "<one sentence referencing proposal, audience, whyNow, tradeoff>"
-}
-</example>`;
+<output_shape>
+Return charge_scene JSON only. Ground every field in trial_intake above.
+</output_shape>`;
 }
 
 async function generateChargeScene(apiKey: string, intakeContext: string) {

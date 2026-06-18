@@ -141,18 +141,23 @@ Before finalizing:
 
 # Examples
 
-Illustrates structure and violations only. Never copy example wording — ground every field in the user message context for the current step.
+Paired input/output patterns only. Apply to the user message for the current step — never copy example wording.
 
-<correct_flow>
-User message names step schema → follow execution_order for that step → emit JSON matching that schema only → run verification_loop
-</correct_flow>
+<user_message id="example-1">
+trial_intake and step task with output_format naming the step schema
+</user_message>
 
-<incorrect_pattern>
-FORBIDDEN: "Bailiff Sprint" in bailiff_reaction or other spoken fields
-FORBIDDEN: third-person narration in spoken fields
-FORBIDDEN: fields from a different step schema than named in output_format
-FORBIDDEN: prose or markdown fences outside the requested JSON
-</incorrect_pattern>`;
+<assistant_response id="example-1">
+JSON matching only the named step schema; all fields grounded in user message context; spoken fields first person with no "Bailiff Sprint"
+</assistant_response>
+
+<user_message id="example-2">
+trial_intake and step task with output_format naming the step schema
+</user_message>
+
+<assistant_response id="example-2">
+Anti-pattern — never output: Bailiff Sprint in spoken fields; third-person narration; fields from wrong schema; prose outside requested JSON
+</assistant_response>`;
 
 const RL_WINDOW_MS = 60_000;
 const RL_MAX_PER_WINDOW = 10;
@@ -303,10 +308,9 @@ case_title must be a theatrical court case name derived from the proposal.
 JSON matching charge_step schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — fill from trial_intake above, not from this example:
-{"case_title": "<theatrical title from proposal>", "charge": "<one sentence: proposal + audience + whyNow + tradeoff>"}
-</example>`,
+<output_shape>
+Return charge_step JSON only. Ground case_title and charge in trial_intake above.
+</output_shape>`,
     schemaName: "charge_step",
     schema: {
       type: "object",
@@ -354,10 +358,9 @@ Write in Prosecutor Mary T. Bug voice.
 JSON matching prosecution_step schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — fill from trial_intake and charge above, not from this example:
-{"prosecution": {"opening": "<Prosecutor opening grounded in intake/charge>", "arguments": ["<paragraph>", "<paragraph>", "<paragraph>"]}}
-</example>`,
+<output_shape>
+Return prosecution_step JSON only. Ground opening and arguments in trial_intake and charge above.
+</output_shape>`,
     schemaName: "prosecution_step",
     schema: {
       type: "object",
@@ -417,10 +420,9 @@ Each argument must directly respond to or reframe the prosecution.
 JSON matching defense_step schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — fill from trial_intake, charge, and prosecution above, not from this example:
-{"defense": {"opening": "<Defense opening responding to prosecution>", "arguments": ["<rebuttal>", "<rebuttal>", "<rebuttal>"]}}
-</example>`,
+<output_shape>
+Return defense_step JSON only. Ground opening and arguments in trial_intake, charge, and prosecution above.
+</output_shape>`,
     schemaName: "defense_step",
     schema: {
       type: "object",
@@ -491,10 +493,9 @@ Questions must probe the judge's conviction on this specific case.
 JSON matching cross_step schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — fill from trial_intake and charge above, not from this example:
-{"cross_examination": [{"question": "<from this trial>", "choices": [{"label": "<short>", "text": "<choice>", "bailiff_reaction": "<first-person spoken>"}, {"label": "<short>", "text": "<choice>", "bailiff_reaction": "<first-person spoken>"}, {"label": "<short>", "text": "<choice>", "bailiff_reaction": "<first-person spoken>"}]}, {"question": "<second>", "choices": ["<same shape>"]}]}
-</example>`,
+<output_shape>
+Return cross_step JSON only. Ground questions and bailiff_reaction fields in trial_intake and charge above.
+</output_shape>`,
     schemaName: "cross_step",
     schema: {
       type: "object",
@@ -573,10 +574,9 @@ Each verdict must reflect this specific trial, not generic product advice.
 JSON matching verdicts_step schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — fill from trial_intake and charge above, not from this example:
-{"verdicts": {"ship": {"sentence": "<from this trial>", "real_risk": "<from this trial>", "strongest_ignored_argument": "<from this trial>", "test_first": "<from this trial>"}, "kill": {"sentence": "<...>", "real_risk": "<...>", "strongest_ignored_argument": "<...>", "test_first": "<...>"}, "revise": {"sentence": "<...>", "real_risk": "<...>", "strongest_ignored_argument": "<...>", "test_first": "<...>"}, "mistrial": {"sentence": "<...>", "real_risk": "<...>", "strongest_ignored_argument": "<...>", "test_first": "<...>"}}}
-</example>`,
+<output_shape>
+Return verdicts_step JSON only. Ground all four verdicts in trial_intake and charge above.
+</output_shape>`,
     schemaName: "verdicts_step",
     schema: {
       type: "object",

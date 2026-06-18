@@ -130,22 +130,24 @@ Before finalizing:
 
 # Examples
 
-Illustrates structure and violations only. Never copy example wording — ground every field in trial_context from the user message.
+Paired input/output patterns only. Apply to trial_context in the user message — never copy example wording.
 
-<correct_flow>
-trial_context in user message →
-bailiff_dialogue[0]: first-person one sentence opening cross; max 25 words; tension from prosecution vs defense →
-questions[0]: question + 3 choices (label, text, bailiff_reaction each first-person spoken) →
-questions[1]: question + 3 choices (label, text, bailiff_reaction each first-person spoken)
-</correct_flow>
+<trial_context id="example-1">
+intake, charge, prosecution, and defense from user message
+</trial_context>
 
-<incorrect_pattern>
-FORBIDDEN: "Bailiff Sprint" in bailiff_dialogue or bailiff_reaction
-FORBIDDEN: third-person narration in spoken fields
-FORBIDDEN: questions count other than exactly 2
-FORBIDDEN: choices count other than exactly 3 per question
-FORBIDDEN: generic product dilemmas not tied to this trial's arguments
-</incorrect_pattern>`;
+<assistant_response id="example-1">
+bailiff_dialogue[0]: one first-person spoken sentence opening cross; max 25 words; tension from prosecution vs defense
+questions[0..1]: each with question text and exactly 3 choices (label, text, bailiff_reaction); all spoken fields first person; no "Bailiff Sprint"
+</assistant_response>
+
+<trial_context id="example-2">
+intake, charge, prosecution, and defense from user message
+</trial_context>
+
+<assistant_response id="example-2">
+Anti-pattern — never output: Bailiff Sprint in spoken fields; third-person narration; question count other than 2; choices count other than 3; generic dilemmas not tied to this trial
+</assistant_response>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -323,26 +325,9 @@ Questions probe the judge's conviction, honesty, and readiness to rule on this s
 JSON matching the cross_examination schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — every value must come from trial_context above, not from this example:
-{
-  "bailiff_dialogue": ["<one spoken sentence opening cross; first person; max 25 words>"],
-  "questions": [
-    {
-      "question": "<probes judge on tension from this trial>",
-      "choices": [
-        {"label": "<short>", "text": "<choice>", "bailiff_reaction": "<first-person spoken; one sentence>"},
-        {"label": "<short>", "text": "<choice>", "bailiff_reaction": "<first-person spoken; one sentence>"},
-        {"label": "<short>", "text": "<choice>", "bailiff_reaction": "<first-person spoken; one sentence>"}
-      ]
-    },
-    {
-      "question": "<second probe from this trial>",
-      "choices": ["<same shape as above>"]
-    }
-  ]
-}
-</example>`;
+<output_shape>
+Return cross_examination schema JSON only. Ground every field in trial_context above.
+</output_shape>`;
 
     const choiceSchema = {
       type: "object",

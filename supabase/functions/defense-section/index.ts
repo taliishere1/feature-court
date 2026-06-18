@@ -147,22 +147,24 @@ Before finalizing:
 
 # Examples
 
-Illustrates structure and violations only. Never copy example wording — ground every field in trial_context from the user message.
+Paired input/output patterns only. Apply to trial_context in the user message — never copy example wording.
 
-<correct_flow>
-trial_context in user message →
-bailiff_intro: first-person one sentence introducing defense phase; max 25 words; no "Bailiff Sprint" →
-opening: Defense voice; responds to prosecution; grounded in intake and charge →
-arguments[0..2]: three distinct paragraphs; each responds to prosecution and intake →
-closing: Defense voice; ties to this case
-</correct_flow>
+<trial_context id="example-1">
+intake, charge, and prosecution from user message
+</trial_context>
 
-<incorrect_pattern>
-FORBIDDEN: "Bailiff Sprint" or bailiff presiding in bailiff_intro
-FORBIDDEN: third-person narration in bailiff_intro
-FORBIDDEN: arguments length other than exactly 3
-FORBIDDEN: arguments that ignore prosecution context
-</incorrect_pattern>`;
+<assistant_response id="example-1">
+bailiff_intro: one first-person spoken sentence introducing defense phase; max 25 words; no "Bailiff Sprint"
+opening, arguments[0..2], closing: Defense voice responding to prosecution; exactly 3 arguments grounded in trial_context
+</assistant_response>
+
+<trial_context id="example-2">
+intake, charge, and prosecution from user message
+</trial_context>
+
+<assistant_response id="example-2">
+Anti-pattern — never output: Bailiff Sprint in bailiff_intro; third-person narration; arguments length other than 3; arguments ignoring prosecution
+</assistant_response>`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -331,19 +333,9 @@ Each defense argument must directly respond to or reframe the prosecution.
 JSON matching the defense schema only. After the final JSON, output nothing further.
 </output_format>
 
-<example>
-Execution shape only — every value must come from trial_context above, not from this example:
-{
-  "bailiff_intro": "<one spoken sentence; defense phase; first person; max 25 words>",
-  "opening": "<Defense opening responding to prosecution; grounded in intake and charge>",
-  "arguments": [
-    "<paragraph rebutting prosecution; tied to intake>",
-    "<paragraph rebutting prosecution; tied to intake>",
-    "<paragraph rebutting prosecution; tied to intake>"
-  ],
-  "closing": "<Defense closing tied to this case>"
-}
-</example>`;
+<output_shape>
+Return defense schema JSON only. Ground every field in trial_context above.
+</output_shape>`;
 
     const { id: conversation_id, outputText } = await callOpenAIResponses({
       apiKey,
