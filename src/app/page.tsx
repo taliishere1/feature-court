@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CourtroomBackground, InteractiveGavel, SiteBrand } from "@/components/court-components";
+import { CourtroomBackground, InteractiveGavel, SiteBrand, SiteFooter } from "@/components/court-components";
 import { Ruling } from "@/lib/types";
 import { getMyTrials } from "@/lib/store";
 import { getVisitorId } from "@/lib/visitor";
@@ -173,11 +173,7 @@ export default function LandingPage() {
         </div>
       </main>
 
-      <footer className="border-t border-court-800 px-8 py-4 relative z-10">
-        <div className="max-w-6xl mx-auto flex items-center justify-between text-court-600 text-xs">
-          <span>FEATURE COURT</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

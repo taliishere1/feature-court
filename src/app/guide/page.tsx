@@ -4,6 +4,7 @@ import {
   ScrollworkBorder,
   SiteBrand,
   SiteNavLinks,
+  SiteFooter,
 } from "@/components/court-components";
 
 export default function GuidePage() {
@@ -275,12 +276,13 @@ export default function GuidePage() {
         </div>
       </main>
 
-      <footer className="border-t border-court-800 px-6 py-4 relative z-10">
-        <div className="max-w-4xl mx-auto flex items-center justify-between text-court-600 text-xs">
-          <span>FEATURE COURT</span>
-          <Link href="/" className="hover:text-court-400 transition-colors">Back to the court</Link>
-        </div>
-      </footer>
+      <SiteFooter
+        end={
+          <Link href="/" className="hover:text-court-400 transition-colors">
+            Back to the court
+          </Link>
+        }
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useReducer, useId } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { SITE } from "@/lib/site";
 import { playGavelClunk } from "@/lib/gavel-sound";
 
 // ─── Ornate Court Seal ───
@@ -60,6 +61,30 @@ export function SiteHomeLink() {
     >
       Home
     </Link>
+  );
+}
+
+export function SiteFooter({ end }: { end?: React.ReactNode }) {
+  return (
+    <footer className="border-t border-court-800 px-6 sm:px-8 py-4 relative z-10">
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap text-court-600 text-xs">
+        <span className="font-mono uppercase tracking-[0.15em]">Feature Court</span>
+        <div className="flex items-center gap-4 flex-wrap">
+          <span>
+            Built by{" "}
+            <a
+              href={SITE.creatorUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-court-400 hover:text-court-200 transition-colors"
+            >
+              {SITE.creatorName}
+            </a>
+          </span>
+          {end}
+        </div>
+      </div>
+    </footer>
   );
 }
 
