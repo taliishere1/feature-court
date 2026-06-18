@@ -234,7 +234,7 @@ function RulingContent() {
             name={CAST.judge.name}
             title="Presiding Judge"
             footer={
-              <div className="text-center lg:text-left animate-fade-in-up space-y-3">
+              <div className="animate-fade-in-up space-y-3 w-full">
                 {submitError && (
                   <p className="text-sm text-red-400/90 font-legal" role="alert">
                     {submitError}
@@ -243,7 +243,7 @@ function RulingContent() {
                 {rulingLocked && recordedRuling ? (
                   <Link
                     href={`/verdict/${trial.id}?ruling=${recordedRuling}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : "")}
-                    className="group inline-flex items-center gap-2 px-6 py-2.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
+                    className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
                   >
                     View your verdict
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
@@ -255,7 +255,7 @@ function RulingContent() {
                     type="button"
                     onClick={handleSubmit}
                     disabled={!selected || submitting}
-                    className="group inline-flex items-center gap-2 px-6 py-2.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
+                    className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
                   >
                     {submitting ? "Recording ruling..." : "Read the verdict"}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
@@ -266,30 +266,30 @@ function RulingContent() {
               </div>
             }
           >
-            <div className="text-center lg:text-left animate-fade-in-up">
-              <h1 className="font-display text-xl sm:text-2xl font-bold text-gold-500 mb-1">
+            <div className="text-center animate-fade-in-up">
+              <h1 className="font-display text-lg lg:text-xl font-bold text-gold-500 mb-1">
                 How do you rule, Your Honor?
               </h1>
-              <p className="text-court-400 text-sm font-legal">
+              <p className="text-court-400 text-xs lg:text-sm font-legal">
                 Case: <span className="text-court-200">{trial.case_title}</span>
               </p>
             </div>
 
             {rulingLocked && (
               <div
-                className="rounded-sm border border-gold-500/60 bg-gold-500/10 px-4 py-3 text-center lg:text-left"
+                className="rounded-sm border border-gold-500/60 bg-gold-500/10 px-3 py-2.5 text-center"
                 role="status"
               >
-                <p className="text-gold-300 text-sm font-semibold">
+                <p className="text-gold-300 text-xs lg:text-sm font-semibold">
                   Ruling recorded: {lockedLabel}
                 </p>
-                <p className="text-court-300 text-xs mt-1 font-legal italic">
+                <p className="text-court-300 text-[11px] mt-1 font-legal italic">
                   The court&apos;s verdict is final for this case.
                 </p>
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 lg:gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-2.5">
               {RULING_OPTIONS.map((option, i) => {
                 const isSelected = selected === option.key;
                 const verdict = trial.verdicts?.[option.key];
@@ -311,23 +311,23 @@ function RulingContent() {
                       }`}
                       style={{ animationDelay: `${i * 0.05}s` }}
                     >
-                      <div className="p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      <div className="p-2.5 lg:p-3">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
                             isSelected ? "border-gold-500" : "border-court-500"
                           }`}>
-                            {isSelected && <div className="w-2 h-2 rounded-full bg-gold-500 animate-seal-appear" />}
+                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-gold-500 animate-seal-appear" />}
                           </div>
-                          <span className={`font-serif text-sm font-bold transition-colors ${
+                          <span className={`font-serif text-xs lg:text-sm font-bold transition-colors ${
                             isSelected ? "gold-foil" : "text-court-200"
                           }`}>
                             {label}
                           </span>
                         </div>
-                        <p className="text-court-500 text-[11px] ml-6 leading-snug">{description}</p>
+                        <p className="text-court-500 text-[10px] lg:text-[11px] ml-5 leading-snug">{description}</p>
                         {isSelected && (
-                          <div className="ml-6 mt-1.5 pt-1.5 border-t border-gold-500/20">
-                            <p className="font-legal text-court-400 text-[11px] italic animate-fade-in-up line-clamp-2">
+                          <div className="ml-5 mt-1 pt-1 border-t border-gold-500/20">
+                            <p className="font-legal text-court-400 text-[10px] lg:text-[11px] italic animate-fade-in-up line-clamp-2">
                               &ldquo;{sentence}&rdquo;
                             </p>
                           </div>
