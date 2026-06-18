@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TrialData, Ruling } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
-import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, SiteBrand, SiteHomeLink, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, BailiffDialoguePortrait, DialogueBox, SiteBrand, SiteHomeLink, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -365,12 +365,7 @@ function ArraignmentContent() {
 
       {revealed && hasDialogue && !dialogueDismissed && (
         <DialogueBox
-          portrait={
-            <>
-              <span className="lg:hidden"><BailiffPortrait size="thumb" reaction="neutral" /></span>
-              <span className="hidden lg:inline-flex"><BailiffPortrait size="medium" reaction="neutral" /></span>
-            </>
-          }
+          portrait={<BailiffDialoguePortrait reaction="neutral" />}
           name={CAST.bailiff.name}
           text={bailiffDialogues[dialogueIndex] ?? ""}
           color={CAST.bailiff.color}
