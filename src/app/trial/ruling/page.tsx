@@ -273,6 +273,11 @@ function RulingContent() {
               <p className="text-court-400 text-xs lg:text-sm font-legal">
                 Case: <span className="text-court-200">{trial.case_title}</span>
               </p>
+              {!rulingLocked && selected && (
+                <p className="text-court-500 text-[11px] mt-1 font-legal italic">
+                  Select a different ruling anytime before you read the verdict.
+                </p>
+              )}
             </div>
 
             {rulingLocked && (

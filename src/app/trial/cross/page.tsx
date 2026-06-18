@@ -224,6 +224,11 @@ function CrossContent() {
                 Answer both questions before you rule.
               </p>
             )}
+            {introComplete && allAnswered && (
+              <p className="text-center text-court-500 text-sm font-legal italic animate-fade-in-up">
+                Tap a different answer anytime before you deliver your ruling.
+              </p>
+            )}
 
             {trial.cross_examination.slice(0, 2).map((cq, i) => {
               const choices = cq.choices;
@@ -245,12 +250,13 @@ function CrossContent() {
                                 key={ci}
                                 type="button"
                                 onClick={() => handleChoice(i, ci)}
-                                disabled={selected !== undefined}
                                 className={`w-full text-left px-4 py-3 rounded-sm border text-sm font-legal tracking-wide transition-all duration-200 cursor-pointer ${
                                   selected === ci
                                     ? "border-gold-500 bg-gold-500/10 text-court-100 shadow-[0_0_12px_rgba(212,175,55,0.1)]"
-                                    : "border-court-700 text-court-400 hover:border-court-500 hover:text-court-200"
-                                } ${selected !== undefined && selected !== ci ? "opacity-50" : ""}`}
+                                    : selected !== undefined
+                                      ? "border-court-700 text-court-400 hover:border-gold-500/50 hover:text-court-200 hover:bg-court-800/40"
+                                      : "border-court-700 text-court-400 hover:border-court-500 hover:text-court-200"
+                                }`}
                               >
                                 <span className="block leading-relaxed">&ldquo;{choice.text}&rdquo;</span>
                               </button>
