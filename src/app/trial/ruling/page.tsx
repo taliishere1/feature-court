@@ -233,6 +233,38 @@ function RulingContent() {
             portraitLarge={<JudgePortrait size="full" reaction="neutral" />}
             name={CAST.judge.name}
             title="Presiding Judge"
+            footer={
+              <div className="text-center lg:text-left animate-fade-in-up space-y-3">
+                {submitError && (
+                  <p className="text-sm text-red-400/90 font-legal" role="alert">
+                    {submitError}
+                  </p>
+                )}
+                {rulingLocked && recordedRuling ? (
+                  <Link
+                    href={`/verdict/${trial.id}?ruling=${recordedRuling}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : "")}
+                    className="group inline-flex items-center gap-2 px-6 py-2.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
+                  >
+                    View your verdict
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={!selected || submitting}
+                    className="group inline-flex items-center gap-2 px-6 py-2.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
+                  >
+                    {submitting ? "Recording ruling..." : "Read the verdict"}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            }
           >
             <div className="text-center lg:text-left animate-fade-in-up">
               <h1 className="font-display text-xl sm:text-2xl font-bold text-gold-500 mb-1">
@@ -310,36 +342,6 @@ function RulingContent() {
               })}
             </div>
 
-            <div className="text-center lg:text-left animate-fade-in-up space-y-3 pt-2">
-              {submitError && (
-                <p className="text-sm text-red-400/90 font-legal" role="alert">
-                  {submitError}
-                </p>
-              )}
-              {rulingLocked && recordedRuling ? (
-                <Link
-                  href={`/verdict/${trial.id}?ruling=${recordedRuling}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : "")}
-                  className="group inline-flex items-center gap-2 px-6 py-2.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
-                >
-                  View your verdict
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!selected || submitting}
-                  className="group inline-flex items-center gap-2 px-6 py-2.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-sm animate-button-press"
-                >
-                  {submitting ? "Recording ruling..." : "Read the verdict"}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </button>
-              )}
-            </div>
           </CounselStageLayout>
           </div>
         </div>

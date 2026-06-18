@@ -163,6 +163,15 @@ function ProsecutionContent() {
               portraitLarge={<ProsecutorPortrait size="full" />}
               name={prosecutorName}
               title={prosecutorTitle}
+              footer={
+                <div className="text-center animate-fade-in-up">
+                  <StageProceedLink
+                    engaged={exhibitEngaged}
+                    href={`/trial/defense?id=${trial.id}`}
+                    label="Hear the defense"
+                  />
+                </div>
+              }
             >
               <div className="parchment-ruled p-4 animate-fade-in-up w-full">
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
@@ -185,14 +194,6 @@ function ProsecutionContent() {
                   </EvidenceCard>
                 ))}
               </ExhibitListFrame>
-
-              <div className="text-center pt-2 animate-fade-in-up">
-                <StageProceedLink
-                  engaged={exhibitEngaged}
-                  href={`/trial/defense?id=${trial.id}`}
-                  label="Hear the defense"
-                />
-              </div>
             </CounselStageLayout>
             </div>
           )}

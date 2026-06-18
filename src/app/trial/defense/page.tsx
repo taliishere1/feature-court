@@ -163,6 +163,15 @@ function DefenseContent() {
               portraitLarge={<DefensePortrait size="full" />}
               name={defenseName}
               title={defenseTitle}
+              footer={
+                <div className="text-center animate-fade-in-up">
+                  <StageProceedLink
+                    engaged={exhibitEngaged}
+                    href={`/trial/cross?id=${trial.id}`}
+                    label="Cross-examination"
+                  />
+                </div>
+              }
             >
               <div className="parchment-ruled p-4 animate-fade-in-up w-full">
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
@@ -185,14 +194,6 @@ function DefenseContent() {
                   </EvidenceCard>
                 ))}
               </ExhibitListFrame>
-
-              <div className="text-center pt-2 animate-fade-in-up">
-                <StageProceedLink
-                  engaged={exhibitEngaged}
-                  href={`/trial/cross?id=${trial.id}`}
-                  label="Cross-examination"
-                />
-              </div>
             </CounselStageLayout>
             </div>
           )}

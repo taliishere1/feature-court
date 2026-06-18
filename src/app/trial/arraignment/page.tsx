@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { TrialData } from "@/lib/types";
+import { TrialData, Ruling } from "@/lib/types";
 import { SAMPLE_CASES } from "@/lib/types";
 import { StageProgress, CourtroomBackground, BailiffPortrait, DialogueBox, SiteBrand, SiteHomeLink, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
@@ -29,6 +29,17 @@ function normalizeArraignmentDialogue(lines: string[] | undefined): string[] {
   return (lines ?? []).map((line) => line?.trim()).filter(Boolean).slice(0, ARRAIGNMENT_BAILIFF_LINE_COUNT);
 }
 
+function rulingFromStorage(trialId: string): Ruling | undefined {
+  try {
+    const raw = localStorage.getItem("fc-rulings");
+    if (!raw) return undefined;
+    const entries = JSON.parse(raw) as { id: string; ruling: Ruling }[];
+    return entries.find((entry) => entry.id === trialId)?.ruling;
+  } catch {
+    return undefined;
+  }
+}
+
 function ArraignmentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -41,6 +52,7 @@ function ArraignmentContent() {
   const [dialogueDismissed, setDialogueDismissed] = useState(false);
   const [showContinue, setShowContinue] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [storedRuling, setStoredRuling] = useState<Ruling | undefined>();
 
   const handleRetry = useCallback(() => {
     setLoadError(null);
@@ -55,6 +67,11 @@ function ArraignmentContent() {
   const bailiffDialogues = normalizeArraignmentDialogue(trial?.charge_data?.bailiff_dialogue);
   const hasDialogue = bailiffDialogues.length > 0;
   const showCharge = revealed && (!hasDialogue || dialogueDismissed);
+  const verdictRuling = trial?.ruling ?? storedRuling;
+
+  useEffect(() => {
+    if (trial?.id) setStoredRuling(rulingFromStorage(trial.id));
+  }, [trial?.id]);
 
   const handleDialogueComplete = useCallback(() => {
     if (dialogueIndex < bailiffDialogues.length - 1) {
@@ -320,7 +337,7 @@ function ArraignmentContent() {
               </div>
 
               {/* Proceed CTA */}
-              <div className="text-center mt-8">
+              <div className="text-center mt-8 space-y-4">
                 <Link
                   href={`/trial/prosecution?id=${trial.id}`}
                   className="group inline-flex items-center gap-2.5 px-8 py-3.5 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
@@ -330,6 +347,16 @@ function ArraignmentContent() {
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </Link>
+                {verdictRuling && (
+                  <div>
+                    <Link
+                      href={`/verdict/${trial.id}?ruling=${verdictRuling}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : "")}
+                      className="text-sm text-court-400 hover:text-gold-400 font-legal italic underline underline-offset-4 transition-colors"
+                    >
+                      Skip to verdict
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -198,22 +198,29 @@ export function CounselStageLayout({
   name,
   title,
   children,
+  footer,
 }: {
   portrait: React.ReactNode;
   portraitLarge: React.ReactNode;
   name: string;
   title: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
 }) {
+  const footerBlock = footer ? (
+    <div className="pt-4 mt-4 border-t border-court-800/80 shrink-0">{footer}</div>
+  ) : null;
+
   return (
     <div className="animate-fade-in-up">
       {/* Mobile: stacked, page scrolls normally */}
       <div className="lg:hidden">
         <CounselProfileCard portrait={portrait} portraitLarge={portraitLarge} name={name} title={title} />
         <div className="space-y-4 mt-5 w-full">{children}</div>
+        {footerBlock}
       </div>
 
-      {/* Desktop: 1/3 profile (fixed) + 2/3 content (scrolls) */}
+      {/* Desktop: 1/3 profile (fixed) + 2/3 content (scrolls, footer pinned below) */}
       <div className={`hidden lg:grid lg:grid-cols-3 lg:gap-8 xl:gap-10 ${counselStagePanelHeightClass}`}>
         <div className="col-span-1 min-h-0">
           <CounselProfileCard
@@ -224,8 +231,17 @@ export function CounselStageLayout({
             tall
           />
         </div>
-        <div className={`col-span-2 min-h-0 overflow-y-auto overscroll-contain pr-1 counsel-stage-scroll`}>
-          <div className="space-y-4 pb-6">{children}</div>
+        <div className="col-span-2 min-h-0 flex flex-col">
+          <div className="relative flex-1 min-h-0">
+            <div className="h-full overflow-y-auto overscroll-contain pr-1 counsel-stage-scroll">
+              <div className="space-y-4 pb-2">{children}</div>
+            </div>
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-court-950/90 to-transparent"
+              aria-hidden="true"
+            />
+          </div>
+          {footerBlock}
         </div>
       </div>
     </div>

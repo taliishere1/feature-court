@@ -29,11 +29,6 @@ const RULING_BG: Record<Ruling, string> = {
 };
 
 function trialCardHref(trial: TrialData): string {
-  if (trial.ruling) {
-    const params = new URLSearchParams({ ruling: trial.ruling });
-    if (trial.intake.gutCall) params.set("gut", trial.intake.gutCall);
-    return `/verdict/${trial.id}?${params.toString()}`;
-  }
   return `/trial/arraignment?id=${trial.id}`;
 }
 
@@ -209,7 +204,7 @@ export default function GalleryPage() {
                       <path d="M12 3L14 7L18 8L15 11L16 15L12 13L8 15L9 11L6 8L10 7L12 3Z" fill="currentColor" />
                     </svg>
                     <span className="font-mono text-[9px] text-court-600 uppercase tracking-[0.15em]">
-                      {trial.ruling ? "View verdict" : "View case"}
+                      {trial.ruling ? "Replay trial" : "View case"}
                     </span>
                   </div>
                 </Link>
