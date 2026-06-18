@@ -198,6 +198,44 @@ function RulingContent() {
   if (loading) return <LoadingState />;
   if (!trial) return <NotFoundState />;
 
+  const rulingCta = (
+    <div className="w-full flex flex-col items-center gap-2">
+      {submitError && (
+        <p className="text-sm text-red-400/90 font-legal text-center" role="alert">
+          {submitError}
+        </p>
+      )}
+      {!rulingLocked && !selected && (
+        <p className="text-gold-400 text-sm font-medium text-center leading-snug">
+          Select a ruling above to continue.
+        </p>
+      )}
+      {rulingLocked && recordedRuling ? (
+        <Link
+          href={`/verdict/${trial.id}?ruling=${recordedRuling}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : "")}
+          className="group inline-flex items-center justify-center gap-2.5 w-full sm:w-auto min-w-[14rem] px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+        >
+          View your verdict
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!selected || submitting}
+          className="group inline-flex items-center justify-center gap-2.5 w-full sm:w-auto min-w-[14rem] px-8 py-3 bg-gold-500 hover:bg-gold-400 disabled:bg-court-800/90 disabled:border disabled:border-court-600 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press disabled:cursor-not-allowed"
+        >
+          {submitting ? "Recording ruling..." : "Read the verdict"}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col wood-panel relative">
       <CourtroomBackground opacity={0.1} />
@@ -217,7 +255,7 @@ function RulingContent() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col min-h-0 px-6 pt-4 pb-8 lg:pb-6 relative z-10">
+      <main className="flex-1 flex flex-col min-h-0 px-6 pt-4 pb-28 lg:pb-6 relative z-10">
         <div className={`${trialStageShellClass} flex-1 flex flex-col min-h-0 animate-page-enter`}>
           <div className="text-center mb-2 shrink-0">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 5 of 5</span>
@@ -234,40 +272,8 @@ function RulingContent() {
               name={CAST.judge.name}
               title="Presiding Judge"
               footer={
-                <div className="animate-fade-in-up w-full flex flex-col items-center gap-2">
-                  {submitError && (
-                    <p className="text-sm text-red-400/90 font-legal text-center" role="alert">
-                      {submitError}
-                    </p>
-                  )}
-                  {!rulingLocked && !selected && (
-                    <p className="text-gold-400 text-sm font-medium text-center leading-snug">
-                      Select a ruling above to continue.
-                    </p>
-                  )}
-                  {rulingLocked && recordedRuling ? (
-                    <Link
-                      href={`/verdict/${trial.id}?ruling=${recordedRuling}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : "")}
-                      className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
-                    >
-                      View your verdict
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
-                    </Link>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleSubmit}
-                      disabled={!selected || submitting}
-                      className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 disabled:bg-court-800/90 disabled:border disabled:border-court-600 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press disabled:cursor-not-allowed"
-                    >
-                      {submitting ? "Recording ruling..." : "Read the verdict"}
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  )}
+                <div className="hidden lg:block animate-fade-in-up w-full">
+                  {rulingCta}
                 </div>
               }
             >
@@ -345,6 +351,12 @@ function RulingContent() {
           </div>
         </div>
       </main>
+
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-court-800/90 bg-court-950/95 backdrop-blur-md px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className={`${trialStageShellClass} animate-fade-in-up`}>
+          {rulingCta}
+        </div>
+      </div>
     </div>
   );
 }
