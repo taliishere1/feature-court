@@ -23,12 +23,6 @@ const PROGRESS_STEPS = [
   { message: "Weighing the verdicts...", sub: "The bench is considering possible outcomes" },
 ];
 
-const ARRAIGNMENT_BAILIFF_LINE_COUNT = 2;
-
-function normalizeArraignmentDialogue(lines: string[] | undefined): string[] {
-  return (lines ?? []).map((line) => line?.trim()).filter(Boolean).slice(0, ARRAIGNMENT_BAILIFF_LINE_COUNT);
-}
-
 function rulingFromStorage(trialId: string): Ruling | undefined {
   try {
     const raw = localStorage.getItem("fc-rulings");
@@ -64,7 +58,10 @@ function ArraignmentContent() {
     setRetryKey((k) => k + 1);
   }, []);
 
-  const bailiffDialogues = normalizeArraignmentDialogue(trial?.charge_data?.bailiff_dialogue);
+  const bailiffDialogues = (trial?.charge_data?.bailiff_dialogue ?? [])
+    .map((line) => line?.trim())
+    .filter(Boolean)
+    .slice(0, 2);
   const hasDialogue = bailiffDialogues.length > 0;
   const showCharge = revealed && (!hasDialogue || dialogueDismissed);
   const verdictRuling = trial?.ruling ?? storedRuling;
@@ -140,7 +137,10 @@ function ArraignmentContent() {
           const step = converted.generationStep ?? 0;
           const isReady = step >= 5 || (converted.charge && converted.charge.length > 0 && converted.case_title && converted.case_title.length > 0);
           if (isReady) {
-            const dialogues = normalizeArraignmentDialogue(converted.charge_data?.bailiff_dialogue);
+            const dialogues = (converted.charge_data?.bailiff_dialogue ?? [])
+              .map((line) => line?.trim())
+              .filter(Boolean)
+              .slice(0, 2);
             setDialogueIndex(0);
             setDialogueDismissed(dialogues.length === 0);
             setShowContinue(false);
