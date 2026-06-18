@@ -234,16 +234,16 @@ function RulingContent() {
             name={CAST.judge.name}
             title="Presiding Judge"
             footer={
-              <div className="animate-fade-in-up space-y-3 w-full">
+              <div className="animate-fade-in-up flex flex-col items-center justify-center gap-3 w-full">
                 {submitError && (
-                  <p className="text-sm text-red-400/90 font-legal" role="alert">
+                  <p className="text-sm text-red-400/90 font-legal text-center" role="alert">
                     {submitError}
                   </p>
                 )}
                 {rulingLocked && recordedRuling ? (
                   <Link
                     href={`/verdict/${trial.id}?ruling=${recordedRuling}` + (trial.intake.gutCall ? `&gut=${trial.intake.gutCall}` : "")}
-                    className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+                    className="group inline-flex items-center justify-center gap-2.5 min-w-[12rem] px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-colors duration-200 text-base"
                   >
                     View your verdict
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
@@ -255,7 +255,7 @@ function RulingContent() {
                     type="button"
                     onClick={handleSubmit}
                     disabled={!selected || submitting}
-                    className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+                    className="inline-flex items-center justify-center gap-2.5 min-w-[12rem] px-8 py-3 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-colors duration-200 text-base"
                   >
                     {submitting ? "Recording ruling..." : "Read the verdict"}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
@@ -289,20 +289,19 @@ function RulingContent() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-2.5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-2.5 items-stretch">
               {RULING_OPTIONS.map((option, i) => {
                 const isSelected = selected === option.key;
                 const verdict = trial.verdicts?.[option.key];
                 const label = verdict?.label ?? option.label;
                 const description = verdict?.description ?? option.description;
-                const sentence = verdict?.sentence ?? option.sentence;
                 return (
-                  <ScrollworkBorder key={option.key}>
+                  <ScrollworkBorder key={option.key} className="h-full">
                     <button
                       type="button"
                       onClick={() => { if (!rulingLocked) setSelected(option.key); }}
                       disabled={rulingLocked}
-                      className={`w-full border rounded-sm text-left transition-all duration-300 animate-fade-in-up ${
+                      className={`w-full h-full min-h-[4.75rem] border rounded-sm text-left transition-colors duration-200 animate-fade-in-up ${
                         rulingLocked ? "cursor-default" : "cursor-pointer"
                       } ${
                         isSelected
@@ -311,12 +310,12 @@ function RulingContent() {
                       }`}
                       style={{ animationDelay: `${i * 0.05}s` }}
                     >
-                      <div className="p-2.5 lg:p-3">
-                        <div className="flex items-center gap-2 mb-0.5">
+                      <div className="p-2.5 lg:p-3 h-full flex flex-col">
+                        <div className="flex items-center gap-2 mb-0.5 shrink-0">
                           <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
                             isSelected ? "border-gold-500" : "border-court-500"
                           }`}>
-                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-gold-500 animate-seal-appear" />}
+                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-gold-500" />}
                           </div>
                           <span className={`font-serif text-xs lg:text-sm font-bold transition-colors ${
                             isSelected ? "gold-foil" : "text-court-200"
@@ -324,18 +323,8 @@ function RulingContent() {
                             {label}
                           </span>
                         </div>
-                        <p className="text-court-500 text-[10px] lg:text-[11px] ml-5 leading-snug">{description}</p>
-                        {isSelected && (
-                          <div className="ml-5 mt-1 pt-1 border-t border-gold-500/20">
-                            <p className="font-legal text-court-400 text-[10px] lg:text-[11px] italic animate-fade-in-up line-clamp-2">
-                              &ldquo;{sentence}&rdquo;
-                            </p>
-                          </div>
-                        )}
+                        <p className="text-court-500 text-[10px] lg:text-[11px] ml-5 leading-snug line-clamp-3">{description}</p>
                       </div>
-                      {isSelected && (
-                        <div className="h-0.5 bg-gradient-to-r from-gold-500 to-transparent" />
-                      )}
                     </button>
                   </ScrollworkBorder>
                 );

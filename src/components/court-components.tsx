@@ -208,7 +208,7 @@ export function CounselStageLayout({
   footer?: React.ReactNode;
 }) {
   const footerBlock = footer ? (
-    <div className="pt-4 mt-4 border-t border-court-800/80 shrink-0 w-full flex flex-col items-center text-center gap-3">
+    <div className="pt-4 mt-4 border-t border-court-800/80 shrink-0 w-full flex flex-col items-center justify-center text-center gap-3">
       {footer}
     </div>
   ) : null;
