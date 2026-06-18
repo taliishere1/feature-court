@@ -1265,21 +1265,51 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
 }
 
   const [{ typing, typingDone }, tbDispatch] = useReducer(tbReducer, { typing: true, typingDone: false });
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [overflows, setOverflows] = useState(false);
+  const [atBottom, setAtBottom] = useState(true);
+  const completedRef = useRef(false);
+
+  const updateScrollState = useCallback(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const hasOverflow = el.scrollHeight > el.clientHeight + 1;
+    setOverflows(hasOverflow);
+    setAtBottom(!hasOverflow || el.scrollHeight - el.scrollTop - el.clientHeight <= 8);
+  }, []);
 
   useEffect(() => {
+    completedRef.current = false;
+    setOverflows(false);
+    setAtBottom(true);
     if (!text) return;
     if (instant) {
       tbDispatch({ type: 'FINISH_TYPING' });
-      onComplete?.();
     } else {
       tbDispatch({ type: 'START_TYPING' });
     }
-  }, [text, instant, onComplete]);
+  }, [text, instant]);
+
+  useEffect(() => {
+    updateScrollState();
+    const el = bodyRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text, typingDone, updateScrollState]);
+
+  const canContinue = typingDone && (!overflows || atBottom);
+
+  useEffect(() => {
+    if (!canContinue || completedRef.current) return;
+    completedRef.current = true;
+    onComplete?.();
+  }, [canContinue, onComplete]);
 
   const handleTypeComplete = useCallback(() => {
     tbDispatch({ type: 'FINISH_TYPING' });
-    onComplete?.();
-  }, [onComplete]);
+  }, []);
 
   const portraitNode = portrait ?? <BailiffDialoguePortrait />;
 
@@ -1300,7 +1330,11 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
               </button>
             )}
           </div>
-          <div className="dialogue-box-body">
+          <div
+            ref={bodyRef}
+            className={`dialogue-box-body${overflows && !atBottom ? " dialogue-box-body--more" : ""}`}
+            onScroll={updateScrollState}
+          >
             {instant ? (
               <span className="animate-fade-in-up">{text}</span>
             ) : typing ? (
@@ -1309,7 +1343,10 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
               <span>{text}</span>
             )}
           </div>
-          {showContinue && typingDone && onAdvance && (
+          {overflows && !atBottom && typingDone && (
+            <p className="dialogue-box-scroll-hint">Scroll to read</p>
+          )}
+          {showContinue && canContinue && onAdvance && (
             <button
               type="button"
               onClick={onAdvance}
@@ -1318,7 +1355,7 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
               ▼ Continue
             </button>
           )}
-          {showContinue && typingDone && !onAdvance && (
+          {showContinue && canContinue && !onAdvance && (
             <div className="dialogue-box-continue">▼ Continue</div>
           )}
         </div>

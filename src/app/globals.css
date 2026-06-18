@@ -535,6 +535,23 @@ body {
   padding-left: 0;
   max-height: min(40vh, 12rem);
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.35) transparent;
+}
+
+.dialogue-box-body--more {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent 100%);
+}
+
+.dialogue-box-scroll-hint {
+  margin-top: 0.35rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-court-500);
+  animation: glow-pulse 1.5s ease-in-out infinite;
 }
 
 @media (min-width: 768px) {
