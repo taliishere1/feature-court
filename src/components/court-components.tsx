@@ -1497,7 +1497,7 @@ export function EvidenceCard({ exhibit, children, side = "prosecution", index = 
         </span>
       </div>
       <div className="p-4">
-        <p className="text-court-200 text-sm leading-relaxed font-legal">{children}</p>
+        <p className="text-court-200 text-base leading-relaxed font-legal">{children}</p>
       </div>
     </div>
   );
