@@ -9,6 +9,8 @@ export interface IntakeForm {
 }
 
 export interface VerdictContent {
+  label?: string;
+  description?: string;
   sentence: string;
   real_risk: string;
   strongest_ignored_argument: string;

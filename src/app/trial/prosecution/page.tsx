@@ -17,13 +17,16 @@ function ProsecutionContent() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<EdgeFunctionErrorInfo | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [objectionActive, setObjectionActive] = useState(false);
+  const [exhibitEngaged, setExhibitEngaged] = useState(false);
+  const [objectionTrigger, setObjectionTrigger] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
   const mounted = useRef(false);
 
   const handleRetry = useCallback(() => {
     setLoadError(null);
     setLoading(true);
+    setExhibitEngaged(false);
+    setObjectionTrigger(0);
     setRetryKey((k) => k + 1);
   }, []);
 
@@ -96,10 +99,9 @@ function ProsecutionContent() {
   }, [searchParams, retryKey]);
 
   const handleEvidenceClick = useCallback(() => {
-    if (objectionActive) return;
-    setObjectionActive(true);
-    setTimeout(() => setObjectionActive(false), 900);
-  }, [objectionActive]);
+    setExhibitEngaged(true);
+    setObjectionTrigger((n) => n + 1);
+  }, []);
 
   if (loadError) {
     const id = searchParams.get("id");
@@ -127,7 +129,7 @@ function ProsecutionContent() {
   return (
     <div className="min-h-screen flex flex-col wood-panel relative">
       <CourtroomBackground opacity={0.1} />
-      <ObjectionOverlay active={objectionActive} side="prosecution" />
+      <ObjectionOverlay trigger={objectionTrigger} side="prosecution" />
 
       <header className="border-b border-court-800 relative z-10">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -189,15 +191,26 @@ function ProsecutionContent() {
 
           {revealed && (
             <div className="text-center mt-6 animate-fade-in-up">
-              <Link
-                href={`/trial/defense?id=${trial.id}`}
-                className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
-              >
-                Hear the defense
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </Link>
+              {!exhibitEngaged && (
+                <p className="text-court-500 text-sm font-legal italic mb-3">
+                  Click at least one exhibit to continue.
+                </p>
+              )}
+              {exhibitEngaged ? (
+                <Link
+                  href={`/trial/defense?id=${trial.id}`}
+                  className="group inline-flex items-center gap-2.5 px-8 py-3 bg-gold-500 hover:bg-gold-400 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"
+                >
+                  Hear the defense
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:translate-x-0.5 transition-transform">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-2.5 px-8 py-3 bg-court-800 text-court-500 font-semibold rounded-sm text-base cursor-not-allowed">
+                  Hear the defense
+                </span>
+              )}
             </div>
           )}
         </div>

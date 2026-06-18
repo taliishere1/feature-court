@@ -432,8 +432,8 @@ body {
   80% { transform: translate(1px, 0); }
 }
 
-.objection-flash { animation: objection-flash 1.5s ease-out forwards; }
-.objection-screen-shake { animation: objection-screen-shake 0.6s ease-out; }
+.objection-flash { animation: objection-flash 0.8s ease-out forwards; }
+.objection-screen-shake { animation: objection-screen-shake 0.45s ease-out; }
 
 /* ─── Dialogue Box ─── */
 

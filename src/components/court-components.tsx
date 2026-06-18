@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useReducer } from "react";
 import Image from "next/image";
+import { playGavelClunk } from "@/lib/gavel-sound";
 
 // ─── Ornate Court Seal ───
 
@@ -145,6 +146,7 @@ export function InteractiveGavel({ onStrike, className = "", width = 72, height 
 
   const handleClick = () => {
     setStriking(true);
+    playGavelClunk();
     onStrike?.();
     setTimeout(() => setStriking(false), 600);
   };
@@ -1089,26 +1091,27 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
 // ─── Objection Overlay (Full-Screen) ───
 
 export function ObjectionOverlay({
-  active,
+  trigger,
   side = "prosecution",
+  duration = 1000,
   onComplete,
 }: {
-  active: boolean;
+  trigger: number;
   side?: "prosecution" | "defense";
+  duration?: number;
   onComplete?: () => void;
 }) {
   const [showing, dispatchOverlay] = useReducer(stampReducer, false);
 
   useEffect(() => {
-    if (active) {
-      dispatchOverlay({ type: 'SHOW' });
-      const timer = setTimeout(() => {
-        dispatchOverlay({ type: 'HIDE' });
-        onComplete?.();
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [active, onComplete]);
+    if (trigger === 0) return;
+    dispatchOverlay({ type: "SHOW" });
+    const timer = setTimeout(() => {
+      dispatchOverlay({ type: "HIDE" });
+      onComplete?.();
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [trigger, duration, onComplete]);
 
   if (!showing) return null;
 
@@ -1127,7 +1130,7 @@ export function ObjectionOverlay({
           <div className={`border-4 ${borderColor} px-8 py-4`}
             style={{ background: side === "prosecution" ? "rgba(185,28,28,0.1)" : "rgba(37,99,235,0.1)" }}>
             <p className="font-serif text-5xl sm:text-6xl font-black tracking-[0.2em]">
-              {side === "prosecution" ? "OBJECTION!" : "HOLD IT!"}
+              OBJECTION!
             </p>
           </div>
         </div>
