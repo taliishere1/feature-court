@@ -155,9 +155,102 @@ const STAGES = [
   { num: 5, label: "Ruling" },
 ];
 
+/** Shared width tokens for trial stage pages — widen on large viewports. */
+export const trialStageShellClass = "w-full max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto";
+export const trialStageHeaderClass = "w-full max-w-4xl lg:max-w-6xl mx-auto";
+
+/** Fixed height for counsel two-column stage (profile + scrollable content). */
+export const counselStagePanelHeightClass = "h-[calc(100vh-13rem)] min-h-[28rem]";
+
+function CounselProfileCard({
+  portrait,
+  portraitLarge,
+  name,
+  title,
+  tall = false,
+}: {
+  portrait: React.ReactNode;
+  portraitLarge: React.ReactNode;
+  name: string;
+  title: string;
+  tall?: boolean;
+}) {
+  return (
+    <div
+      className={`flex flex-col items-center gap-4 border border-court-700 rounded-sm px-5 py-5 bg-court-900/60 w-full text-center ${
+        tall ? `${counselStagePanelHeightClass} justify-between` : ""
+      }`}
+    >
+      <div className={`w-full ${tall ? "flex-1 flex items-center justify-center min-h-0 py-2 [&_img]:max-h-full [&_img]:w-auto [&_img]:mx-auto" : ""}`}>
+        {tall ? portraitLarge : portrait}
+      </div>
+      <div className="shrink-0 w-full">
+        <h2 className="font-serif text-base lg:text-lg text-court-100 leading-snug">{name}</h2>
+        <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em] mt-1">{title}</p>
+      </div>
+    </div>
+  );
+}
+
+export function CounselStageLayout({
+  portrait,
+  portraitLarge,
+  name,
+  title,
+  children,
+  footer,
+}: {
+  portrait: React.ReactNode;
+  portraitLarge: React.ReactNode;
+  name: string;
+  title: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
+  const footerBlock = footer ? (
+    <div className="pt-4 mt-4 border-t border-court-800/80 shrink-0">{footer}</div>
+  ) : null;
+
+  return (
+    <div className="animate-fade-in-up">
+      {/* Mobile: stacked, page scrolls normally */}
+      <div className="lg:hidden">
+        <CounselProfileCard portrait={portrait} portraitLarge={portraitLarge} name={name} title={title} />
+        <div className="space-y-4 mt-5 w-full">{children}</div>
+        {footerBlock}
+      </div>
+
+      {/* Desktop: 1/3 profile (fixed) + 2/3 content (scrolls, footer pinned below) */}
+      <div className={`hidden lg:grid lg:grid-cols-3 lg:gap-8 xl:gap-10 ${counselStagePanelHeightClass}`}>
+        <div className="col-span-1 min-h-0">
+          <CounselProfileCard
+            portrait={portrait}
+            portraitLarge={portraitLarge}
+            name={name}
+            title={title}
+            tall
+          />
+        </div>
+        <div className="col-span-2 min-h-0 flex flex-col">
+          <div className="relative flex-1 min-h-0">
+            <div className="h-full overflow-y-auto overscroll-contain pr-1 counsel-stage-scroll">
+              <div className="space-y-4 pb-2">{children}</div>
+            </div>
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-court-950/90 to-transparent"
+              aria-hidden="true"
+            />
+          </div>
+          {footerBlock}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function StageProgress({ current }: { current: number }) {
   return (
-    <div className="w-full max-w-xl mx-auto mb-10">
+    <div className="w-full max-w-xl lg:max-w-4xl xl:max-w-5xl mx-auto mb-10">
       <div className="flex items-center justify-between">
         {STAGES.map((stage, i) => (
           <div key={stage.num} className="flex items-center">
@@ -193,7 +286,7 @@ export function StageProgress({ current }: { current: number }) {
                     <path d="M14 2 L18 6 L14 10" stroke="currentColor" strokeWidth="1.5" fill="none" />
                   </svg>
                 ) : (
-                  <div className="w-14 sm:w-16 h-px bg-court-700" />
+                  <div className="w-14 sm:w-16 lg:w-20 xl:w-28 h-px bg-court-700" />
                 )}
               </div>
             )}
@@ -351,7 +444,7 @@ export function SignatureBlock({
   };
 
   const signatureMark = (
-    <p className="font-signature text-[2.75rem] text-gold-400 leading-none tracking-normal pt-1">
+    <p className="judge-signature text-[2.75rem] text-gold-400 leading-none tracking-normal pt-1">
       Ship Itwell
     </p>
   );
@@ -1095,22 +1188,12 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
   }
 }
 
-  const [{ typing, typingDone }, tbDispatch] = useReducer(tbReducer, { typing: false, typingDone: false });
+  const [{ typing, typingDone }, tbDispatch] = useReducer(tbReducer, { typing: true, typingDone: false });
 
   useEffect(() => {
-    if (text) {
-      tbDispatch({ type: 'START_TYPING' });
-    }
+    if (!text) return;
+    tbDispatch({ type: 'START_TYPING' });
   }, [text]);
-
-  // If typing is false but text exists and we're not done, mark as done
-  // (covers the static <span> branch when TypewriterText doesn't run)
-  useEffect(() => {
-    if (text && !typing && !typingDone) {
-      tbDispatch({ type: 'FINISH_TYPING' });
-      onComplete?.();
-    }
-  }, [text, typing, typingDone, onComplete]);
 
   const handleTypeComplete = useCallback(() => {
     tbDispatch({ type: 'FINISH_TYPING' });
@@ -1122,7 +1205,7 @@ function tbReducer(state: { typing: boolean; typingDone: boolean }, action: TBAc
       <div className="dialogue-box-inner">
         <div className="dialogue-box-top">
           <div
-            className="w-[72px] h-[72px] rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
+            className="dialogue-box-portrait w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] lg:w-[100px] lg:h-[100px] rounded-lg border border-court-600 flex items-center justify-center overflow-hidden shrink-0"
             style={{ borderColor: `${color}40` }}
           >
             {portrait}

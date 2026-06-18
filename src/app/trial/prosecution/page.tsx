@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CourtroomBackground, ProsecutorPortrait, EvidenceCard, ObjectionOverlay, ExhibitEngagementPrompt, ExhibitListFrame, StageProceedLink, SiteHomeLink } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, ProsecutorPortrait, EvidenceCard, ObjectionOverlay, ExhibitEngagementPrompt, ExhibitListFrame, StageProceedLink, SiteHomeLink, CounselStageLayout, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasProsecution } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -132,7 +132,7 @@ function ProsecutionContent() {
       <ObjectionOverlay trigger={objectionTrigger} side="prosecution" />
 
       <header className="border-b border-court-800 relative z-10">
-        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className={`${trialStageHeaderClass} px-6 py-3 flex items-center justify-between`}>
           <Link href={`/trial/arraignment?id=${trial.id}`} className="flex items-center gap-2 group">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -146,37 +146,40 @@ function ProsecutionContent() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 pt-4 pb-48 relative z-10">
-        <div className="max-w-3xl mx-auto animate-page-enter">
-          <div className="text-center mb-2">
+      <main className="flex-1 flex flex-col min-h-0 px-6 pt-4 pb-8 lg:pb-6 relative z-10">
+        <div className={`${trialStageShellClass} flex-1 flex flex-col min-h-0 animate-page-enter`}>
+          <div className="text-center mb-2 shrink-0">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 2 of 5</span>
           </div>
 
-          <StageProgress current={2} />
+          <div className="shrink-0">
+            <StageProgress current={2} />
+          </div>
 
           {revealed && (
-            <div className="text-center mb-4 animate-fade-in-up">
-              <div className="inline-flex items-center gap-4 border border-court-700 rounded-sm px-5 py-3 bg-court-900/60">
-                <ProsecutorPortrait size="medium" />
-                <div className="text-left">
-                  <h2 className="font-serif text-base text-court-100">{prosecutorName}</h2>
-                  <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em]">{prosecutorTitle}</p>
+            <div className="flex-1 min-h-0 mt-2">
+            <CounselStageLayout
+              portrait={<ProsecutorPortrait size="medium" />}
+              portraitLarge={<ProsecutorPortrait size="full" />}
+              name={prosecutorName}
+              title={prosecutorTitle}
+              footer={
+                <div className="text-center animate-fade-in-up">
+                  <StageProceedLink
+                    engaged={exhibitEngaged}
+                    href={`/trial/defense?id=${trial.id}`}
+                    label="Hear the defense"
+                  />
                 </div>
+              }
+            >
+              <div className="parchment-ruled p-4 animate-fade-in-up w-full">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
+                <p className="text-court-200 text-xs leading-relaxed font-legal italic relative z-10">
+                  &ldquo;{trial.prosecution.opening}&rdquo;
+                </p>
               </div>
-            </div>
-          )}
 
-          {revealed && (
-            <div className="parchment-ruled p-4 mb-4 animate-fade-in-up max-w-lg mx-auto w-full">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
-              <p className="text-court-200 text-xs leading-relaxed font-legal italic relative z-10">
-                &ldquo;{trial.prosecution.opening}&rdquo;
-              </p>
-            </div>
-          )}
-
-          {revealed && (
-            <div className="max-w-lg mx-auto w-full">
               <ExhibitEngagementPrompt engaged={exhibitEngaged} side="prosecution" />
               <ExhibitListFrame engaged={exhibitEngaged}>
                 {trial.prosecution.arguments.map((arg, i) => (
@@ -191,16 +194,7 @@ function ProsecutionContent() {
                   </EvidenceCard>
                 ))}
               </ExhibitListFrame>
-            </div>
-          )}
-
-          {revealed && (
-            <div className="text-center mt-6 animate-fade-in-up">
-              <StageProceedLink
-                engaged={exhibitEngaged}
-                href={`/trial/defense?id=${trial.id}`}
-                label="Hear the defense"
-              />
+            </CounselStageLayout>
             </div>
           )}
         </div>

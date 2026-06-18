@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TrialData } from "@/lib/types";
-import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay, ExhibitEngagementPrompt, ExhibitListFrame, StageProceedLink, SiteHomeLink } from "@/components/court-components";
+import { StageProgress, CourtroomBackground, DefensePortrait, EvidenceCard, ObjectionOverlay, ExhibitEngagementPrompt, ExhibitListFrame, StageProceedLink, SiteHomeLink, CounselStageLayout, trialStageShellClass, trialStageHeaderClass } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasDefense } from "@/lib/store";
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
@@ -132,7 +132,7 @@ function DefenseContent() {
       <ObjectionOverlay trigger={objectionTrigger} side="defense" />
 
       <header className="border-b border-court-800 relative z-10">
-        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className={`${trialStageHeaderClass} px-6 py-3 flex items-center justify-between`}>
           <Link href={`/trial/prosecution?id=${trial.id}`} className="flex items-center gap-2 group">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-court-400 group-hover:text-court-200 transition-colors">
               <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -146,37 +146,40 @@ function DefenseContent() {
         </div>
       </header>
 
-      <main className="flex-1 px-6 pt-4 pb-48 relative z-10">
-        <div className="max-w-3xl mx-auto animate-page-enter">
-          <div className="text-center mb-2">
+      <main className="flex-1 flex flex-col min-h-0 px-6 pt-4 pb-8 lg:pb-6 relative z-10">
+        <div className={`${trialStageShellClass} flex-1 flex flex-col min-h-0 animate-page-enter`}>
+          <div className="text-center mb-2 shrink-0">
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-court-500">Stage 3 of 5</span>
           </div>
 
-          <StageProgress current={3} />
+          <div className="shrink-0">
+            <StageProgress current={3} />
+          </div>
 
           {revealed && (
-            <div className="text-center mb-4 animate-fade-in-up">
-              <div className="inline-flex items-center gap-4 border border-court-700 rounded-sm px-5 py-3 bg-court-900/60">
-                <DefensePortrait size="medium" />
-                <div className="text-left">
-                  <h2 className="font-serif text-base text-court-100">{defenseName}</h2>
-                  <p className="text-court-600 text-xs font-mono uppercase tracking-[0.15em]">{defenseTitle}</p>
+            <div className="flex-1 min-h-0 mt-2">
+            <CounselStageLayout
+              portrait={<DefensePortrait size="medium" />}
+              portraitLarge={<DefensePortrait size="full" />}
+              name={defenseName}
+              title={defenseTitle}
+              footer={
+                <div className="text-center animate-fade-in-up">
+                  <StageProceedLink
+                    engaged={exhibitEngaged}
+                    href={`/trial/cross?id=${trial.id}`}
+                    label="Cross-examination"
+                  />
                 </div>
+              }
+            >
+              <div className="parchment-ruled p-4 animate-fade-in-up w-full">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
+                <p className="text-court-200 text-xs leading-relaxed font-legal italic relative z-10">
+                  &ldquo;{trial.defense.opening}&rdquo;
+                </p>
               </div>
-            </div>
-          )}
 
-          {revealed && (
-            <div className="parchment-ruled p-4 mb-4 animate-fade-in-up max-w-lg mx-auto w-full">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-court-500 block mb-2 relative z-10">Opening Statement</span>
-              <p className="text-court-200 text-xs leading-relaxed font-legal italic relative z-10">
-                &ldquo;{trial.defense.opening}&rdquo;
-              </p>
-            </div>
-          )}
-
-          {revealed && (
-            <div className="max-w-lg mx-auto w-full">
               <ExhibitEngagementPrompt engaged={exhibitEngaged} side="defense" />
               <ExhibitListFrame engaged={exhibitEngaged}>
                 {trial.defense.arguments.map((arg, i) => (
@@ -191,16 +194,7 @@ function DefenseContent() {
                   </EvidenceCard>
                 ))}
               </ExhibitListFrame>
-            </div>
-          )}
-
-          {revealed && (
-            <div className="text-center mt-6 animate-fade-in-up">
-              <StageProceedLink
-                engaged={exhibitEngaged}
-                href={`/trial/cross?id=${trial.id}`}
-                label="Cross-examination"
-              />
+            </CounselStageLayout>
             </div>
           )}
         </div>

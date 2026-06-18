@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
+import { judgeSignatureFont } from "@/lib/fonts";
 import PendoPageTracker from "@/components/PendoPageTracker";
 import { PENDO_INSTALL_SNIPPET } from "@/lib/pendo";
 
@@ -44,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className={`h-full ${judgeSignatureFont.variable}`}>
       <head>
         <script
           id="pendo-install"
