@@ -174,7 +174,7 @@ function DefenseContent() {
 
           {revealed && (
             <div className="max-w-lg mx-auto w-full">
-              <ExhibitEngagementPrompt engaged={exhibitEngaged} />
+              <ExhibitEngagementPrompt engaged={exhibitEngaged} side="defense" />
               <ExhibitListFrame engaged={exhibitEngaged}>
                 {trial.defense.arguments.map((arg, i) => (
                   <EvidenceCard

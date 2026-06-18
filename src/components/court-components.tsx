@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, useReducer } from "react";
+import { useEffect, useState, useRef, useCallback, useReducer, useId } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { playGavelClunk } from "@/lib/gavel-sound";
@@ -1142,17 +1142,27 @@ export function ObjectionOverlay({
 
 // ─── Evidence Card ───
 
-export function ExhibitEngagementPrompt({ engaged }: { engaged: boolean }) {
+export function ExhibitEngagementPrompt({
+  engaged,
+  side,
+}: {
+  engaged: boolean;
+  side: "prosecution" | "defense";
+}) {
   if (engaged) return null;
+
+  const subcopy =
+    side === "prosecution"
+      ? "Tap a card below — the defense will object, then you can proceed."
+      : "Tap a card below to interact with the evidence, then you can proceed.";
+
   return (
     <div
       className="mb-3 rounded-sm border border-gold-500/70 bg-gold-500/15 px-4 py-3 text-center shadow-[0_0_20px_rgba(245,158,11,0.15)]"
       role="status"
     >
       <p className="text-gold-300 text-sm font-semibold">Object to an exhibit to continue</p>
-      <p className="text-court-300 text-xs mt-1 font-legal italic">
-        Tap a card below — opposing counsel will object, then you can proceed.
-      </p>
+      <p className="text-court-300 text-xs mt-1 font-legal italic">{subcopy}</p>
     </div>
   );
 }
@@ -1185,6 +1195,7 @@ export function StageProceedLink({
   label: string;
 }) {
   const lockedMessage = "Object to an exhibit above to unlock";
+  const lockedHintId = useId();
 
   if (engaged) {
     return (
@@ -1202,18 +1213,21 @@ export function StageProceedLink({
 
   return (
     <div className="inline-flex flex-col items-center gap-2 max-w-sm mx-auto">
-      <span
-        aria-disabled="true"
-        title={lockedMessage}
-        className="inline-flex items-center gap-2 px-8 py-3 bg-court-800/90 border border-court-600 text-court-500 font-semibold rounded-sm text-base cursor-not-allowed select-none"
+      <button
+        type="button"
+        disabled
+        aria-describedby={lockedHintId}
+        className="inline-flex items-center gap-2 px-8 py-3 bg-court-800/90 border border-court-600 text-court-500 font-semibold rounded-sm text-base cursor-not-allowed select-none disabled:opacity-100"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-70" aria-hidden>
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
         {label}
-      </span>
-      <p className="text-gold-400 text-sm font-medium text-center leading-snug">{lockedMessage}</p>
+      </button>
+      <p id={lockedHintId} className="text-gold-400 text-sm font-medium text-center leading-snug">
+        {lockedMessage}
+      </p>
     </div>
   );
 }

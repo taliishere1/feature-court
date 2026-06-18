@@ -174,7 +174,7 @@ function ProsecutionContent() {
 
           {revealed && (
             <div className="max-w-lg mx-auto w-full">
-              <ExhibitEngagementPrompt engaged={exhibitEngaged} />
+              <ExhibitEngagementPrompt engaged={exhibitEngaged} side="prosecution" />
               <ExhibitListFrame engaged={exhibitEngaged}>
                 {trial.prosecution.arguments.map((arg, i) => (
                   <EvidenceCard
