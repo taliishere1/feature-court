@@ -483,17 +483,16 @@ body {
   }
 }
 
-.dialogue-box-portrait {
+.bailiff-dialogue-portrait {
   line-height: 0;
-  overflow: visible;
 }
 
-.dialogue-box-portrait img,
-.dialogue-box-portrait svg {
+.bailiff-dialogue-portrait img,
+.bailiff-dialogue-portrait svg {
   display: block;
-  width: 100% !important;
-  height: auto !important;
-  max-width: 100% !important;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
   object-fit: contain;
 }
 

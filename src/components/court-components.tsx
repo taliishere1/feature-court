@@ -1191,7 +1191,7 @@ function BailiffDialoguePortraitFrame({
 }) {
   return (
     <div
-      className={`dialogue-box-portrait shrink-0 rounded-lg border border-court-600 ${
+      className={`bailiff-dialogue-portrait shrink-0 rounded-lg border border-court-600 ${
         compact ? "w-[100px]" : "w-[100px] lg:w-[140px]"
       }`}
       style={color ? { borderColor: `${color}40` } : undefined}
