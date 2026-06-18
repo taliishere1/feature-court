@@ -284,7 +284,7 @@ function RulingContent() {
                 <p className="font-display text-lg sm:text-xl font-bold text-gold-500 relative z-10">
                   How do you rule, Your Honor?
                 </p>
-                <p className="text-court-400 text-xs leading-relaxed font-legal mt-2 relative z-10">
+                <p className="text-court-400 text-sm leading-relaxed font-legal mt-2 relative z-10">
                   Case: <span className="text-court-200">{trial.case_title}</span>
                 </p>
               </div>
@@ -339,7 +339,7 @@ function RulingContent() {
                       </span>
                       <span className="block leading-relaxed mt-1">&ldquo;{description}&rdquo;</span>
                       {isSelected && (
-                        <p className="font-legal text-court-300 text-xs italic mt-3 pt-3 border-t border-gold-500/20 leading-relaxed">
+                        <p className="font-legal text-court-300 text-sm italic mt-3 pt-3 border-t border-gold-500/20 leading-relaxed">
                           &ldquo;{sentence}&rdquo;
                         </p>
                       )}
