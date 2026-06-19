@@ -13,6 +13,7 @@ import { pendoTrack } from "@/lib/pendo-track";
 import { registerVisitor } from "@/lib/visitor";
 import { StageGenerationError } from "@/components/stage-generation-error";
 import { CAST } from "@/lib/cast";
+import { usePendoTrialStage } from "@/lib/use-pendo-trial-stage";
 
 const PROGRESS_STEPS = [
   { message: "The court is assembling...", sub: "Preparing the docket" },
@@ -65,6 +66,8 @@ function ArraignmentContent() {
   const hasDialogue = bailiffDialogues.length > 0;
   const showCharge = revealed && (!hasDialogue || dialogueDismissed);
   const verdictRuling = trial?.ruling ?? storedRuling;
+
+  usePendoTrialStage("arraignment", revealed && !loading, trial?.id);
 
   useEffect(() => {
     if (trial?.id) setStoredRuling(rulingFromStorage(trial.id));

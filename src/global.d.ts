@@ -14,6 +14,12 @@ interface PendoSDK {
   getVisitorId?: () => string;
   getAccountId?: () => string;
   getVersion?: () => string;
+  location?: {
+    getHref?: () => string;
+    setUrl?: (fn: () => string) => void;
+    addTransforms?: (transforms: unknown[]) => void;
+    clearTransforms?: () => void;
+  };
   recording?: { start?: () => void; stop?: () => void };
   validateEnvironment?: () => unknown;
   validateInstall?: () => unknown;

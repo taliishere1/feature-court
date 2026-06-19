@@ -8,9 +8,7 @@ const MAX_WAIT_MS = 30_000;
 
 function syncPendoPage(): void {
   window.pendo.pageLoad();
-  // autoStart can miss on SPA remounts; explicit start is safe when already recording.
   window.pendo.recording?.start?.();
-  window.pendo.flushNow?.();
 }
 
 /**
