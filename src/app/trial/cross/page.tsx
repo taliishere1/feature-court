@@ -11,6 +11,7 @@ import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-functi
 import { pendoTrack } from "@/lib/pendo-track";
 import { StageGenerationError } from "@/components/stage-generation-error";
 import { CAST } from "@/lib/cast";
+import { usePendoTrialStage } from "@/lib/use-pendo-trial-stage";
 
 function CrossContent() {
   const searchParams = useSearchParams();
@@ -29,6 +30,8 @@ function CrossContent() {
 
   const introText = trial?.cross_bailiff_dialogue?.[0]?.trim() ?? "";
   const hasIntro = introText.length > 0;
+
+  usePendoTrialStage("cross", introComplete && !loading, trial?.id);
 
   const handleRetry = useCallback(() => {
     setLoadError(null);

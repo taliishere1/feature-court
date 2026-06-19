@@ -25,5 +25,5 @@ var visitorId=localStorage.getItem('${VISITOR_STORAGE_KEY}');
 if(!visitorId){visitorId=sessionStorage.getItem('${LEGACY_SESSION_KEY}');if(visitorId)sessionStorage.removeItem('${LEGACY_SESSION_KEY}');}
 if(!visitorId){visitorId='anon-'+crypto.randomUUID();}
 localStorage.setItem('${VISITOR_STORAGE_KEY}',visitorId);
-pendo.initialize({visitor:{id:visitorId},account:{id:'feature-court1'},recording:{enabled:true,autoStart:true}});
+pendo.initialize({visitor:{id:visitorId},account:{id:'feature-court1'},recording:{enabled:true,autoStart:true},location:{setUrl:function(){var p=window.location.pathname;if(p.indexOf('/verdict/')===0)p='/verdict';return window.location.origin+p;}}});
 })('${PENDO_API_KEY}');`;

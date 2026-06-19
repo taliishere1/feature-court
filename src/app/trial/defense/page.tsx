@@ -10,6 +10,7 @@ import { rowToTrialData, resolveTrialRowAfterGeneration, rowHasDefense } from "@
 import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { StageGenerationError } from "@/components/stage-generation-error";
 import { CAST } from "@/lib/cast";
+import { usePendoTrialStage } from "@/lib/use-pendo-trial-stage";
 
 function DefenseContent() {
   const searchParams = useSearchParams();
@@ -97,6 +98,8 @@ function DefenseContent() {
 
     return () => { mounted.current = false; cancelled = true; };
   }, [searchParams, retryKey]);
+
+  usePendoTrialStage("defense", revealed && !loading, trial?.id);
 
   const handleEvidenceClick = useCallback(() => {
     setExhibitEngaged(true);

@@ -11,6 +11,7 @@ import { EdgeFunctionErrorInfo, parseEdgeFunctionError } from "@/lib/edge-functi
 import { pendoTrack } from "@/lib/pendo-track";
 import { StageGenerationError } from "@/components/stage-generation-error";
 import { CAST } from "@/lib/cast";
+import { usePendoTrialStage } from "@/lib/use-pendo-trial-stage";
 
 const RULING_OPTIONS: { key: Ruling; label: string; description: string; sentence: string }[] = [
   { key: "ship", label: "Ship It", description: "Full speed ahead.", sentence: "The evidence is sufficient. Proceed with confidence." },
@@ -108,6 +109,8 @@ function RulingContent() {
 
     return () => { mounted.current = false; };
   }, [searchParams, retryKey]);
+
+  usePendoTrialStage("ruling", !loading && !!trial, trial?.id);
 
   async function handleSubmit() {
     if (!selected || !trial || recordedRuling) return;

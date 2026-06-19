@@ -8,6 +8,7 @@ import { CAST } from "@/lib/cast";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { pendoTrack } from "@/lib/pendo-track";
+import { usePendoTrialStage } from "@/lib/use-pendo-trial-stage";
 
 const RULING_LABELS: Record<Ruling, string> = {
   ship: "SHIP IT",
@@ -88,6 +89,8 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
     }
     load();
   }, [params]);
+
+  usePendoTrialStage("verdict", !loading && !!trial, trial?.id);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
