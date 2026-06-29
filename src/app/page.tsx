@@ -6,6 +6,7 @@ import { CourtroomBackground, InteractiveGavel, SiteBrand, SiteFooter } from "@/
 import { Ruling } from "@/lib/types";
 import { getMyTrials } from "@/lib/store";
 import { getVisitorId } from "@/lib/visitor";
+import { trackSampleCaseClicked } from "@/lib/pendo-analytics";
 
 export default function LandingPage() {
   const [casesTried, setCasesTried] = useState(0);
@@ -113,7 +114,7 @@ export default function LandingPage() {
           {/* Title */}
           <div className={`mb-2 transition-all duration-1000 ${intro.title ? "opacity-100" : "opacity-0"}`}>
             <div className="flex justify-center mb-1">
-              <InteractiveGavel width={200} height={200} className="text-gold-500" />
+              <InteractiveGavel width={200} height={200} className="text-gold-500" interactive={false} />
             </div>
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black leading-[1.04] gold-foil tracking-normal">
               FEATURE COURT
@@ -137,16 +138,17 @@ export default function LandingPage() {
           {/* CTA buttons */}
           <div className={`flex flex-col sm:flex-row gap-3 justify-center items-center ${intro.cta ? "animate-cta-rise" : "opacity-0 pointer-events-none"}`}>
             <Link
-              href="/file"
+              href="/trial/arraignment?sample=0"
+              onClick={() => trackSampleCaseClicked("landing")}
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-gold-500 text-court-950 font-medium rounded-md transition-all duration-200 text-sm hover:bg-gold-400"
             >
-              File a case
+              Try a sample
             </Link>
             <Link
-              href="/trial/arraignment?sample=0"
+              href="/file"
               className="inline-flex items-center gap-2 px-6 py-2.5 border border-court-600 text-court-300 rounded-md transition-all duration-200 text-sm hover:border-court-400 hover:text-court-100"
             >
-              Try a sample
+              File a case
             </Link>
           </div>
 

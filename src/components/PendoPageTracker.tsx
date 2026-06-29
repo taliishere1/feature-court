@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { pendoAnalyticsUrl } from "@/lib/pendo-analytics";
 
 const RETRY_MS = 100;
 const MAX_WAIT_MS = 30_000;
 
+function ensurePendoUrl(): void {
+  const url = pendoAnalyticsUrl();
+  window.pendo.location?.setUrl?.(() => url);
+}
+
 function syncPendoPage(): void {
+  ensurePendoUrl();
   window.pendo.pageLoad();
   window.pendo.recording?.start?.();
 }
@@ -17,8 +24,6 @@ function syncPendoPage(): void {
  */
 export default function PendoPageTracker() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const query = searchParams.toString();
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +44,7 @@ export default function PendoPageTracker() {
     return () => {
       cancelled = true;
     };
-  }, [pathname, query]);
+  }, [pathname]);
 
   useEffect(() => {
     function flushOnExit(): void {

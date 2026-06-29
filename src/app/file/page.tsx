@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CourtroomBackground, SiteBrand } from "@/components/court-components";
 import { supabase } from "@/lib/supabase";
 import { parseEdgeFunctionError } from "@/lib/edge-function-errors";
 import { pendoTrack } from "@/lib/pendo-track";
+import { trackCaseFilingViewed } from "@/lib/pendo-analytics";
 import { registerVisitor } from "@/lib/visitor";
 
 const INTAKE_MAX_LENGTH = 500;
@@ -37,6 +38,10 @@ export default function FileCasePage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    trackCaseFilingViewed();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -198,6 +203,7 @@ export default function FileCasePage() {
 
               <div className="text-center animate-fade-in-up stagger-6">
                 <button
+                  id="fc-case-filing-submit"
                   type="submit"
                   disabled={submitting}
                   className="group inline-flex items-center gap-2.5 px-10 py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-court-700 disabled:text-court-500 text-court-950 font-semibold rounded-sm transition-all duration-200 text-base animate-button-press"

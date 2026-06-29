@@ -8,6 +8,7 @@ import { CAST } from "@/lib/cast";
 import { supabase } from "@/lib/supabase";
 import { rowToTrialData } from "@/lib/store";
 import { pendoTrack } from "@/lib/pendo-track";
+import { trackFileAnotherCaseClicked } from "@/lib/pendo-analytics";
 import { usePendoTrialStage } from "@/lib/use-pendo-trial-stage";
 
 const RULING_LABELS: Record<Ruling, string> = {
@@ -259,6 +260,9 @@ export default function VerdictPage({ params }: { params: Promise<{ id: string }
             </button>
             <Link
               href="/file"
+              onClick={() => {
+                if (trial && ruling) trackFileAnotherCaseClicked(trial.id, ruling);
+              }}
               className="group inline-flex items-center gap-2 px-5 py-3 border border-court-600 hover:border-court-400 text-court-300 hover:text-court-100 rounded-sm transition-all duration-200 text-sm font-medium animate-button-press"
             >
               File another case

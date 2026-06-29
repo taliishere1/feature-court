@@ -302,7 +302,20 @@ export function StageProgress({ current, className = "" }: { current: number; cl
 
 // ─── Interactive Gavel ───
 
-export function InteractiveGavel({ onStrike, className = "", width = 72, height = 72 }: { onStrike?: () => void; className?: string; width?: number; height?: number }) {
+export function InteractiveGavel({
+  onStrike,
+  interactive = true,
+  className = "",
+  width = 72,
+  height = 72,
+}: {
+  onStrike?: () => void;
+  /** When false, renders as decorative art (no button) to avoid rage-click false positives. */
+  interactive?: boolean;
+  className?: string;
+  width?: number;
+  height?: number;
+}) {
   const [striking, setStriking] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -313,6 +326,36 @@ export function InteractiveGavel({ onStrike, className = "", width = 72, height 
     setTimeout(() => setStriking(false), 600);
   };
 
+  const image = !imgError ? (
+    <Image
+      src="/images/gavel.png"
+      alt=""
+      width={width}
+      height={height}
+      className="shrink-0 object-contain"
+      unoptimized
+      onError={() => setImgError(true)}
+      priority
+    />
+  ) : (
+    <svg width="72" height="72" viewBox="0 0 56 56" fill="none" className="text-gold-500" style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.25))" }}>
+      <rect x="16" y="42" width="24" height="4" rx="1" fill="currentColor" opacity="0.35" />
+      <rect x="25" y="22" width="6" height="22" rx="1.5" fill="currentColor" opacity="0.55" />
+      <rect x="13" y="6" width="30" height="18" rx="3" fill="currentColor" opacity="0.85" />
+      <polygon points="28,8 30.5,13 36,13 31.5,16.5 33,22 28,19 23,22 24.5,16.5 20,13 25.5,13" fill="var(--color-court-950)" opacity="0.9" />
+      <line x1="15" y1="18" x2="26" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+      <line x1="30" y1="18" x2="41" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+    </svg>
+  );
+
+  if (!interactive) {
+    return (
+      <div className={`pointer-events-none select-none ${className}`} aria-hidden="true">
+        {image}
+      </div>
+    );
+  }
+
   if (!imgError) {
     return (
       <button
@@ -320,18 +363,7 @@ export function InteractiveGavel({ onStrike, className = "", width = 72, height 
         className={`cursor-pointer focus:outline-none ${className}`}
         aria-label="Strike gavel"
       >
-        <div className={striking ? "animate-gavel-strike" : ""}>
-          <Image
-            src="/images/gavel.png"
-            alt="Gavel"
-            width={width}
-            height={height}
-            className="shrink-0 object-contain"
-            unoptimized
-            onError={() => setImgError(true)}
-            priority
-          />
-        </div>
+        <div className={striking ? "animate-gavel-strike" : ""}>{image}</div>
       </button>
     );
   }
@@ -342,21 +374,7 @@ export function InteractiveGavel({ onStrike, className = "", width = 72, height 
       className={`cursor-pointer focus:outline-none ${className}`}
       aria-label="Strike gavel"
     >
-      <div className={striking ? "animate-gavel-strike" : ""}>
-        <svg width="72" height="72" viewBox="0 0 56 56" fill="none" className="text-gold-500" style={{ filter: "drop-shadow(0 0 12px rgba(212,175,55,0.25))" }}>
-          {/* Platform base */}
-          <rect x="16" y="42" width="24" height="4" rx="1" fill="currentColor" opacity="0.35" />
-          {/* Handle */}
-          <rect x="25" y="22" width="6" height="22" rx="1.5" fill="currentColor" opacity="0.55" />
-          {/* Gavel head */}
-          <rect x="13" y="6" width="30" height="18" rx="3" fill="currentColor" opacity="0.85" />
-          {/* Star emblem on gavel */}
-          <polygon points="28,8 30.5,13 36,13 31.5,16.5 33,22 28,19 23,22 24.5,16.5 20,13 25.5,13" fill="var(--color-court-950)" opacity="0.9" />
-          {/* Decorative lines on gavel head */}
-          <line x1="15" y1="18" x2="26" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
-          <line x1="30" y1="18" x2="41" y2="18" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
-        </svg>
-      </div>
+      <div className={striking ? "animate-gavel-strike" : ""}>{image}</div>
     </button>
   );
 }

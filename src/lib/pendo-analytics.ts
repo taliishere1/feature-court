@@ -32,9 +32,7 @@ export const PENDO_PAGE_TAG_PATHS = [
 /** Normalizes URLs sent to Pendo (pathname only; collapses /verdict/:id → /verdict). */
 export function pendoAnalyticsUrl(): string {
   if (typeof window === "undefined") return "";
-  let path = window.location.pathname;
-  if (path.startsWith("/verdict/")) path = "/verdict";
-  return window.location.origin + path;
+  return sanitizePendoUrl(window.location.href);
 }
 
 export function trackTrialStageViewed(stage: TrialStage, trialId?: string): void {
@@ -45,4 +43,28 @@ export function trackTrialStageViewed(stage: TrialStage, trialId?: string): void
     stage_label: meta.label,
     ...(trialId ? { trial_id: trialId } : {}),
   });
+}
+
+export function trackCaseFilingViewed(): void {
+  pendoTrack("case_filing_viewed");
+}
+
+export function trackFileAnotherCaseClicked(trialId: string, ruling: string): void {
+  pendoTrack("file_another_case_clicked", { trial_id: trialId, ruling });
+}
+
+export function trackSampleCaseClicked(from: "landing" | "guide"): void {
+  pendoTrack("sample_case_cta_clicked", { from });
+}
+
+/** Strips query strings and normalizes dynamic routes for Pendo Page rules. */
+export function sanitizePendoUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    let path = parsed.pathname;
+    if (path.startsWith("/verdict/")) path = "/verdict";
+    return parsed.origin + path;
+  } catch {
+    return url.split("?")[0]?.split("#")[0] ?? url;
+  }
 }
