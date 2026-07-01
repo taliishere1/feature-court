@@ -4,6 +4,7 @@ interface PendoSDK {
     account?: { id: string };
     recording?: { enabled: boolean; autoStart: boolean };
     disableSessionRecording?: boolean;
+    sanitizeUrl?: (url: string) => string;
     additionalApiKeys?: string[];
   }) => void;
   track: (event: string, metadata?: Record<string, unknown>) => void;
